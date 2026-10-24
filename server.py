@@ -22,14 +22,13 @@ app=FastAPI(title='DRE Juridico Scientist - Piloto API',version='3.0-rc4')
 def safe_add_column(table_name: str, col_name: str, col_type: str):
     """Executes ALTER TABLE ADD COLUMN in its own isolated transaction only if column does not already exist."""
     try:
-        with engine.connect() as conn:
+        with engine.begin() as conn:
             if 'sqlite' in DB_URL:
                 cols = [row[1] for row in conn.execute(text(f"PRAGMA table_info({table_name})")).fetchall()]
             else:
                 cols = [row[0] for row in conn.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name=:t"), {'t': table_name.lower()}).fetchall()]
-            if col_name.lower() not in [c.lower() for c in cols]:
-                with conn.begin():
-                    conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {col_name} {col_type}"))
+            if cols and col_name.lower() not in [c.lower() for c in cols]:
+                conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {col_name} {col_type}"))
     except Exception as _err:
         pass
 
