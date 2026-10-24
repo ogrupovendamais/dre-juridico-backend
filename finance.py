@@ -10,19 +10,21 @@ def setup(app, db, auth, editor, utc):
         c.execute(text('CREATE TABLE IF NOT EXISTS ledger_accounts (id VARCHAR(40) PRIMARY KEY,office_id VARCHAR(40) NOT NULL,code VARCHAR(24) NOT NULL,name VARCHAR(120) NOT NULL,kind VARCHAR(20) NOT NULL,UNIQUE(office_id,code))'))
         c.execute(text('CREATE TABLE IF NOT EXISTS customers (id VARCHAR(40) PRIMARY KEY,office_id VARCHAR(40) NOT NULL,name VARCHAR(160) NOT NULL)'))
         c.execute(text('CREATE TABLE IF NOT EXISTS contracts (id VARCHAR(40) PRIMARY KEY,office_id VARCHAR(40) NOT NULL,customer_id VARCHAR(40) NOT NULL,label VARCHAR(160) NOT NULL,fee_type VARCHAR(24) NOT NULL,origin VARCHAR(30) DEFAULT \'atendimento\',suborigin VARCHAR(80))'))
-        try: c.execute(text("ALTER TABLE contracts ADD COLUMN origin VARCHAR(30) DEFAULT 'atendimento'"))
-        except Exception: pass
-        try: c.execute(text("ALTER TABLE contracts ADD COLUMN suborigin VARCHAR(80)"))
-        except Exception: pass
-        try: c.execute(text("ALTER TABLE customers ADD COLUMN created_at VARCHAR(40)"))
-        except Exception: pass
-        try: c.execute(text("ALTER TABLE contracts ADD COLUMN created_at VARCHAR(40)"))
-        except Exception: pass
-        try: c.execute(text("ALTER TABLE contracts ADD COLUMN signed_date VARCHAR(10)"))
-        except Exception: pass
-        try: c.execute(text("ALTER TABLE contracts ADD COLUMN contract_value_cents BIGINT DEFAULT 0"))
-        except Exception: pass
-        try:
+        c.execute(text('CREATE TABLE IF NOT EXISTS bills (id VARCHAR(40) PRIMARY KEY,office_id VARCHAR(40) NOT NULL,account_id VARCHAR(40) NOT NULL,contract_id VARCHAR(40),description VARCHAR(160) NOT NULL,competence VARCHAR(7) NOT NULL,due_date VARCHAR(10) NOT NULL,cents BIGINT NOT NULL,settled_cents BIGINT NOT NULL DEFAULT 0,settled_date VARCHAR(10),created_by VARCHAR(40) NOT NULL,created_at VARCHAR(40) NOT NULL,nature_id VARCHAR(40),subcategory_id VARCHAR(40))'))
+        c.execute(text('CREATE TABLE IF NOT EXISTS cash_movements (id VARCHAR(40) PRIMARY KEY,office_id VARCHAR(40) NOT NULL,bill_id VARCHAR(40) NOT NULL,kind VARCHAR(20) NOT NULL,movement_date VARCHAR(10) NOT NULL,cents BIGINT NOT NULL,created_by VARCHAR(40) NOT NULL,created_at VARCHAR(40) NOT NULL)'))
+
+    import server
+    server.safe_add_column('contracts', 'origin', "VARCHAR(30) DEFAULT 'atendimento'")
+    server.safe_add_column('contracts', 'suborigin', "VARCHAR(80)")
+    server.safe_add_column('customers', 'created_at', "VARCHAR(40)")
+    server.safe_add_column('contracts', 'created_at', "VARCHAR(40)")
+    server.safe_add_column('contracts', 'signed_date', "VARCHAR(10)")
+    server.safe_add_column('contracts', 'contract_value_cents', "BIGINT DEFAULT 0")
+    server.safe_add_column('bills', 'nature_id', "VARCHAR(40)")
+    server.safe_add_column('bills', 'subcategory_id', "VARCHAR(40)")
+
+    try:
+        with db() as c:
             c.execute(text("""
                 UPDATE customers 
                 SET created_at = COALESCE(
@@ -44,13 +46,8 @@ def setup(app, db, auth, editor, utc):
                 SET signed_date = substr(created_at, 1, 10)
                 WHERE signed_date IS NULL
             """))
-        except Exception: pass
-        c.execute(text('CREATE TABLE IF NOT EXISTS bills (id VARCHAR(40) PRIMARY KEY,office_id VARCHAR(40) NOT NULL,account_id VARCHAR(40) NOT NULL,contract_id VARCHAR(40),description VARCHAR(160) NOT NULL,competence VARCHAR(7) NOT NULL,due_date VARCHAR(10) NOT NULL,cents BIGINT NOT NULL,settled_cents BIGINT NOT NULL DEFAULT 0,settled_date VARCHAR(10),created_by VARCHAR(40) NOT NULL,created_at VARCHAR(40) NOT NULL,nature_id VARCHAR(40),subcategory_id VARCHAR(40))'))
-        try: c.execute(text('ALTER TABLE bills ADD COLUMN nature_id VARCHAR(40)'))
-        except Exception: pass
-        try: c.execute(text('ALTER TABLE bills ADD COLUMN subcategory_id VARCHAR(40)'))
-        except Exception: pass
-        c.execute(text('CREATE TABLE IF NOT EXISTS cash_movements (id VARCHAR(40) PRIMARY KEY,office_id VARCHAR(40) NOT NULL,bill_id VARCHAR(40) NOT NULL,kind VARCHAR(20) NOT NULL,movement_date VARCHAR(10) NOT NULL,cents BIGINT NOT NULL,created_by VARCHAR(40) NOT NULL,created_at VARCHAR(40) NOT NULL)'))
+    except Exception:
+        pass
     class AccountIn(BaseModel):
         code:str=Field(min_length=1,max_length=24)
         name:str=Field(min_length=2,max_length=120)

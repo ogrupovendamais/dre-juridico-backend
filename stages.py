@@ -114,24 +114,21 @@ def setup(app, db, auth, editor, utc):
             created_at VARCHAR(40) NOT NULL
         )'''))
 
-        # 5. Adições seguras e não destrutivas na tabela worklogs
-        for col, col_def in [
-            ('stage_id', 'VARCHAR(40)'),
-            ('activity_type', 'VARCHAR(80)'),
-            ('start_time', 'VARCHAR(10)'),
-            ('end_time', 'VARCHAR(10)'),
-            ('pause_minutes', 'INTEGER DEFAULT 0')
-        ]:
-            try:
-                c.execute(text(f'ALTER TABLE worklogs ADD COLUMN {col} {col_def}'))
-            except Exception:
-                pass
+    import server
+    # 5. Adições seguras e não destrutivas na tabela worklogs
+    for col, col_def in [
+        ('stage_id', 'VARCHAR(40)'),
+        ('activity_type', 'VARCHAR(80)'),
+        ('start_time', 'VARCHAR(10)'),
+        ('end_time', 'VARCHAR(10)'),
+        ('pause_minutes', 'INTEGER DEFAULT 0')
+    ]:
+        server.safe_add_column('worklogs', col, col_def)
 
-        # 6. Adição segura de legal_area em contracts se não existir
-        try:
-            c.execute(text("ALTER TABLE contracts ADD COLUMN legal_area VARCHAR(60) DEFAULT 'civel'"))
-        except Exception:
-            pass
+    # 6. Adição segura de legal_area em contracts se não existir
+    server.safe_add_column('contracts', 'legal_area', "VARCHAR(60) DEFAULT 'civel'")
+
+    with db() as c:
 
         # 7. Preencher templates padrão no sistema se vazios
         count = c.execute(text('SELECT COUNT(*) FROM process_stage_templates WHERE office_id IS NULL')).scalar() or 0

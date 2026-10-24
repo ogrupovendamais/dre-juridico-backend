@@ -60,22 +60,20 @@ def setup(app, db, auth, editor, utc):
             expires_at BIGINT NOT NULL
         )'''))
 
-        # 4. Safe migration of worklogs table to support approval, idempotency, and notes
-        for col_def in [
-            ('status', 'VARCHAR(20) DEFAULT "APPROVED"'),
-            ('description', 'VARCHAR(500)'),
-            ('idempotency_key', 'VARCHAR(64)'),
-            ('approved_by', 'VARCHAR(40)'),
-            ('approved_at', 'VARCHAR(40)'),
-            ('rejection_reason', 'VARCHAR(250)'),
-            ('source', 'VARCHAR(20) DEFAULT "web"')
-        ]:
-            col_name, col_type = col_def
-            try:
-                c.execute(text(f'ALTER TABLE worklogs ADD COLUMN {col_name} {col_type}'))
-            except Exception:
-                pass
-        
+    import server
+    # 4. Safe migration of worklogs table to support approval, idempotency, and notes
+    for col_name, col_type in [
+        ('status', "VARCHAR(20) DEFAULT 'APPROVED'"),
+        ('description', 'VARCHAR(500)'),
+        ('idempotency_key', 'VARCHAR(64)'),
+        ('approved_by', 'VARCHAR(40)'),
+        ('approved_at', 'VARCHAR(40)'),
+        ('rejection_reason', 'VARCHAR(250)'),
+        ('source', "VARCHAR(20) DEFAULT 'web'")
+    ]:
+        server.safe_add_column('worklogs', col_name, col_type)
+    
+    with db() as c:
         # Ensure any legacy entries without status are marked APPROVED
         c.execute(text("UPDATE worklogs SET status = 'APPROVED' WHERE status IS NULL OR status = ''"))
 

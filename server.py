@@ -13,10 +13,25 @@ from sqlalchemy.pool import StaticPool
 
 BASE = Path(__file__).parent
 DB_URL = os.getenv('DATABASE_URL', 'sqlite:///' + str(BASE/'pilot.db'))
-if DB_URL.startswith('postgres://'): DB_URL = DB_URL.replace('postgres://','postgresql://',1)
+if DB_URL.startswith('postgres://'): DB_URL = DB_URL.replace('postgres://','postgresql+psycopg://',1)
+elif DB_URL.startswith('postgresql://'): DB_URL = DB_URL.replace('postgresql://','postgresql+psycopg://',1)
 kw = {'connect_args': {'check_same_thread': False}} if DB_URL.startswith('sqlite') else {}
 engine = create_engine(DB_URL, pool_pre_ping=True, **kw)
 app=FastAPI(title='DRE Juridico Scientist - Piloto API',version='3.0-rc4')
+
+def safe_add_column(table_name: str, col_name: str, col_type: str):
+    """Executes ALTER TABLE ADD COLUMN in its own isolated transaction only if column does not already exist."""
+    try:
+        with engine.connect() as conn:
+            if 'sqlite' in DB_URL:
+                cols = [row[1] for row in conn.execute(text(f"PRAGMA table_info({table_name})")).fetchall()]
+            else:
+                cols = [row[0] for row in conn.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name=:t"), {'t': table_name.lower()}).fetchall()]
+            if col_name.lower() not in [c.lower() for c in cols]:
+                with conn.begin():
+                    conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {col_name} {col_type}"))
+    except Exception as _err:
+        pass
 
 def hash_password(password, salt=None):
     salt = salt or secrets.token_hex(16)
@@ -41,13 +56,11 @@ def init_db():
         c.execute(text('CREATE TABLE IF NOT EXISTS users (id VARCHAR(40) PRIMARY KEY,office_id VARCHAR(40) NOT NULL, email VARCHAR(180) NOT NULL UNIQUE, password_hash TEXT NOT NULL, role VARCHAR(20) NOT NULL)'))
         c.execute(text('CREATE TABLE IF NOT EXISTS sessions (token_hash CHAR(64) PRIMARY KEY, user_id VARCHAR(40) NOT NULL, expires BIGINT NOT NULL)'))
         c.execute(text('CREATE TABLE IF NOT EXISTS entries (id VARCHAR(40) PRIMARY KEY,office_id VARCHAR(40) NOT NULL, user_id VARCHAR(40) NOT NULL, entry_date VARCHAR(10) NOT NULL, description VARCHAR(140) NOT NULL, area VARCHAR(100) NOT NULL, kind VARCHAR(12) NOT NULL, cents BIGINT NOT NULL, created_at VARCHAR(40) NOT NULL, nature_id VARCHAR(40), subcategory_id VARCHAR(40))'))
-        try: c.execute(text('ALTER TABLE entries ADD COLUMN nature_id VARCHAR(40)'))
-        except Exception: pass
-        try: c.execute(text('ALTER TABLE entries ADD COLUMN subcategory_id VARCHAR(40)'))
-        except Exception: pass
         c.execute(text('CREATE TABLE IF NOT EXISTS login_attempts (email_key CHAR(64) PRIMARY KEY, count INTEGER NOT NULL, window_start BIGINT NOT NULL, locked_until BIGINT NOT NULL)'))
         c.execute(text('CREATE TABLE IF NOT EXISTS audit (id VARCHAR(40) PRIMARY KEY,office_id VARCHAR(40) NOT NULL,user_id VARCHAR(40) NOT NULL, action VARCHAR(40) NOT NULL, target_id VARCHAR(40) NOT NULL, timestamp VARCHAR(40) NOT NULL)'))
         c.execute(text('CREATE TABLE IF NOT EXISTS office_areas (id VARCHAR(40) PRIMARY KEY, office_id VARCHAR(40) NOT NULL, name VARCHAR(100) NOT NULL, created_at VARCHAR(40) NOT NULL, CONSTRAINT uq_office_areas UNIQUE (office_id, name))'))
+    safe_add_column('entries', 'nature_id', 'VARCHAR(40)')
+    safe_add_column('entries', 'subcategory_id', 'VARCHAR(40)')
 init_db()
 from idempotency25 import setup as setup_idempotency25, reserve as idem_reserve, finish as idem_finish
 setup_idempotency25(db)
