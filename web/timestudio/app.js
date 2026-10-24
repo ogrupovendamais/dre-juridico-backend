@@ -68,7 +68,11 @@
     let data;
     try { data = JSON.parse(text); } catch { data = { message: text }; }
     if (!res.ok) {
-      throw new Error(data.detail || data.message || `Erro HTTP ${res.status}`);
+      let errMsg = `Erro HTTP ${res.status}`;
+      if (typeof data.detail === 'string') errMsg = data.detail;
+      else if (Array.isArray(data.detail)) errMsg = data.detail.map(d => d.msg || JSON.stringify(d)).join('; ');
+      else if (typeof data.message === 'string') errMsg = data.message;
+      throw new Error(errMsg);
     }
     return data;
   }
