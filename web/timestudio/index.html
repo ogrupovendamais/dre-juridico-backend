@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Time Studio | DRE Jurídico</title>
+  <meta name="description" content="Apontamento inteligente de horas por processo com cronômetro offline resiliente e sincronização automática." />
+  <meta name="theme-color" content="#010E38" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Time Studio" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/svg+xml" href="icon-192.svg" />
+  <link rel="apple-touch-icon" href="icon-192.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Montserrat:wght@600;700;800;900&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --brand-navy: #010E38;
+      --brand-navy-dark: #000824;
+      --brand-navy-card: #081432;
+      --brand-gold: #EBB52C;
+      --gold-hover: #F5C842;
+      --text-white: #FFFFFF;
+      --text-slate: #94A3B8;
+      --bg-page: #010E38;
+      --border-subtle: rgba(235, 181, 44, 0.22);
+      --success-green: #10B981;
+      --danger-red: #EF4444;
+      --warning-amber: #F59E0B;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-page);
+      color: var(--text-white);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+
+    /* Top Bar */
+    .top-bar {
+      background: rgba(1, 14, 56, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-logo {
+      width: 32px;
+      height: 32px;
+    }
+
+    .brand-title {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .app-name {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .gold-badge {
+      background: var(--brand-gold);
+      color: var(--brand-navy);
+      font-size: 9.5px;
+      font-weight: 900;
+      padding: 2px 6px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .app-sub {
+      font-size: 10.5px;
+      color: var(--text-slate);
+      font-weight: 500;
+    }
+
+    .status-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pill {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+    }
+
+    .pill-online {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34D399;
+      border: 1px solid rgba(16, 185, 129, 0.35);
+    }
+
+    .pill-offline {
+      background: rgba(245, 158, 11, 0.18);
+      color: #FBBF24;
+      border: 1px solid rgba(245, 158, 11, 0.4);
+    }
+
+    .pill-sync {
+      background: rgba(255, 255, 255, 0.08);
+      color: #E2E8F0;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      cursor: pointer;
+    }
+
+    .btn-logout {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #FCA5A5;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-logout:hover {
+      background: #EF4444;
+      color: #FFFFFF;
+    }
+
+    /* Container */
+    .container {
+      max-width: 600px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 16px 14px 40px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Tabs */
+    .nav-tabs {
+      display: flex;
+      gap: 6px;
+      background: rgba(8, 20, 50, 0.8);
+      padding: 5px;
+      border-radius: 12px;
+      border: 1px solid var(--border-subtle);
+      margin-bottom: 20px;
+    }
+
+    .nav-tab {
+      flex: 1;
+      text-align: center;
+      padding: 10px 8px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: var(--text-slate);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .nav-tab:hover {
+      color: #FFFFFF;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .nav-tab.active {
+      background: var(--brand-gold);
+      color: var(--brand-navy);
+      font-weight: 800;
+      box-shadow: 0 2px 10px rgba(235, 181, 44, 0.3);
+    }
+
+    /* Cards */
+    .card {
+      background: var(--brand-navy-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+    }
+
+    /* Timer Widget */
+    .timer-container {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .timer-clock {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 48px;
+      font-weight: 800;
+      color: #FFFFFF;
+      letter-spacing: 2px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 2px solid rgba(235, 181, 44, 0.35);
+      border-radius: 20px;
+      padding: 16px 24px;
+      width: 100%;
+      text-shadow: 0 0 20px rgba(235, 181, 44, 0.3);
+      user-select: none;
+    }
+
+    .timer-clock.running {
+      border-color: var(--brand-gold);
+      color: #FFFBEB;
+      box-shadow: 0 0 30px rgba(235, 181, 44, 0.25);
+    }
+
+    .timer-clock.paused {
+      border-color: var(--warning-amber);
+      color: #FEF3C7;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
+    .timer-state-tag {
+      font-size: 11.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      display: inline-block;
+    }
+
+    .timer-state-tag.stopped { background: rgba(255, 255, 255, 0.08); color: #94A3B8; }
+    .timer-state-tag.running { background: rgba(16, 185, 129, 0.2); color: #34D399; border: 1px solid rgba(16, 185, 129, 0.4); }
+    .timer-state-tag.paused { background: rgba(245, 158, 11, 0.2); color: #FBBF24; border: 1px solid rgba(245, 158, 11, 0.4); }
+
+    .timer-controls {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 12px 20px;
+      border-radius: 10px;
+      border: none;
+      font-size: 13.5px;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.18s ease;
+      min-height: 44px;
+    }
+
+    .btn-gold {
+      background: var(--brand-gold);
+      color: var(--brand-navy);
+    }
+
+    .btn-gold:hover {
+      background: var(--gold-hover);
+      box-shadow: 0 4px 16px rgba(235, 181, 44, 0.4);
+      transform: translateY(-1px);
+    }
+
+    .btn-pause {
+      background: rgba(245, 158, 11, 0.2);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      color: #FBBF24;
+    }
+
+    .btn-pause:hover {
+      background: #F59E0B;
+      color: #000;
+    }
+
+    .btn-stop {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #FCA5A5;
+    }
+
+    .btn-stop:hover {
+      background: #EF4444;
+      color: #FFF;
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      color: #E2E8F0;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: #FFF;
+    }
+
+    /* Forms */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 14px;
+      text-align: left;
+      width: 100%;
+    }
+
+    .form-group label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #CBD5E1;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(235, 181, 44, 0.25);
+      background: #000824;
+      color: #FFFFFF;
+      font-size: 13.5px;
+      font-family: inherit;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .form-control:focus {
+      border-color: var(--brand-gold);
+      box-shadow: 0 0 0 2px rgba(235, 181, 44, 0.25);
+    }
+
+    textarea.form-control {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    /* History Feed */
+    .history-item {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .history-item:hover {
+      border-color: var(--border-subtle);
+      background: rgba(0, 0, 0, 0.4);
+    }
+
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .history-title {
+      font-size: 13.5px;
+      font-weight: 800;
+      color: #FFFFFF;
+    }
+
+    .history-time {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--brand-gold);
+      white-space: nowrap;
+    }
+
+    .history-desc {
+      font-size: 12.5px;
+      color: #94A3B8;
+      line-height: 1.4;
+    }
+
+    .history-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 6px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 11px;
+      color: #64748B;
+    }
+
+    /* Badges */
+    .badge-pending {
+      background: rgba(245, 158, 11, 0.15);
+      color: #FBBF24;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .badge-approved {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34D399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .badge-rejected {
+      background: rgba(239, 68, 68, 0.15);
+      color: #FCA5A5;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .badge-stage {
+      background: rgba(14, 165, 233, 0.15);
+      color: #38BDF8;
+      border: 1px solid rgba(14, 165, 233, 0.3);
+      font-size: 10.5px;
+      font-weight: 700;
+    }
+
+    .badge-activity {
+      background: rgba(168, 85, 247, 0.15);
+      color: #C084FC;
+      border: 1px solid rgba(168, 85, 247, 0.3);
+      font-size: 10.5px;
+      font-weight: 700;
+    }
+
+    /* Screen Views */
+    .view-screen {
+      display: none;
+    }
+
+    .view-screen.active {
+      display: block;
+      animation: fadeIn 0.25s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Alerts */
+    .alert-box {
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 12.5px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .alert-info {
+      background: rgba(2, 132, 199, 0.15);
+      border: 1px solid rgba(2, 132, 199, 0.35);
+      color: #BAE6FD;
+    }
+
+    .alert-success {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      color: #A7F3D0;
+    }
+
+    .alert-warning {
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      color: #FDE68A;
+    }
+
+    .alert-error {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #FECACA;
+    }
+
+    /* Lembrete Anti-Esquecimento */
+    .reminder-settings-box {
+      width: 100%;
+      background: rgba(0, 8, 36, 0.65);
+      border: 1px solid rgba(235, 181, 44, 0.22);
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .reminder-settings-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11.5px;
+      color: #CBD5E1;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .reminder-btn-group {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .btn-reminder-choice {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #94A3B8;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      font-family: inherit;
+    }
+    .btn-reminder-choice:hover {
+      background: rgba(235, 181, 44, 0.15);
+      color: #FFF;
+      border-color: rgba(235, 181, 44, 0.35);
+    }
+    .btn-reminder-choice.active {
+      background: rgba(235, 181, 44, 0.22);
+      color: var(--brand-gold);
+      border-color: var(--brand-gold);
+      box-shadow: 0 0 8px rgba(235, 181, 44, 0.25);
+    }
+
+    /* Modal / Toast Flutuante de Alerta */
+    .reminder-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 4, 18, 0.78);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 16px;
+      animation: fadeIn 0.2s ease-out;
+    }
+    .reminder-modal-box {
+      background: #081432;
+      border: 2px solid var(--brand-gold);
+      border-radius: 14px;
+      max-width: 480px;
+      width: 100%;
+      padding: 24px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65), 0 0 25px rgba(235, 181, 44, 0.2);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .reminder-modal-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .reminder-modal-icon {
+      font-size: 32px;
+      line-height: 1;
+      animation: pulseAlert 1.6s infinite ease-in-out;
+    }
+    @keyframes pulseAlert {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.15); }
+    }
+    .reminder-modal-title {
+      font-size: 17px;
+      font-weight: 800;
+      color: #FFFFFF;
+    }
+    .reminder-modal-time {
+      font-size: 13px;
+      color: var(--brand-gold);
+      font-weight: 700;
+      margin-top: 2px;
+    }
+    .reminder-modal-body {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 12.5px;
+      color: #CBD5E1;
+      line-height: 1.5;
+    }
+    .reminder-modal-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <header class="top-bar">
+    <div class="brand-group">
+      <img src="icon-192.svg" alt="Time Studio Logo" class="brand-logo" />
+      <div class="brand-title">
+        <div class="app-name">
+          TIME STUDIO
+          <span class="gold-badge">PWA</span>
+        </div>
+        <span class="app-sub" id="hdr-office">DRE Jurídico Scientist</span>
+      </div>
+    </div>
+
+    <div class="status-group">
+      <span class="pill pill-online" id="status-online">● Online</span>
+      <span class="pill pill-sync" id="status-sync" title="Clique para sincronizar fila de apontamentos">
+        <span id="sync-icon">🔄</span>
+        <span id="sync-label">Sincronizado</span>
+      </span>
+      <button type="button" class="btn-logout" id="btn-logout" style="display:none;" title="Sair da conta">Sair</button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="container">
+
+    <!-- SCREEN 1: Ativação de Convite (Invite Flow) -->
+    <section id="screen-invite" class="view-screen">
+      <div class="card" style="text-align:center;">
+        <span style="font-size:42px;display:inline-block;margin-bottom:10px;">✉️</span>
+        <h2 style="font-size:20px;font-weight:900;color:var(--brand-gold);margin-bottom:6px;">Convite Time Studio</h2>
+        <p style="font-size:13px;color:#94A3B8;margin-bottom:20px;">Você foi convidado para apontar suas horas na banca jurídica.</p>
+
+        <div class="alert-box alert-info" id="invite-info" style="text-align:left;">
+          <div>
+            <strong id="invite-prof-name" style="color:#FFF;display:block;">Carregando profissional...</strong>
+            <span id="invite-office-name" style="font-size:11.5px;color:#BAE6FD;display:block;">Banca Jurídica</span>
+            <span id="invite-email" style="font-size:11.5px;color:#94A3B8;display:block;margin-top:2px;">email@adv.br</span>
+          </div>
+        </div>
+
+        <form id="form-accept-invite" style="text-align:left;">
+          <div class="form-group">
+            <label for="invite-password">Criar Senha de Acesso (mínimo 6 caracteres)</label>
+            <input type="password" id="invite-password" class="form-control" placeholder="Sua senha segura" minlength="6" required />
+          </div>
+          <div class="form-group">
+            <label for="invite-password-confirm">Confirmar Senha</label>
+            <input type="password" id="invite-password-confirm" class="form-control" placeholder="Repita a senha" minlength="6" required />
+          </div>
+          <button type="submit" class="btn btn-gold" style="width:100%;margin-top:10px;">Ativar e Acessar Time Studio</button>
+        </form>
+        <p id="invite-error" class="alert-box alert-error" style="display:none;margin-top:14px;"></p>
+      </div>
+    </section>
+
+    <!-- SCREEN 2: Login do Profissional -->
+    <section id="screen-login" class="view-screen">
+      <div class="card" style="text-align:center;">
+        <span style="font-size:40px;display:inline-block;margin-bottom:10px;">⚖️</span>
+        <h2 style="font-size:20px;font-weight:900;color:#FFFFFF;margin-bottom:6px;">Acesso do Advogado</h2>
+        <p style="font-size:13px;color:#94A3B8;margin-bottom:20px;">Entre com seu e-mail corporativo para registrar e acompanhar suas horas.</p>
+
+        <form id="form-login" style="text-align:left;">
+          <div class="form-group">
+            <label for="login-email">E-mail corporativo</label>
+            <input type="email" id="login-email" class="form-control" placeholder="ex: advogado@banca.adv.br" required />
+          </div>
+          <div class="form-group">
+            <label for="login-password">Senha de acesso</label>
+            <input type="password" id="login-password" class="form-control" placeholder="Sua senha" required />
+          </div>
+          <button type="submit" class="btn btn-gold" style="width:100%;margin-top:10px;">Entrar no Time Studio</button>
+        </form>
+        <p id="login-error" class="alert-box alert-error" style="display:none;margin-top:14px;"></p>
+        <div style="font-size:11.5px;color:#64748B;margin-top:20px;line-height:1.5;">
+          * Se você ainda não possui senha, solicite um <strong>link individual de convite</strong> ao administrador da banca.
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 3: Dashboard Principal do Profissional -->
+    <section id="screen-app" class="view-screen">
+      
+      <!-- Navegação Interna -->
+      <nav class="nav-tabs">
+        <button type="button" class="nav-tab active" data-tab="tab-timer">
+          <span>⏱️</span> Cronômetro
+        </button>
+        <button type="button" class="nav-tab" data-tab="tab-manual">
+          <span>✍️</span> Apontar Manual
+        </button>
+        <button type="button" class="nav-tab" data-tab="tab-history">
+          <span>📋</span> Histórico (<span id="history-count">0</span>)
+        </button>
+      </nav>
+
+      <!-- PANE 1: CRONÔMETRO -->
+      <div id="tab-timer" class="tab-pane">
+        <div class="card">
+          <div class="timer-container">
+            <div style="display:flex;justify-content:space-between;align-items:center;width:100%;">
+              <span style="font-size:12px;font-weight:700;color:#CBD5E1;">Caso / Contrato em Atendimento</span>
+              <span id="timer-state-badge" class="timer-state-tag stopped">Pronto para iniciar</span>
+            </div>
+
+            <div class="form-group" style="margin-bottom:0;width:100%;">
+              <select id="timer-contract" class="form-control" required>
+                <option value="">Selecione o Contrato / Processo...</option>
+              </select>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;margin-top:10px;">
+              <div class="form-group" style="margin-bottom:0;">
+                <label for="timer-stage" style="font-size:11px;font-weight:700;color:#CBD5E1;display:block;margin-bottom:4px;">Etapa Processual</label>
+                <select id="timer-stage" class="form-control" style="font-size:12.5px;">
+                  <option value="">Selecione o Contrato primeiro...</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom:0;">
+                <label for="timer-activity" style="font-size:11px;font-weight:700;color:#CBD5E1;display:block;margin-bottom:4px;">Tipo de Atividade</label>
+                <select id="timer-activity" class="form-control" style="font-size:12.5px;">
+                  <option value="Petição / Manifestação">Petição / Manifestação</option>
+                  <option value="Audiência / Sessão">Audiência / Sessão</option>
+                  <option value="Análise de Documentos / Provas">Análise Documental</option>
+                  <option value="Pesquisa Jurídica / Jurisprudência">Pesquisa Jurídica</option>
+                  <option value="Atendimento / Reunião">Atendimento / Reunião</option>
+                  <option value="Diligência / Despacho com Juiz">Diligência / Despacho</option>
+                  <option value="Gestão de Prazos / Diligência Interna">Gestão de Prazos</option>
+                  <option value="Outro Ato Processual">Outro Ato</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="timer-clock" id="timer-display">00:00:00</div>
+
+            <div class="timer-controls">
+              <button type="button" class="btn btn-gold" id="btn-timer-start" style="flex:1;">
+                <span>▶</span> Iniciar Horas
+              </button>
+              <button type="button" class="btn btn-pause" id="btn-timer-pause" style="display:none;flex:1;">
+                <span>⏸</span> Pausar
+              </button>
+              <button type="button" class="btn btn-gold" id="btn-timer-resume" style="display:none;flex:1;">
+                <span>▶</span> Retomar
+              </button>
+              <button type="button" class="btn btn-stop" id="btn-timer-stop" style="display:none;flex:1;">
+                <span>⏹</span> Finalizar & Gravar
+              </button>
+            </div>
+
+            <div class="form-group" style="margin-top:8px;width:100%;">
+              <label for="timer-desc">Descrição do Ato Praticado (opcional)</label>
+              <textarea id="timer-desc" class="form-control" placeholder="Ex: Análise de contestação e elaboração de réplica no processo..."></textarea>
+            </div>
+
+            <!-- Configuração Inteligente de Lembrete Periódico (Anti-Esquecimento) -->
+            <div class="reminder-settings-box">
+              <div class="reminder-settings-header">
+                <span style="display:flex;align-items:center;gap:6px;">
+                  <span>🔔</span>
+                  <strong>Lembrete Anti-Esquecimento:</strong>
+                </span>
+                <span id="reminder-status-pill" class="pill" style="font-size:10px;padding:2px 8px;background:rgba(235,181,44,0.15);color:var(--brand-gold);font-weight:700;">A cada 60 min</span>
+              </div>
+              <div class="reminder-btn-group" role="group" aria-label="Intervalo de lembrete do cronômetro">
+                <button type="button" class="btn-reminder-choice" data-interval="30">30 min</button>
+                <button type="button" class="btn-reminder-choice" data-interval="45">45 min</button>
+                <button type="button" class="btn-reminder-choice active" data-interval="60">60 min ★</button>
+                <button type="button" class="btn-reminder-choice" data-interval="90">90 min</button>
+                <button type="button" class="btn-reminder-choice" data-interval="120">2 horas</button>
+                <button type="button" class="btn-reminder-choice" data-interval="0">Desativado</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="alert-box alert-info">
+          <span>💡</span>
+          <div>
+            <strong>Persistência de Sessão Garantida:</strong>
+            O cronômetro calcula o tempo decorrido com base no relógio do sistema. Você pode fechar o aplicativo, navegar em outros apps ou reiniciar o celular sem perder a contagem das suas horas.
+          </div>
+        </div>
+      </div>
+
+      <!-- PANE 2: APONTAMENTO MANUAL -->
+      <div id="tab-manual" class="tab-pane" style="display:none;">
+        <div class="card">
+          <h3 style="font-size:16px;font-weight:800;color:var(--brand-gold);margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+            <span>✍️</span> Registro Manual Retroativo
+          </h3>
+          <form id="form-manual">
+            <div class="form-group">
+              <label for="manual-contract">Contrato / Processo Atendido</label>
+              <select id="manual-contract" class="form-control" required>
+                <option value="">Selecione o Contrato...</option>
+              </select>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+              <div class="form-group">
+                <label for="manual-stage">Etapa Processual</label>
+                <select id="manual-stage" class="form-control" style="font-size:12.5px;">
+                  <option value="">Selecione o Contrato primeiro...</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="manual-activity">Tipo de Atividade</label>
+                <select id="manual-activity" class="form-control" style="font-size:12.5px;">
+                  <option value="Petição / Manifestação">Petição / Manifestação</option>
+                  <option value="Audiência / Sessão">Audiência / Sessão</option>
+                  <option value="Análise de Documentos / Provas">Análise Documental</option>
+                  <option value="Pesquisa Jurídica / Jurisprudência">Pesquisa Jurídica</option>
+                  <option value="Atendimento / Reunião">Atendimento / Reunião</option>
+                  <option value="Diligência / Despacho com Juiz">Diligência / Despacho</option>
+                  <option value="Gestão de Prazos / Diligência Interna">Gestão de Prazos</option>
+                  <option value="Outro Ato Processual">Outro Ato</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+              <div class="form-group">
+                <label for="manual-start" style="font-size:11.5px;">Início (opcional)</label>
+                <input type="time" id="manual-start" class="form-control" />
+              </div>
+              <div class="form-group">
+                <label for="manual-end" style="font-size:11.5px;">Término (opcional)</label>
+                <input type="time" id="manual-end" class="form-control" />
+              </div>
+              <div class="form-group">
+                <label for="manual-pause" style="font-size:11.5px;">Pausa (min)</label>
+                <input type="number" id="manual-pause" class="form-control" min="0" placeholder="0" />
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+              <div class="form-group">
+                <label for="manual-date">Data do Trabalho</label>
+                <input type="date" id="manual-date" class="form-control" required />
+              </div>
+              <div class="form-group">
+                <label for="manual-minutes">Tempo Trabalhado (min)</label>
+                <input type="number" id="manual-minutes" class="form-control" min="1" max="1440" placeholder="Ex: 120 (2 horas)" required />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="manual-desc">Detalhamento da Atividade</label>
+              <textarea id="manual-desc" class="form-control" placeholder="Descreva os atos processuais ou consultoria realizados..." required></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-gold" style="width:100%;margin-top:6px;">
+              <span>💾</span> Salvar Apontamento
+            </button>
+          </form>
+          <p id="manual-feedback" class="alert-box alert-success" style="display:none;margin-top:14px;"></p>
+        </div>
+      </div>
+
+      <!-- PANE 3: HISTÓRICO & FILA DE SINCRONIZAÇÃO -->
+      <div id="tab-history" class="tab-pane" style="display:none;">
+        <!-- Status de Fila Offline -->
+        <div class="card" style="padding:14px 16px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+          <div>
+            <strong style="font-size:13px;display:block;color:#FFF;">Fila Local de Sincronização</strong>
+            <span style="font-size:11.5px;color:#94A3B8;" id="queue-status-text">0 apontamentos pendentes</span>
+          </div>
+          <button type="button" class="btn btn-secondary" id="btn-sync-now" style="padding:6px 14px;font-size:12px;min-height:36px;">
+            <span>🔄</span> Sincronizar Agora
+          </button>
+        </div>
+
+        <!-- Lista de Apontamentos -->
+        <div id="history-list">
+          <p style="text-align:center;color:#64748B;font-size:13px;padding:20px;">Carregando histórico...</p>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Modal Flutuante Anti-Esquecimento -->
+  <div id="reminder-modal" class="reminder-modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="reminder-modal-title-text">
+    <div class="reminder-modal-box">
+      <div class="reminder-modal-header">
+        <span class="reminder-modal-icon">⏱️</span>
+        <div>
+          <h3 id="reminder-modal-title-text" class="reminder-modal-title">Cronômetro em Andamento</h3>
+          <div id="reminder-modal-time-text" class="reminder-modal-time">Sessão ativa há 60 minutos</div>
+        </div>
+      </div>
+      <div class="reminder-modal-body">
+        <div style="margin-bottom:6px;">
+          <strong style="color:#FFF;">Contrato:</strong> <span id="reminder-contract-label">—</span>
+        </div>
+        <div style="margin-bottom:6px;">
+          <strong style="color:#FFF;">Atividade:</strong> <span id="reminder-activity-label">—</span>
+        </div>
+        <div id="reminder-overtime-note" style="display:none;margin-top:8px;padding:8px 10px;background:rgba(239,68,68,0.18);border:1px solid rgba(239,68,68,0.35);border-radius:6px;color:#FCA5A5;font-size:12px;">
+          ⚠️ <strong>Atenção:</strong> Esta sessão ultrapassou 4 horas ininterruptas. Caso tenha esquecido o cronômetro aberto, finalize e informe o tempo real do ato.
+        </div>
+      </div>
+      <div class="reminder-modal-actions">
+        <button type="button" id="btn-reminder-continue" class="btn btn-gold" style="flex:1;">
+          <span>▶</span> Continuar Trabalhando
+        </button>
+        <button type="button" id="btn-reminder-stop" class="btn btn-stop" style="flex:1;">
+          <span>⏹</span> Finalizar & Salvar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js?v=2"></script>
+</body>
+</html>

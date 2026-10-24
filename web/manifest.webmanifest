@@ -1,0 +1,8 @@
+{
+  "name": "DRE Jurídico Scientist | Venda+ Tech",
+  "short_name": "DRE Jurídico",
+  "description": "Gestão financeira no desktop e acompanhamento executivo no celular.",
+  "start_url": "./", "scope": "./", "display": "standalone",
+  "background_color": "#F1F4F9", "theme_color": "#010E38", "lang": "pt-BR",
+  "icons": [{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}]
+}

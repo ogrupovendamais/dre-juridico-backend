@@ -1,0 +1,28 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # Roteia requisições da API para o proxy.php
+    RewriteRule ^api/(.*)$ proxy.php?endpoint=$1 [QSA,L]
+
+    # Permite acesso direto aos arquivos físicos existentes (HTML, CSS, JS, Imagens, Manifest)
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Suporte ao PWA / SPA (Redireciona rotas para index.html)
+    RewriteRule ^ index.html [L]
+</IfModule>
+
+# Forçar HTTPS
+<IfModule mod_rewrite.c>
+    RewriteCond %{HTTPS} off
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</IfModule>
+
+# Otimização de Cache e Segurança
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>

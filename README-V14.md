@@ -1,0 +1,9 @@
+# PWA 1.4 — reforço de segurança experimental
+
+- Criptografia dos segredos MFA com Fernet. Obrigatório configurar `DRE_MFA_FERNET_KEY` antes de cadastrar novos autenticadores. Gere uma chave com `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"` e guarde fora do código e dos backups.
+- Dados MFA legados v1.3 ainda em texto devem ser migrados com `python server.py migrate-mfa-encryption` **após backup verificado e configuração da chave**. Não perca a chave: os autenticadores deixam de funcionar.
+- Códigos de recuperação de uso único: após login com MFA, chame `POST /api/account/mfa/recovery-codes/renew` com `password` e `code` (TOTP atual). Retorna oito códigos exibidos uma única vez; hashes são guardados no banco. Ao perder o autenticador, digite um código de recuperação no campo do código MFA no login. O código é consumido de forma transacional; não desativa o MFA. Após recuperar acesso, configure um novo autenticador com o suporte administrativo apropriado. **Não exibir códigos em capturas ou logs.**
+- Backup criptografado para piloto SQLite: gere com `python server.py backup-sqlite --output backup.sqlite`; criptografe com `python server.py encrypt-backup --input backup.sqlite --output backup.enc`; verifique com `python server.py verify-encrypted-backup --file backup.enc`. Apague adequadamente o backup intermediário não cifrado conforme a política de retenção local. Este fluxo NÃO agenda backup, não faz rotação e não restaura banco de produção.
+- `schema_versions` registra versão 14 e cria tabela de hashes de recuperação idempotentemente. **Não** é um mecanismo de migração completo nem rollback.
+- Backend continua com perfil `viewer` somente leitura, mobile sem entrada; bloqueio por hardware não é garantido.
+- Testar somente com dados fictícios. Não homologado para produção, LGPD ou dados sigilosos reais.

@@ -1,0 +1,38 @@
+# STAGING ONLY: no public port for DB; app exposed on host loopback only.
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: dre_homolog
+      POSTGRES_USER: dre_staging
+      POSTGRES_PASSWORD: ${STAGING_DB_PASSWORD:?define STAGING_DB_PASSWORD securely}
+    volumes:
+      - dre_pg_staging:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dre_staging -d dre_homolog"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    networks: [dre_private]
+  app:
+    build:
+      context: ../..
+      dockerfile: deploy/staging/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://dre_staging:${STAGING_DB_PASSWORD:?missing password}@db:5432/dre_homolog
+      DRE_MFA_FERNET_KEY: ${DRE_MFA_FERNET_KEY:?missing key}
+      DRE_PUBLIC_URL: ${DRE_PUBLIC_URL:-http://localhost:8080}
+      DRE_BACKUP_DIR: /app/backups
+    ports:
+      - "127.0.0.1:8080:8080"
+    networks: [dre_private]
+networks:
+  dre_private:
+    internal: true
+volumes:
+  dre_pg_staging:
