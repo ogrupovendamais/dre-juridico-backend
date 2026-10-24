@@ -366,15 +366,29 @@ setup_stages(app,db,auth,editor,utc)
 
 def ensure_seed():
     with db() as c:
-        has_user = c.execute(text("SELECT 1 FROM users LIMIT 1")).first()
+        has_user = c.execute(text("SELECT id, office_id FROM users WHERE email='admin@vendamaistech.com.br'")).first()
         if not has_user:
-            try:
-                import iniciar_local
-                iniciar_local.seed()
-            except Exception:
-                pass
+            office_id = secrets.token_hex(12)
+            c.execute(text('INSERT INTO offices VALUES (:id,:name)'), {'id': office_id, 'name': 'Venda+ Tech Advocacia'})
+            c.execute(text('INSERT INTO users VALUES (:id,:office,:email,:pw,:role)'), {
+                'id': secrets.token_hex(12),
+                'office': office_id,
+                'email': 'admin@vendamaistech.com.br',
+                'pw': hash_password('admin12345678'),
+                'role': 'admin'
+            })
+            return True
+        return False
 
-ensure_seed()
+try:
+    ensure_seed()
+except Exception as _e:
+    print('ensure_seed error:', _e)
+
+@app.post('/api/setup_initial_admin')
+def setup_initial_admin():
+    created = ensure_seed()
+    return {'ok': True, 'created': created, 'email': 'admin@vendamaistech.com.br'}
 
 # Frontend assets served from same origin: avoid cross-origin authentication configuration.
 @app.get('/')
