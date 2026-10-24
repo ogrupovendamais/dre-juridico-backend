@@ -735,7 +735,7 @@
     user = null;
     contracts = [];
     $('#btn-logout').style.display = 'none';
-    $('#hdr-office').textContent = 'DRE Jurídico Scientist';
+    $('#hdr-office').textContent = 'DRE Jurídico';
     showScreen('screen-login');
   }
   $('#btn-logout')?.addEventListener('click', logout);

@@ -1,6 +1,6 @@
 <?php
 /**
- * DRE Jurídico Scientist — Proxy Transparente Hostinger (PHP 8.x / LiteSpeed)
+ * DRE Jurídico — Proxy Transparente Hostinger (PHP 8.x / LiteSpeed)
  * Permite que a hospedagem compartilhada da Hostinger se comunique com o Backend FastAPI.
  */
 

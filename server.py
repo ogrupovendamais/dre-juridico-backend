@@ -17,7 +17,7 @@ if DB_URL.startswith('postgres://'): DB_URL = DB_URL.replace('postgres://','post
 elif DB_URL.startswith('postgresql://'): DB_URL = DB_URL.replace('postgresql://','postgresql+psycopg://',1)
 kw = {'connect_args': {'check_same_thread': False}} if DB_URL.startswith('sqlite') else {}
 engine = create_engine(DB_URL, pool_pre_ping=True, **kw)
-app=FastAPI(title='DRE Juridico Scientist - Piloto API',version='3.0-rc4')
+app=FastAPI(title='DRE Jurídico - API',version='3.0')
 
 def safe_add_column(table_name: str, col_name: str, col_type: str):
     """Executes ALTER TABLE ADD COLUMN in its own isolated transaction only if column does not already exist."""
