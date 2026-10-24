@@ -86,7 +86,8 @@ function render(){
   if(!runwayCard){
     const container = document.createElement('div');
     container.id = 'burn-rate-runway-card';
-    container.style.cssText = 'margin-top:14px;background:#f8fafc;border:1px solid #e2e8f0;border-left:5px solid #d97706;border-radius:12px;padding:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;box-shadow:0 2px 8px rgba(1,14,56,0.04);';
+    container.className = 'burn-rate-runway-box';
+    container.style.cssText = 'margin-top:14px;border-left:5px solid #d97706;border-radius:12px;padding:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;';
     $('#summary').insertAdjacentElement('afterend', container);
     runwayCard = container;
   }
@@ -98,14 +99,14 @@ function render(){
       <div>
         <div style="display:flex;align-items:center;gap:8px;">
           <strong style="font-size:15px;color:var(--brand-navy,#010E38);">Previsibilidade de Caixa & Sobrevivência (Runway)</strong>
-          <span class="pill" style="font-size:10px;font-weight:800;background:#dcfce7;color:#16a34a;text-transform:uppercase;">Inteligência Financeira</span>
+          <span class="pill pill-success" style="font-size:10px;font-weight:800;text-transform:uppercase;">Inteligência Financeira</span>
         </div>
         <p style="margin:4px 0 0 0;font-size:12.5px;color:#475569;">
           Burn Rate Operacional Médio: <strong style="color:#b91c1c;">${money(burnRateMensal)}/mês</strong> · Saldo Acumulado: <strong style="color:${saldoCaixaOperacional>=0?'#16a34a':'#b91c1c'};">${money(saldoCaixaOperacional)}</strong>
         </p>
       </div>
     </div>
-    <div style="text-align:right;background:#ffffff;border:1px solid #cbd5e1;border-radius:10px;padding:8px 18px;min-width:170px;">
+    <div class="runway-stat-box" style="text-align:right;border-radius:10px;padding:8px 18px;min-width:170px;">
       <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;">Autonomia Estimada</div>
       <div style="font-size:22px;font-weight:900;color:${Number(runwayMeses)>3||runwayMeses==='∞'?'#16a34a':'#ea580c'};">
         ${runwayMeses === '∞' ? 'Sustentável' : runwayMeses + ' Meses'}
@@ -146,7 +147,7 @@ function render(){
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;max-height:180px;overflow-y:auto;">
         ${areasList.length ? areasList.map(a => `
-          <div style="display:flex;justify-content:space-between;align-items:center;background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;padding:6px 10px;font-size:12px;">
+          <div class="area-profit-item" style="display:flex;justify-content:space-between;align-items:center;border-radius:6px;padding:6px 10px;font-size:12px;">
             <div>
               <strong style="color:var(--brand-navy);">${esc(a.area)}</strong>
               <div style="font-size:10.5px;color:#64748b;">Rec: ${money(a.receita)} · Custo: ${money(a.custo+a.despesa)}</div>
@@ -1332,40 +1333,40 @@ async function refreshTimeStudioAdmin(){
   const container=$('#ts-approvals-container');
   if(container){
    if(approvals.length===0){
-    container.innerHTML='<div style="background:#f8fafc;padding:24px;border-radius:10px;text-align:center;color:#64748b;font-size:13px;border:1px solid #e2e8f0;">Nenhum apontamento com o status selecionado.</div>';
+    container.innerHTML='<div class="empty-state-box" style="padding:24px;border-radius:10px;text-align:center;font-size:13px;">Nenhum apontamento com o status selecionado.</div>';
    }else{
     const fmt=c=>money((c||0)/100);
     const duration=formatHoursMinutes;
     container.innerHTML=`
-     <div class="tablewrap" style="border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;background:#fff;">
+     <div class="tablewrap" style="border-radius:10px;overflow-x:auto;">
       <table style="width:100%;margin:0;border-collapse:collapse;">
        <thead>
-        <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;">
-         <th style="padding:10px 14px;font-size:12px;color:#475569;font-weight:700;">Profissional</th>
-         <th style="padding:10px 14px;font-size:12px;color:#475569;font-weight:700;">Data</th>
-         <th style="padding:10px 14px;font-size:12px;color:#475569;font-weight:700;">Contrato / Processo</th>
-         <th style="padding:10px 14px;font-size:12px;color:#475569;font-weight:700;text-align:right;">Horas & Minutos</th>
-         <th style="padding:10px 14px;font-size:12px;color:#475569;font-weight:700;text-align:right;">Custo Est.</th>
-         <th style="padding:10px 14px;font-size:12px;color:#475569;font-weight:700;">Descrição do Ato</th>
-         <th style="padding:10px 14px;font-size:12px;color:#475569;font-weight:700;text-align:center;">Status</th>
-         <th style="padding:10px 14px;font-size:12px;color:#475569;font-weight:700;text-align:center;">Ações de Controle</th>
+        <tr class="ts-table-head-row">
+         <th style="padding:10px 14px;font-size:12px;font-weight:700;">Profissional</th>
+         <th style="padding:10px 14px;font-size:12px;font-weight:700;">Data</th>
+         <th style="padding:10px 14px;font-size:12px;font-weight:700;">Contrato / Processo</th>
+         <th style="padding:10px 14px;font-size:12px;font-weight:700;text-align:right;">Horas & Minutos</th>
+         <th style="padding:10px 14px;font-size:12px;font-weight:700;text-align:right;">Custo Est.</th>
+         <th style="padding:10px 14px;font-size:12px;font-weight:700;">Descrição do Ato</th>
+         <th style="padding:10px 14px;font-size:12px;font-weight:700;text-align:center;">Status</th>
+         <th style="padding:10px 14px;font-size:12px;font-weight:700;text-align:center;">Ações de Controle</th>
         </tr>
        </thead>
        <tbody>
         ${approvals.map(a=>{
          let badge='';
-         if(a.status==='APPROVED') badge='<span class="pill" style="background:#dcfce7;color:#166534;font-size:10.5px;font-weight:700;">✓ Aprovado</span>';
+         if(a.status==='APPROVED') badge='<span class="pill pill-success" style="font-size:10.5px;font-weight:700;">✓ Aprovado</span>';
          else if(a.status==='REJECTED') badge=`<span class="pill" style="background:#fee2e2;color:#b91c1c;font-size:10.5px;font-weight:700;" title="${esc(a.rejection_reason)}">✕ Rejeitado</span>`;
-         else badge='<span class="pill" style="background:#fef3c7;color:#b45309;font-size:10.5px;font-weight:700;">⏳ Pendente</span>';
+         else badge='<span class="pill pill-warning" style="font-size:10.5px;font-weight:700;">⏳ Pendente</span>';
 
          return `
-          <tr style="border-bottom:1px solid #f1f5f9;">
-           <td style="padding:10px 14px;font-size:12.5px;font-weight:700;color:var(--brand-navy,#010E38);">${esc(a.professional_name)}</td>
-           <td style="padding:10px 14px;font-size:12px;color:#475569;">${esc(a.work_date)}</td>
-           <td style="padding:10px 14px;font-size:12.5px;color:var(--brand-navy,#010E38);font-weight:600;">${esc(a.contract_label)}</td>
+          <tr class="ts-approval-row" style="border-bottom:1px solid #f1f5f9;transition:background 0.15s;">
+           <td style="padding:10px 14px;font-size:12.5px;font-weight:700;" class="ts-cell-title">${esc(a.professional_name)}</td>
+           <td style="padding:10px 14px;font-size:12px;" class="ts-cell-date">${esc(a.work_date)}</td>
+           <td style="padding:10px 14px;font-size:12.5px;font-weight:600;" class="ts-cell-contract">${esc(a.contract_label)}</td>
            <td style="padding:10px 14px;font-size:12.5px;font-weight:700;text-align:right;color:#0284c7;">${esc(duration(a.minutes))}</td>
            <td style="padding:10px 14px;font-size:12.5px;font-weight:700;text-align:right;color:#d97706;">${esc(fmt(a.cost_cents))}</td>
-           <td style="padding:10px 14px;font-size:12px;color:#334155;max-width:240px;line-height:1.3;">
+           <td style="padding:10px 14px;font-size:12px;max-width:240px;line-height:1.3;" class="ts-cell-desc">
             ${esc(a.description||'—')}
             ${a.status==='REJECTED'&&a.rejection_reason?`<div style="font-size:10.5px;color:#dc2626;margin-top:2px;"><strong>Motivo:</strong> ${esc(a.rejection_reason)}</div>`:''}
            </td>
@@ -1396,15 +1397,15 @@ async function refreshTimeStudioAdmin(){
    }else{
     invitesContainer.innerHTML=invites.map(inv=>{
      let stBadge='';
-     if(inv.status==='ATIVO') stBadge='<span class="pill" style="background:#dcfce7;color:#15803d;font-size:10px;">Ativo (48h)</span>';
-     else if(inv.status==='USADO') stBadge='<span class="pill" style="background:#e0f2fe;color:#0369a1;font-size:10px;">Já Cadastrado</span>';
-     else stBadge='<span class="pill" style="background:#fee2e2;color:#b91c1c;font-size:10px;">Expirado</span>';
+     if(inv.status==='ATIVO') stBadge='<span class="pill pill-success" style="font-size:10px;font-weight:700;">Ativo (48h)</span>';
+     else if(inv.status==='USADO') stBadge='<span class="pill pill-info" style="font-size:10px;font-weight:700;">Já Cadastrado</span>';
+     else stBadge='<span class="pill" style="background:#fee2e2;color:#b91c1c;font-size:10px;font-weight:700;">Expirado</span>';
 
      return `
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid #f1f5f9;font-size:12px;">
+      <div class="ts-invite-row" style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid #f1f5f9;font-size:12px;">
        <div>
-        <strong style="color:var(--brand-navy,#010E38);display:block;">${esc(inv.professional_name)}</strong>
-        <span style="color:#64748b;font-size:11px;">${esc(inv.email)}</span>
+        <strong class="ts-invite-name" style="display:block;font-size:12.5px;">${esc(inv.professional_name)}</strong>
+        <span class="ts-invite-email" style="font-size:11px;">${esc(inv.email)}</span>
        </div>
        <div>${stBadge}</div>
       </div>
@@ -1560,7 +1561,7 @@ async function refreshRecentWorklogs() {
     if (list.length === 0) {
       const activeFmt = activeMonth ? `${activeMonth.split('-')[1]}/${activeMonth.split('-')[0]}` : '';
       container.innerHTML = `
-        <div style="background:#f8fafc;padding:24px;border-radius:10px;text-align:center;color:#64748b;font-size:13px;border:1px solid #e2e8f0;">
+        <div class="empty-state-box" style="padding:24px;border-radius:10px;text-align:center;font-size:13px;">
           Nenhum apontamento de horas encontrado ${recentLogsFilterMode === 'current' && activeFmt ? `para a competência ativa (${activeFmt})` : ''}.
         </div>
       `;
@@ -1571,18 +1572,18 @@ async function refreshRecentWorklogs() {
     const duration = formatHoursMinutes;
 
     container.innerHTML = `
-      <div class="tablewrap" style="border:1px solid #e2e8f0;border-radius:10px;overflow-x:auto;background:#fff;">
+      <div class="tablewrap" style="border-radius:10px;overflow-x:auto;">
         <table style="width:100%;margin:0;border-collapse:collapse;font-size:12.5px;">
           <thead>
-            <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;">
-              <th style="padding:10px 14px;font-size:12px;color:#475569;font-weight:700;text-align:left;white-space:nowrap;min-width:95px;vertical-align:middle;">Data</th>
-              <th style="padding:10px 14px;font-size:12px;color:#475569;font-weight:700;text-align:center;white-space:nowrap;min-width:115px;vertical-align:middle;">Competência</th>
-              <th style="padding:10px 14px;font-size:12px;color:#475569;font-weight:700;text-align:left;min-width:180px;vertical-align:middle;">Advogado / Profissional</th>
-              <th style="padding:10px 14px;font-size:12px;color:#475569;font-weight:700;text-align:left;min-width:200px;vertical-align:middle;">Contrato Atendido</th>
-              <th style="padding:10px 14px;font-size:12px;color:#475569;font-weight:700;text-align:right;white-space:nowrap;min-width:95px;vertical-align:middle;">Tempo</th>
-              <th style="padding:10px 14px;font-size:12px;color:#475569;font-weight:700;text-align:right;white-space:nowrap;min-width:115px;vertical-align:middle;">Custo Calculado</th>
-              <th style="padding:10px 14px;font-size:12px;color:#475569;font-weight:700;text-align:center;white-space:nowrap;min-width:115px;vertical-align:middle;">Status</th>
-              <th style="padding:10px 14px;font-size:12px;color:#475569;font-weight:700;text-align:center;white-space:nowrap;min-width:95px;vertical-align:middle;">Ações</th>
+            <tr class="timesheet-thead-row">
+              <th style="padding:10px 14px;font-size:12px;font-weight:700;text-align:left;white-space:nowrap;min-width:95px;vertical-align:middle;">Data</th>
+              <th style="padding:10px 14px;font-size:12px;font-weight:700;text-align:center;white-space:nowrap;min-width:115px;vertical-align:middle;">Competência</th>
+              <th style="padding:10px 14px;font-size:12px;font-weight:700;text-align:left;min-width:180px;vertical-align:middle;">Advogado / Profissional</th>
+              <th style="padding:10px 14px;font-size:12px;font-weight:700;text-align:left;min-width:200px;vertical-align:middle;">Contrato Atendido</th>
+              <th style="padding:10px 14px;font-size:12px;font-weight:700;text-align:right;white-space:nowrap;min-width:95px;vertical-align:middle;">Tempo</th>
+              <th style="padding:10px 14px;font-size:12px;font-weight:700;text-align:right;white-space:nowrap;min-width:115px;vertical-align:middle;">Custo Calculado</th>
+              <th style="padding:10px 14px;font-size:12px;font-weight:700;text-align:center;white-space:nowrap;min-width:115px;vertical-align:middle;">Status</th>
+              <th style="padding:10px 14px;font-size:12px;font-weight:700;text-align:center;white-space:nowrap;min-width:95px;vertical-align:middle;">Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -1593,8 +1594,8 @@ async function refreshRecentWorklogs() {
               const isDiffFromActive = activeMonth && (y && m) && (`${y}-${m}` !== activeMonth);
 
               return `
-                <tr style="border-bottom:1px solid #f1f5f9;transition:background 0.15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                  <td style="padding:10px 14px;font-weight:700;color:var(--brand-navy,#010E38);white-space:nowrap;vertical-align:middle;">
+                <tr class="worklog-data-row" style="border-bottom:1px solid #f1f5f9;transition:background 0.15s;">
+                  <td style="padding:10px 14px;font-weight:700;white-space:nowrap;vertical-align:middle;" class="worklog-cell-date">
                     ${esc(dateFormatted)}
                   </td>
                   <td style="padding:10px 14px;text-align:center;white-space:nowrap;vertical-align:middle;">
@@ -1603,10 +1604,10 @@ async function refreshRecentWorklogs() {
                       <span>${esc(comp)}</span>
                     </span>
                   </td>
-                  <td style="padding:10px 14px;font-weight:700;color:var(--brand-navy,#010E38);vertical-align:middle;">
+                  <td style="padding:10px 14px;font-weight:700;vertical-align:middle;" class="worklog-cell-pro">
                     ${esc(item.professional_name)}
                   </td>
-                  <td style="padding:10px 14px;color:#334155;font-weight:600;vertical-align:middle;">
+                  <td style="padding:10px 14px;font-weight:600;vertical-align:middle;" class="worklog-cell-contract">
                     ${esc(item.contract_label)}
                   </td>
                   <td style="padding:10px 14px;text-align:right;font-weight:800;color:#0284c7;white-space:nowrap;vertical-align:middle;">
@@ -1622,7 +1623,7 @@ async function refreshRecentWorklogs() {
                     </span>
                   </td>
                   <td style="padding:10px 14px;text-align:center;white-space:nowrap;vertical-align:middle;">
-                    <button type="button" class="btn secondary btn-delete-worklog" data-log-id="${esc(item.id)}" style="display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;padding:4px 9px;font-size:11px;font-weight:700;color:#dc2626;border-color:#fca5a5;border-radius:6px;cursor:pointer;background:#fff;" title="Excluir apontamento">
+                    <button type="button" class="btn secondary btn-delete-worklog" data-log-id="${esc(item.id)}" style="display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;padding:4px 9px;font-size:11px;font-weight:700;border-radius:6px;cursor:pointer;" title="Excluir apontamento">
                       <span style="font-size:12px;line-height:1;">🗑️</span>
                       <span>Excluir</span>
                     </button>
@@ -1660,20 +1661,12 @@ $('#btn-recent-all')?.addEventListener('click', () => {
   const bAll = $('#btn-recent-all');
   const bCur = $('#btn-recent-current');
   if (bAll) {
-    bAll.className = 'btn active';
-    bAll.style.background = '#fff';
-    bAll.style.color = 'var(--brand-navy,#010E38)';
-    bAll.style.fontWeight = '700';
-    bAll.style.border = '2px solid #0284c7';
-    bAll.style.boxShadow = '0 1px 4px rgba(2,132,199,0.15)';
+    bAll.classList.add('active');
+    bAll.classList.remove('secondary');
   }
   if (bCur) {
-    bCur.className = 'btn secondary';
-    bCur.style.background = 'transparent';
-    bCur.style.color = '#64748b';
-    bCur.style.fontWeight = '600';
-    bCur.style.border = '2px solid transparent';
-    bCur.style.boxShadow = 'none';
+    bCur.classList.remove('active');
+    bCur.classList.add('secondary');
   }
   refreshRecentWorklogs();
 });
@@ -1683,20 +1676,12 @@ $('#btn-recent-current')?.addEventListener('click', () => {
   const bAll = $('#btn-recent-all');
   const bCur = $('#btn-recent-current');
   if (bCur) {
-    bCur.className = 'btn active';
-    bCur.style.background = '#fff';
-    bCur.style.color = 'var(--brand-navy,#010E38)';
-    bCur.style.fontWeight = '700';
-    bCur.style.border = '2px solid #0284c7';
-    bCur.style.boxShadow = '0 1px 4px rgba(2,132,199,0.15)';
+    bCur.classList.add('active');
+    bCur.classList.remove('secondary');
   }
   if (bAll) {
-    bAll.className = 'btn secondary';
-    bAll.style.background = 'transparent';
-    bAll.style.color = '#64748b';
-    bAll.style.fontWeight = '600';
-    bAll.style.border = '2px solid transparent';
-    bAll.style.boxShadow = 'none';
+    bAll.classList.remove('active');
+    bAll.classList.add('secondary');
   }
   refreshRecentWorklogs();
 });
@@ -4874,7 +4859,7 @@ function renderSelectedContractStages(contractId) {
       const stageBarColor = stagePct > 100 ? '#ef4444' : (stagePct > 80 ? '#f59e0b' : '#10b981');
 
       return `
-        <tr style="border-bottom:1px solid #f1f5f9;transition:background 0.15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+        <tr class="stage-data-row" style="border-bottom:1px solid #f1f5f9;transition:background 0.15s;">
           <td style="text-align:center;color:#64748b;font-weight:700;white-space:nowrap;vertical-align:middle;">
             ${s.order_index || s.stage_order || 1}
           </td>
@@ -4986,7 +4971,7 @@ function renderTeamStages(professionals) {
     ).join(' ') || '<span style="color:#94a3b8;font-size:11px;">—</span>';
 
     return `
-      <tr style="border-bottom:1px solid #f1f5f9;transition:background 0.15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+      <tr class="stage-data-row" style="border-bottom:1px solid #f1f5f9;transition:background 0.15s;">
         <td style="vertical-align:middle;white-space:nowrap;">
           <strong style="color:var(--brand-navy,#010E38);display:block;">${esc(p.name)}</strong>
           <small style="color:#64748b;">${esc(p.role || 'Advogado')}</small>
@@ -5038,7 +5023,7 @@ function renderAreasStages(areas) {
     const formattedArea = formatLegalAreaName(a.area || a.legal_area);
 
     return `
-      <tr style="border-bottom:1px solid #f1f5f9;transition:background 0.15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+      <tr class="stage-data-row" style="border-bottom:1px solid #f1f5f9;transition:background 0.15s;">
         <td style="vertical-align:middle;white-space:nowrap;">
           <div style="display:inline-flex;align-items:center;gap:8px;">
             <span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:#ede9fe;color:#7c3aed;font-size:12px;border:1px solid #ddd6fe;">⚖️</span>
