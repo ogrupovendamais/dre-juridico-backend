@@ -48,7 +48,129 @@ async function api(url,options={}){
 function canWrite(){return Boolean(user&&user.role!=='viewer')}
 function updateMode(){const readonly=mobile()||user?.role==='viewer';document.querySelectorAll('.desktop-only').forEach(e=>e.style.display=readonly?'none':'');$('#mode').textContent=`${mobile()?'Mobile':'Desktop'} · ${readonly?'somente leitura':'gestão'}`;$('#office-label').textContent=user?user.office:'';}
 function totals(filterMonth){const selMonth=filterMonth!==undefined?filterMonth:($('#painel-month')?.value||'');const list=selMonth?entries.filter(e=>e.data&&e.data.startsWith(selMonth)):entries;const sum=t=>list.filter(e=>e.tipo===t).reduce((a,e)=>a+Number(e.valor),0);const receita=sum('receita'),custo=sum('custo'),despesa=sum('despesa'),patrimonial=sum('patrimonial');return {receita,custo,despesa,patrimonial,resultado:receita-custo-despesa,margem:receita?(receita-custo-despesa)/receita*100:null,count:list.length,month:selMonth}}
-function render(){updateMode();const t=totals();const selMonth=t.month;const mLabel=$('#painel-month-label'),mCount=$('#painel-month-count');if(mLabel&&mCount){if(selMonth){const [y,m]=selMonth.split('-');const monthNames=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];const name=monthNames[parseInt(m,10)-1]||m;mLabel.textContent=`Mês de referência: ${name} de ${y}`;mCount.textContent=`Exibindo ${t.count} lançamento(s) de ${name}/${y}`;}else{mLabel.textContent='Todos os meses (Visão acumulada)';mCount.textContent=`Exibindo totais consolidados de todos os ${t.count} lançamentos`;}}const cards=[['Receitas',t.receita,selMonth?'Registradas no mês':'Valores registrados'],['Custos diretos',t.custo,selMonth?'Custos do mês':'Custos informados'],['Despesas',t.despesa,selMonth?'Despesas do mês':'Despesas operacionais'],['Resultado',t.resultado,selMonth?'Resultado do mês':'Resultado simplificado'],['Patrimônio',t.patrimonial,selMonth?'Movimentações do mês':'Movimentações Não-DRE']];$('#summary').innerHTML=cards.map(([l,v,m],i)=>`<article class="card"><div class="label">${l}</div><strong class="${i===3?(v>=0?'positive':'negative'):''}">${money(v)}</strong><div class="meta">${m}</div></article>`).join('');const max=Math.max(t.receita,t.custo,t.despesa,t.patrimonial,1);$('#bars').innerHTML=[['Receitas',t.receita,''],['Custos diretos',t.custo,'orange'],['Despesas',t.despesa,'red'],['Patrimônio',t.patrimonial,'purple']].map(([l,v,c])=>`<div class="barline"><span>${l}</span><div class="track"><div class="fill ${c}" style="width:${Math.max(0,v/max*100)}%"></div></div><strong style="text-align:right">${money(v)}</strong></div>`).join('');$('#highlights').innerHTML=`<p><strong>Resultado:</strong> ${money(t.resultado)}</p><p><strong>Margem indicativa:</strong> ${t.margem===null?'Não disponível':t.margem.toFixed(1).replace('.',',')+'%'}</p><p><strong>Patrimônio (Não-DRE):</strong> ${money(t.patrimonial)}</p><p><strong>Lançamentos no período:</strong> ${t.count}</p><div class="hint">Dados cadastrados sem conciliação contábil ou reconhecimento de competência.</div>`;$('#entries').innerHTML=entries.length?entries.slice().sort((a,b)=>b.data.localeCompare(a.data)).map(e=>`<tr data-record-id="${esc(e.id)}"><td>${esc(e.data.split('-').reverse().join('/'))}</td><td>${esc(e.descricao)}</td><td>${esc(e.area)}</td><td><span class="${e.tipo==='patrimonial'?'pill-custom':''}">${{receita:'Receita',custo:'Custo',despesa:'Despesa',patrimonial:'Patrimonial (Não-DRE)'}[e.tipo]||esc(e.tipo)}</span></td><td class="num">${money(e.valor)}</td><td class="desktop-only">${canWrite()?`<div style="display:flex;gap:6px;align-items:center;"><button type="button" class="btn-action edit" data-edit-entry="${esc(e.id)}" title="Editar lançamento" aria-label="Editar lançamento ${esc(e.descricao)}"><span>✏️</span> Editar</button><button type="button" class="btn-action delete" data-delete="${esc(e.id)}" title="Excluir lançamento" aria-label="Excluir lançamento ${esc(e.descricao)}"><span>🗑️</span> Excluir</button></div>`:''}</td></tr>`).join(''):'<tr><td colspan="6" class="empty">Nenhum lançamento neste escritório.</td></tr>';const dreRows=$('#dre-rows');if(dreRows){dreRows.innerHTML=[['Receita de honorários',t.receita],['(-) Custos diretos',-t.custo],['(=) Resultado bruto simplificado',t.receita-t.custo],['(-) Despesas operacionais',-t.despesa],['(=) Resultado gerencial simplificado',t.resultado],['(i) Movimentações Patrimoniais (Não-DRE)',t.patrimonial]].map(([k,v],i)=>`<tr ${i===4?'style="font-weight:800;background:#f0f6f8"':(i===5?'style="font-style:italic;color:#475569;background:#f8fafc"':'')}><td>${k}</td><td class="num">${money(v)}</td></tr>`).join('');}$('#diagnostics').innerHTML=`<p>Margem: <strong>${t.margem===null?'Não disponível':t.margem.toFixed(1).replace('.',',')+'%'}</strong></p><p>Custos / receita: <strong>${t.receita?(t.custo/t.receita*100).toFixed(1).replace('.',',')+'%':'Não disponível'}</strong></p><p>Despesas / receita: <strong>${t.receita?(t.despesa/t.receita*100).toFixed(1).replace('.',',')+'%':'Não disponível'}</strong></p><p>Não inclui contas a receber, tributos, repasses nem conciliação.</p>`}
+function render(){
+  updateMode();
+  const t=totals();
+  const selMonth=t.month;
+  const mLabel=$('#painel-month-label'),mCount=$('#painel-month-count');
+  if(mLabel&&mCount){
+    if(selMonth){
+      const [y,m]=selMonth.split('-');
+      const monthNames=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+      const name=monthNames[parseInt(m,10)-1]||m;
+      mLabel.textContent=`Mês de referência: ${name} de ${y}`;
+      mCount.textContent=`Exibindo ${t.count} lançamento(s) de ${name}/${y}`;
+    }else{
+      mLabel.textContent='Todos os meses (Visão acumulada)';
+      mCount.textContent=`Exibindo totais consolidados de todos os ${t.count} lançamentos`;
+    }
+  }
+
+  // Cálculo de Inteligência de Caixa e Burn Rate
+  const totalSaidas = t.custo + t.despesa;
+  const saldoCaixaOperacional = t.receita - totalSaidas;
+  const burnRateMensal = selMonth ? totalSaidas : (entries.length ? totalSaidas / Math.max(1, new Set(entries.map(e => (e.data||'').slice(0,7))).size) : 0);
+  const runwayMeses = (burnRateMensal > 0 && saldoCaixaOperacional > 0) ? (saldoCaixaOperacional / burnRateMensal).toFixed(1) : (burnRateMensal > 0 ? '0.0' : '∞');
+
+  const cards=[
+    ['Receitas',t.receita,selMonth?'Registradas no mês':'Valores registrados'],
+    ['Custos diretos',t.custo,selMonth?'Custos do mês':'Custos informados'],
+    ['Despesas',t.despesa,selMonth?'Despesas do mês':'Despesas operacionais'],
+    ['Resultado Líquido',t.resultado,selMonth?'Resultado do mês':'Resultado simplificado'],
+    ['Patrimônio',t.patrimonial,selMonth?'Movimentações do mês':'Movimentações Não-DRE']
+  ];
+  $('#summary').innerHTML=cards.map(([l,v,m],i)=>`<article class="card"><div class="label">${l}</div><strong class="${i===3?(v>=0?'positive':'negative'):''}">${money(v)}</strong><div class="meta">${m}</div></article>`).join('');
+
+  // Injeção do Card de Inteligência de Sobrevivência & Burn Rate
+  let runwayCard = $('#burn-rate-runway-card');
+  if(!runwayCard){
+    const container = document.createElement('div');
+    container.id = 'burn-rate-runway-card';
+    container.style.cssText = 'margin-top:14px;background:#f8fafc;border:1px solid #e2e8f0;border-left:5px solid #d97706;border-radius:12px;padding:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;box-shadow:0 2px 8px rgba(1,14,56,0.04);';
+    $('#summary').insertAdjacentElement('afterend', container);
+    runwayCard = container;
+  }
+  runwayCard.innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span style="display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;background:#fef3c7;color:#d97706;border:1px solid #fde68a;border-radius:10px;box-shadow:0 2px 4px rgba(217,119,6,0.12);flex-shrink:0;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      </span>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <strong style="font-size:15px;color:var(--brand-navy,#010E38);">Previsibilidade de Caixa & Sobrevivência (Runway)</strong>
+          <span class="pill" style="font-size:10px;font-weight:800;background:#dcfce7;color:#16a34a;text-transform:uppercase;">Inteligência Financeira</span>
+        </div>
+        <p style="margin:4px 0 0 0;font-size:12.5px;color:#475569;">
+          Burn Rate Operacional Médio: <strong style="color:#b91c1c;">${money(burnRateMensal)}/mês</strong> · Saldo Acumulado: <strong style="color:${saldoCaixaOperacional>=0?'#16a34a':'#b91c1c'};">${money(saldoCaixaOperacional)}</strong>
+        </p>
+      </div>
+    </div>
+    <div style="text-align:right;background:#ffffff;border:1px solid #cbd5e1;border-radius:10px;padding:8px 18px;min-width:170px;">
+      <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;">Autonomia Estimada</div>
+      <div style="font-size:22px;font-weight:900;color:${Number(runwayMeses)>3||runwayMeses==='∞'?'#16a34a':'#ea580c'};">
+        ${runwayMeses === '∞' ? 'Sustentável' : runwayMeses + ' Meses'}
+      </div>
+      <div style="font-size:10px;color:#94a3b8;">${runwayMeses==='∞'?'Caixa com superávit':'Com a estrutura atual'}</div>
+    </div>
+  `;
+
+  // Apuração de Lucratividade por Área Jurídica
+  const filteredList = selMonth ? entries.filter(e=>e.data&&e.data.startsWith(selMonth)) : entries;
+  const areaMap = {};
+  filteredList.forEach(e => {
+    const area = e.area || 'Geral / Outros';
+    if(!areaMap[area]) areaMap[area] = { receita: 0, custo: 0, despesa: 0 };
+    if(e.tipo === 'receita') areaMap[area].receita += Number(e.valor);
+    else if(e.tipo === 'custo') areaMap[area].custo += Number(e.valor);
+    else if(e.tipo === 'despesa') areaMap[area].despesa += Number(e.valor);
+  });
+  const areasList = Object.entries(areaMap).map(([area, vals]) => {
+    const resultado = vals.receita - vals.custo - vals.despesa;
+    const margem = vals.receita ? (resultado / vals.receita) * 100 : (resultado < 0 ? -100 : 0);
+    return { area, ...vals, resultado, margem };
+  }).sort((a,b) => b.resultado - a.resultado);
+
+  const max=Math.max(t.receita,t.custo,t.despesa,t.patrimonial,1);
+  $('#bars').innerHTML=[['Receitas',t.receita,''],['Custos diretos',t.custo,'orange'],['Despesas',t.despesa,'red'],['Patrimônio',t.patrimonial,'purple']].map(([l,v,c])=>`<div class="barline"><span>${l}</span><div class="track"><div class="fill ${c}" style="width:${Math.max(0,v/max*100)}%"></div></div><strong style="text-align:right">${money(v)}</strong></div>`).join('');
+
+  // Bloco Executivo com DRE por Área e Indicadores
+  $('#highlights').innerHTML=`
+    <p><strong>Resultado Operacional:</strong> <span style="color:${t.resultado>=0?'#16a34a':'#b91c1c'};font-weight:800;">${money(t.resultado)}</span></p>
+    <p><strong>Margem Líquida Indicativa:</strong> <strong>${t.margem===null?'Não disponível':t.margem.toFixed(1).replace('.',',')+'%'}</strong></p>
+    <p><strong>Patrimônio (Não-DRE):</strong> ${money(t.patrimonial)}</p>
+    <p><strong>Lançamentos no Período:</strong> ${t.count}</p>
+    <div style="margin-top:14px;border-top:1px solid #e2e8f0;padding-top:10px;">
+      <div style="font-size:12px;font-weight:800;color:var(--brand-navy,#010E38);margin-bottom:8px;display:flex;justify-content:space-between;">
+        <span>🎯 Lucratividade por Ramo / Área</span>
+        <span>Margem</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;max-height:180px;overflow-y:auto;">
+        ${areasList.length ? areasList.map(a => `
+          <div style="display:flex;justify-content:space-between;align-items:center;background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;padding:6px 10px;font-size:12px;">
+            <div>
+              <strong style="color:var(--brand-navy);">${esc(a.area)}</strong>
+              <div style="font-size:10.5px;color:#64748b;">Rec: ${money(a.receita)} · Custo: ${money(a.custo+a.despesa)}</div>
+            </div>
+            <div style="text-align:right;">
+              <strong style="color:${a.resultado>=0?'#16a34a':'#b91c1c'};">${money(a.resultado)}</strong>
+              <div style="font-size:10.5px;font-weight:700;color:${a.margem>=30?'#16a34a':(a.margem>=0?'#d97706':'#b91c1c')};">${a.margem.toFixed(0)}%</div>
+            </div>
+          </div>
+        `).join('') : '<p class="muted" style="font-size:11px;">Sem dados de área registrados.</p>'}
+      </div>
+    </div>
+    <div class="hint" style="margin-top:10px;">Demonstrativo gerencial científico calibrado com regras OAB e CPC 00.</div>
+  `;
+
+  $('#entries').innerHTML=entries.length?entries.slice().sort((a,b)=>b.data.localeCompare(a.data)).map(e=>`<tr data-record-id="${esc(e.id)}"><td>${esc(e.data.split('-').reverse().join('/'))}</td><td>${esc(e.descricao)}</td><td>${esc(e.area)}</td><td><span class="${e.tipo==='patrimonial'?'pill-custom':''}">${{receita:'Receita',custo:'Custo',despesa:'Despesa',patrimonial:'Patrimonial (Não-DRE)'}[e.tipo]||esc(e.tipo)}</span></td><td class="num">${money(e.valor)}</td><td class="desktop-only">${canWrite()?`<div style="display:flex;gap:6px;align-items:center;"><button type="button" class="btn-action edit" data-edit-entry="${esc(e.id)}" title="Editar lançamento" aria-label="Editar lançamento ${esc(e.descricao)}"><span>✏️</span> Editar</button><button type="button" class="btn-action delete" data-delete="${esc(e.id)}" title="Excluir lançamento" aria-label="Excluir lançamento ${esc(e.descricao)}"><span>🗑️</span> Excluir</button></div>`:''}</td></tr>`).join(''):'<tr><td colspan="6" class="empty">Nenhum lançamento neste escritório.</td></tr>';
+  
+  const dreRows=$('#dre-rows');
+  if(dreRows){
+    dreRows.innerHTML=[['Receita de honorários',t.receita],['(-) Custos diretos',-t.custo],['(=) Resultado bruto simplificado',t.receita-t.custo],['(-) Despesas operacionais',-t.despesa],['(=) Resultado gerencial simplificado',t.resultado],['(i) Movimentações Patrimoniais (Não-DRE)',t.patrimonial]].map(([k,v],i)=>`<tr ${i===4?'style="font-weight:800;background:#f0f6f8"':(i===5?'style="font-style:italic;color:#475569;background:#f8fafc"':'')}><td>${k}</td><td class="num">${money(v)}</td></tr>`).join('');
+  }
+  
+  $('#diagnostics').innerHTML=`<p>Margem: <strong>${t.margem===null?'Não disponível':t.margem.toFixed(1).replace('.',',')+'%'}</strong></p><p>Custos / receita: <strong>${t.receita?(t.custo/t.receita*100).toFixed(1).replace('.',',')+'%':'Não disponível'}</strong></p><p>Despesas / receita: <strong>${t.receita?(t.despesa/t.receita*100).toFixed(1).replace('.',',')+'%':'Não disponível'}</strong></p><p>Não inclui contas a receber, tributos, repasses nem conciliação.</p>`;
+}
 function filterEntries(){
   const q=($('#entries-search')?.value||'').trim().toLocaleLowerCase('pt-BR');
   const kind=$('#entries-kind')?.value||'';
@@ -70,6 +192,40 @@ $('#painel-month')?.addEventListener('input',()=>render());
 $('#painel-month')?.addEventListener('change',()=>render());
 $('#painel-month-current')?.addEventListener('click',()=>{const pm=$('#painel-month');if(pm){pm.value=new Date().toISOString().slice(0,7);render();}});
 $('#painel-month-clear')?.addEventListener('click',()=>{const pm=$('#painel-month');if(pm){pm.value='';render();}});
+$('#painel-filter-quarter')?.addEventListener('click',()=>{
+  const pm=$('#painel-month');
+  if(pm){pm.value='';}
+  const curMonth = new Date().getMonth(); // 0 a 11
+  const startQuarterMonth = Math.floor(curMonth / 3) * 3;
+  const quarterPrefixes = [0,1,2].map(i => {
+    const d = new Date(new Date().getFullYear(), startQuarterMonth + i, 1);
+    return d.toISOString().slice(0,7);
+  });
+  // Filtro por trimestre nos totais
+  const list = entries.filter(e => e.data && quarterPrefixes.some(p => e.data.startsWith(p)));
+  const sum = t => list.filter(e=>e.tipo===t).reduce((a,e)=>a+Number(e.valor),0);
+  const receita = sum('receita'), custo = sum('custo'), despesa = sum('despesa'), patrimonial = sum('patrimonial');
+  const t = {receita, custo, despesa, patrimonial, resultado: receita-custo-despesa, margem: receita?(receita-custo-despesa)/receita*100:null, count: list.length, month: ''};
+  const mLabel=$('#painel-month-label'), mCount=$('#painel-month-count');
+  if(mLabel) mLabel.textContent = `Trimestre Vigente (${quarterPrefixes[0]} a ${quarterPrefixes[2]})`;
+  if(mCount) mCount.textContent = `Exibindo ${list.length} lançamento(s) do trimestre`;
+  const cards=[['Receitas',t.receita,'Trimestre vigente'],['Custos diretos',t.custo,'Custos do trimestre'],['Despesas',t.despesa,'Despesas do trimestre'],['Resultado Líquido',t.resultado,'Resultado do trimestre'],['Patrimônio',t.patrimonial,'Movimentações']];
+  $('#summary').innerHTML=cards.map(([l,v,m],i)=>`<article class="card"><div class="label">${l}</div><strong class="${i===3?(v>=0?'positive':'negative'):''}">${money(v)}</strong><div class="meta">${m}</div></article>`).join('');
+});
+$('#painel-filter-year')?.addEventListener('click',()=>{
+  const pm=$('#painel-month');
+  if(pm){pm.value='';}
+  const curYear = new Date().getFullYear().toString();
+  const list = entries.filter(e => e.data && e.data.startsWith(curYear));
+  const sum = t => list.filter(e=>e.tipo===t).reduce((a,e)=>a+Number(e.valor),0);
+  const receita = sum('receita'), custo = sum('custo'), despesa = sum('despesa'), patrimonial = sum('patrimonial');
+  const t = {receita, custo, despesa, patrimonial, resultado: receita-custo-despesa, margem: receita?(receita-custo-despesa)/receita*100:null, count: list.length, month: ''};
+  const mLabel=$('#painel-month-label'), mCount=$('#painel-month-count');
+  if(mLabel) mLabel.textContent = `Ano Vigente (${curYear})`;
+  if(mCount) mCount.textContent = `Exibindo ${list.length} lançamento(s) de ${curYear}`;
+  const cards=[['Receitas',t.receita,'Ano vigente'],['Custos diretos',t.custo,'Custos do ano'],['Despesas',t.despesa,'Despesas do ano'],['Resultado Líquido',t.resultado,'Resultado anual'],['Patrimônio',t.patrimonial,'Movimentações']];
+  $('#summary').innerHTML=cards.map(([l,v,m],i)=>`<article class="card"><div class="label">${l}</div><strong class="${i===3?(v>=0?'positive':'negative'):''}">${money(v)}</strong><div class="meta">${m}</div></article>`).join('');
+});
 
 async function refresh(){entries=await api('/entries');render();filterEntries();if(typeof loadAreas==='function')await loadAreas();if(typeof refreshCompleteDRE==='function')await refreshCompleteDRE()}
 const NATUREZAS_VIEWS = ['naturezas', 'nova-natureza', 'subcategorias', 'areas-juridicas'];
