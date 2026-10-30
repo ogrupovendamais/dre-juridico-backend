@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>Time Studio | DRE Jurídico</title>
   <meta name="description" content="Apontamento inteligente de horas por processo com cronômetro offline resiliente e sincronização automática." />
   <meta name="theme-color" content="#010E38" />
@@ -569,12 +572,143 @@
       color: #FFF;
       border-color: rgba(235, 181, 44, 0.35);
     }
+    .btn-sound-choice {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      color: #CBD5E1;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      font-family: inherit;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      user-select: none;
+    }
+    .btn-sound-choice:hover {
+      background: rgba(235, 181, 44, 0.16);
+      color: #FFFFFF;
+      border-color: rgba(235, 181, 44, 0.45);
+      transform: translateY(-1px);
+    }
+    .btn-sound-choice.active {
+      background: rgba(235, 181, 44, 0.28) !important;
+      color: var(--brand-gold, #EBB52C) !important;
+      border-color: var(--brand-gold, #EBB52C) !important;
+      box-shadow: 0 0 12px rgba(235, 181, 44, 0.4) !important;
+      font-weight: 800;
+    }
+
     .btn-reminder-choice.active {
       background: rgba(235, 181, 44, 0.22);
       color: var(--brand-gold);
       border-color: var(--brand-gold);
       box-shadow: 0 0 8px rgba(235, 181, 44, 0.25);
     }
+
+    
+    /* Destaque Visual e Sonoro do Temporizador (UX/UI Anti-Esquecimento) */
+    .timer-clock.reminder-alert {
+      border-color: #F59E0B !important;
+      color: #FEF08A !important;
+      animation: timerClockPulse 1.2s infinite ease-in-out !important;
+    }
+
+    @keyframes timerClockPulse {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 25px rgba(245, 158, 11, 0.45), 0 0 0 0 rgba(235, 181, 44, 0.6);
+        border-color: var(--brand-gold, #EBB52C);
+      }
+      50% {
+        transform: scale(1.025);
+        box-shadow: 0 0 45px rgba(245, 158, 11, 0.75), 0 0 0 6px rgba(235, 181, 44, 0.35);
+        border-color: #FDE047;
+        background: rgba(235, 181, 44, 0.12);
+      }
+    }
+
+    .timer-alert-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(245, 158, 11, 0.2);
+      border: 1px solid #F59E0B;
+      color: #FDE047;
+      padding: 5px 14px;
+      border-radius: 20px;
+      font-size: 11.5px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      box-shadow: 0 0 15px rgba(245, 158, 11, 0.35);
+      animation: pulseAlert 1.6s infinite ease-in-out;
+    }
+
+    .btn-test-chime {
+      background: rgba(235, 181, 44, 0.15);
+      border: 1px solid rgba(235, 181, 44, 0.35);
+      color: var(--brand-gold, #EBB52C);
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.18s ease;
+      font-family: inherit;
+    }
+
+    .btn-test-chime:hover {
+      background: rgba(235, 181, 44, 0.3);
+      color: #FFFFFF;
+      border-color: var(--brand-gold, #EBB52C);
+      transform: translateY(-1px);
+    }
+
+    .btn-chime-replay {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: #E2E8F0;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.18s ease;
+      font-family: inherit;
+    }
+
+    .btn-chime-replay:hover {
+      background: rgba(235, 181, 44, 0.2);
+      border-color: var(--brand-gold, #EBB52C);
+      color: var(--brand-gold, #EBB52C);
+    }
+    .btn-time-quick {
+      background: transparent;
+      border: none;
+      color: var(--brand-gold, #EBB52C);
+      font-size: 10.5px;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 0;
+      text-decoration: underline;
+      opacity: 0.85;
+      transition: opacity 0.15s ease;
+      font-family: inherit;
+    }
+    .btn-time-quick:hover {
+      opacity: 1;
+      color: #FDE047;
+    }
+
 
     /* Modal / Toast Flutuante de Alerta */
     .reminder-modal-overlay {
@@ -645,6 +779,29 @@
       margin-top: 4px;
     }
   </style>
+<style>
+
+/* Time Studio Mobile Login Enhancements */
+#screen-login .card {
+  max-width: 440px !important;
+  margin: 10px auto !important;
+  box-shadow: 0 16px 45px rgba(0, 0, 0, 0.6), 0 0 20px rgba(235, 181, 44, 0.15) !important;
+  border: 1px solid rgba(235, 181, 44, 0.3) !important;
+}
+#screen-login .btn-gold {
+  min-height: 50px !important;
+  font-size: 14.5px !important;
+  font-weight: 900 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  box-shadow: 0 4px 18px rgba(235, 181, 44, 0.45) !important;
+}
+
+</style>
 </head>
 <body>
 
@@ -704,27 +861,67 @@
       </div>
     </section>
 
-    <!-- SCREEN 2: Login do Profissional -->
+        <!-- SCREEN 2: Login do Profissional / Advogado / Administrador -->
     <section id="screen-login" class="view-screen">
-      <div class="card" style="text-align:center;">
-        <span style="font-size:40px;display:inline-block;margin-bottom:10px;">⚖️</span>
-        <h2 style="font-size:20px;font-weight:900;color:#FFFFFF;margin-bottom:6px;">Acesso do Advogado</h2>
-        <p style="font-size:13px;color:#94A3B8;margin-bottom:20px;">Entre com seu e-mail corporativo para registrar e acompanhar suas horas.</p>
+      <div class="card" style="text-align:center;max-width:440px;margin:20px auto;">
+        <span style="font-size:42px;display:inline-block;margin-bottom:10px;">⚖️</span>
+        <h2 style="font-size:21px;font-weight:900;color:#FFFFFF;margin-bottom:6px;letter-spacing:-0.3px;">Acesso ao Time Studio</h2>
+        <p style="font-size:13px;color:#94A3B8;margin-bottom:20px;line-height:1.4;">
+          Entre com seu e-mail de advogado (convite) ou sua conta de Administrador da Banca.
+        </p>
+
+        <!-- Card de Sessão DRE Detectada (SSO Rápido) -->
+        <div id="box-sso-detected" style="display:none;background:rgba(235,181,44,0.08);border:1px solid rgba(235,181,44,0.35);border-radius:10px;padding:14px;margin-bottom:18px;text-align:left;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+            <span style="font-size:22px;">⚡</span>
+            <div>
+              <strong style="color:var(--brand-gold,#EBB52C);font-size:13px;display:block;">Sessão Ativa no DRE Jurídico</strong>
+              <span style="font-size:11.5px;color:#BAE6FD;">Detectamos que você já está conectado no painel principal.</span>
+            </div>
+          </div>
+          <button type="button" id="btn-sso-login" class="btn btn-gold" style="width:100%;min-height:42px;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px;">
+            <span>Acessar com Minha Conta DRE (1 Clique)</span>
+          </button>
+          <div style="text-align:center;margin-top:10px;">
+            <span style="font-size:11px;color:#64748B;">— ou entre com outro e-mail abaixo —</span>
+          </div>
+        </div>
 
         <form id="form-login" style="text-align:left;">
-          <div class="form-group">
-            <label for="login-email">E-mail corporativo</label>
-            <input type="email" id="login-email" class="form-control" placeholder="ex: advogado@banca.adv.br" required />
+          <div class="form-group" style="margin-bottom:14px;">
+            <label for="login-email" style="font-size:12.5px;font-weight:700;color:#E2E8F0;display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+              <span>✉️</span> E-mail corporativo ou Administrador
+            </label>
+            <input type="email" id="login-email" class="form-control" placeholder="ex: advogado@banca.adv.br ou admin@..." required style="height:44px;font-size:13.5px;" />
           </div>
-          <div class="form-group">
-            <label for="login-password">Senha de acesso</label>
-            <input type="password" id="login-password" class="form-control" placeholder="Sua senha" required />
+
+          <div class="form-group" style="margin-bottom:18px;">
+            <label for="login-password" style="font-size:12.5px;font-weight:700;color:#E2E8F0;display:block;margin-bottom:6px;">
+              <span>🔒</span> Senha de acesso
+            </label>
+            <div style="position:relative;display:flex;align-items:center;">
+              <input type="password" id="login-password" class="form-control" placeholder="Sua senha de acesso" required style="height:44px;font-size:13.5px;padding-right:44px;width:100%;" />
+              <button type="button" id="btn-toggle-pwd" title="Mostrar ou ocultar senha" aria-label="Mostrar ou ocultar senha" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:#94A3B8;cursor:pointer;font-size:18px;padding:6px;display:flex;align-items:center;justify-content:center;border-radius:6px;transition:color 0.2s;" tabindex="0">
+                <span id="toggle-pwd-icon">👁️</span>
+              </button>
+            </div>
           </div>
-          <button type="submit" class="btn btn-gold" style="width:100%;margin-top:10px;">Entrar no Time Studio</button>
+
+          <button type="submit" id="btn-submit-login" class="btn btn-gold" style="width:100%;margin-top:6px;min-height:48px;font-size:14px;font-weight:800;">
+            <span id="login-btn-text">Entrar no Time Studio</span>
+          </button>
         </form>
-        <p id="login-error" class="alert-box alert-error" style="display:none;margin-top:14px;"></p>
-        <div style="font-size:11.5px;color:#64748B;margin-top:20px;line-height:1.5;">
-          * Se você ainda não possui senha, solicite um <strong>link individual de convite</strong> ao administrador da banca.
+
+        <!-- Mensagem de Erro Inteligente com UX Auxiliar -->
+        <div id="login-error" class="alert-box alert-error" style="display:none;margin-top:16px;text-align:left;font-size:12.5px;line-height:1.45;border-radius:8px;"></div>
+
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.08);display:flex;flex-direction:column;gap:10px;text-align:center;">
+          <a href="/" style="font-size:12px;font-weight:700;color:#BAE6FD;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;">
+            <span>←</span> Voltar ao Painel DRE Jurídico
+          </a>
+          <span style="font-size:11.5px;color:#64748B;line-height:1.4;">
+            * Se você é advogado da banca e ainda não possui senha, utilize o <strong>link individual de convite</strong> enviado pelo administrador.
+          </span>
         </div>
       </div>
     </section>
@@ -751,7 +948,10 @@
           <div class="timer-container">
             <div style="display:flex;justify-content:space-between;align-items:center;width:100%;">
               <span style="font-size:12px;font-weight:700;color:#CBD5E1;">Caso / Contrato em Atendimento</span>
-              <span id="timer-state-badge" class="timer-state-tag stopped">Pronto para iniciar</span>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <button type="button" id="btn-timer-test-fill" class="btn" onclick="window.fillSampleTimerData(true)" style="font-size:11px;padding:3px 10px;border:1px dashed var(--brand-gold);color:var(--brand-gold);background:rgba(235,181,44,0.1);border-radius:6px;font-weight:700;cursor:pointer;">⚡ Teste Rápido</button>
+                <span id="timer-state-badge" class="timer-state-tag stopped">Pronto para iniciar</span>
+              </div>
             </div>
 
             <div class="form-group" style="margin-bottom:0;width:100%;">
@@ -782,6 +982,9 @@
               </div>
             </div>
 
+            <div id="timer-alert-badge" class="timer-alert-badge" style="display:none;">
+              <span class="pulse-icon">🔔</span> <strong>Tempo Selecionado Atingido!</strong> Verifique o temporizador.
+            </div>
             <div class="timer-clock" id="timer-display">00:00:00</div>
 
             <div class="timer-controls">
@@ -811,7 +1014,12 @@
                   <span>🔔</span>
                   <strong>Lembrete Anti-Esquecimento:</strong>
                 </span>
-                <span id="reminder-status-pill" class="pill" style="font-size:10px;padding:2px 8px;background:rgba(235,181,44,0.15);color:var(--brand-gold);font-weight:700;">A cada 60 min</span>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <button type="button" id="btn-test-reminder-sound" class="btn-test-chime" onclick="window.testChimeSound(event)" title="Clique para ouvir o som do alarme agora">
+                    🔊 Testar Som
+                  </button>
+                  <span id="reminder-status-pill" class="pill" style="font-size:10px;padding:2px 8px;background:rgba(235,181,44,0.15);color:var(--brand-gold);font-weight:700;">A cada 60 min</span>
+                </div>
               </div>
               <div class="reminder-btn-group" role="group" aria-label="Intervalo de lembrete do cronômetro">
                 <button type="button" class="btn-reminder-choice" data-interval="30">30 min</button>
@@ -820,6 +1028,26 @@
                 <button type="button" class="btn-reminder-choice" data-interval="90">90 min</button>
                 <button type="button" class="btn-reminder-choice" data-interval="120">2 horas</button>
                 <button type="button" class="btn-reminder-choice" data-interval="0">Desativado</button>
+              </div>
+                            <!-- Escolha de Toques Sonoros Executivos (3 Opções) -->
+              <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <span style="font-size:11.5px;font-weight:700;color:#CBD5E1;display:flex;align-items:center;gap:5px;">
+                    <span>🎵</span> Toque do Alarme:
+                  </span>
+                  <span id="reminder-sound-status" class="pill" style="font-size:10px;padding:2px 8px;background:rgba(235,181,44,0.12);color:var(--brand-gold);font-weight:700;border:1px solid rgba(235,181,44,0.3);">Sino Cristalino 🔔</span>
+                </div>
+                <div class="reminder-sound-group" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                  <button type="button" id="btn-sound-cristalino" class="btn-sound-choice active" data-sound="cristalino" onclick="window.selectChimeSound('cristalino', event)" title="Sino suave e cristalino com harmônicos">
+                    <span>🔔</span> Sino Cristalino
+                  </button>
+                  <button type="button" id="btn-sound-dingdong" class="btn-sound-choice" data-sound="dingdong" onclick="window.selectChimeSound('dingdong', event)" title="Clássico ding-dong duplo executivo">
+                    <span>🛎️</span> Ding-Dong
+                  </button>
+                  <button type="button" id="btn-sound-arpejo" class="btn-sound-choice" data-sound="arpejo" onclick="window.selectChimeSound('arpejo', event)" title="Tríade moderna e harmônica">
+                    <span>✨</span> Arpejo Moderno
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -837,9 +1065,14 @@
       <!-- PANE 2: APONTAMENTO MANUAL -->
       <div id="tab-manual" class="tab-pane" style="display:none;">
         <div class="card">
-          <h3 style="font-size:16px;font-weight:800;color:var(--brand-gold);margin-bottom:14px;display:flex;align-items:center;gap:8px;">
-            <span>✍️</span> Registro Manual Retroativo
-          </h3>
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+            <h3 style="font-size:16px;font-weight:800;color:var(--brand-gold);margin:0;display:flex;align-items:center;gap:8px;">
+              <span>✍️</span> Registro Manual Retroativo
+            </h3>
+            <button type="button" id="btn-sample-fill" class="btn" onclick="window.fillSampleManualData(true)" style="font-size:12px;padding:6px 14px;border:1px dashed var(--brand-gold);color:var(--brand-gold);background:rgba(235,181,44,0.12);border-radius:8px;font-weight:700;display:inline-flex;align-items:center;gap:6px;cursor:pointer;transition:all 0.2s ease;">
+              <span>⚡</span> Preencher Dados de Teste
+            </button>
+          </div>
           <form id="form-manual">
             <div class="form-group">
               <label for="manual-contract">Contrato / Processo Atendido</label>
@@ -872,16 +1105,22 @@
 
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
               <div class="form-group">
-                <label for="manual-start" style="font-size:11.5px;">Início (opcional)</label>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <label for="manual-start" style="font-size:11.5px;">Início (opcional)</label>
+                  <button type="button" id="btn-set-now-start" class="btn-time-quick" title="Ajustar início para 1h atrás">1h atrás</button>
+                </div>
                 <input type="time" id="manual-start" class="form-control" />
               </div>
               <div class="form-group">
-                <label for="manual-end" style="font-size:11.5px;">Término (opcional)</label>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <label for="manual-end" style="font-size:11.5px;">Término (opcional)</label>
+                  <button type="button" id="btn-set-now-end" class="btn-time-quick" title="Ajustar término para o horário atual">Agora</button>
+                </div>
                 <input type="time" id="manual-end" class="form-control" />
               </div>
               <div class="form-group">
                 <label for="manual-pause" style="font-size:11.5px;">Pausa (min)</label>
-                <input type="number" id="manual-pause" class="form-control" min="0" placeholder="0" />
+                <input type="number" id="manual-pause" class="form-control" min="0" placeholder="0" value="0" />
               </div>
             </div>
 
@@ -891,8 +1130,14 @@
                 <input type="date" id="manual-date" class="form-control" required />
               </div>
               <div class="form-group">
-                <label for="manual-minutes">Tempo Trabalhado (min)</label>
-                <input type="number" id="manual-minutes" class="form-control" min="1" max="1440" placeholder="Ex: 120 (2 horas)" required />
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <label for="manual-minutes">Tempo Trabalhado (min)</label>
+                  <span id="manual-minutes-badge" class="pill" style="font-size:11px;font-weight:700;background:rgba(235,181,44,0.18);color:var(--brand-gold);padding:2px 8px;">1h 00min</span>
+                </div>
+                <input type="number" id="manual-minutes" class="form-control" min="1" max="1440" placeholder="Ex: 60 (1 hora)" required />
+                <div id="manual-calc-hint" style="font-size:11px;color:#94A3B8;margin-top:4px;">
+                  ⚡ Calculado automaticamente pelos horários. Você pode alterar livremente.
+                </div>
               </div>
             </div>
 
@@ -952,10 +1197,18 @@
         <div id="reminder-overtime-note" style="display:none;margin-top:8px;padding:8px 10px;background:rgba(239,68,68,0.18);border:1px solid rgba(239,68,68,0.35);border-radius:6px;color:#FCA5A5;font-size:12px;">
           ⚠️ <strong>Atenção:</strong> Esta sessão ultrapassou 4 horas ininterruptas. Caso tenha esquecido o cronômetro aberto, finalize e informe o tempo real do ato.
         </div>
+        <div style="display:flex;justify-content:flex-end;margin-top:10px;">
+          <button type="button" id="btn-replay-reminder-sound" class="btn-chime-replay" title="Tocar som de alerta novamente">
+            🔊 Ouvir Alerta Novamente
+          </button>
+        </div>
       </div>
       <div class="reminder-modal-actions">
         <button type="button" id="btn-reminder-continue" class="btn btn-gold" style="flex:1;">
           <span>▶</span> Continuar Trabalhando
+        </button>
+        <button type="button" id="btn-reminder-pause" class="btn btn-pause" style="flex:1;">
+          <span>⏸️</span> Pausar Temporizador
         </button>
         <button type="button" id="btn-reminder-stop" class="btn btn-stop" style="flex:1;">
           <span>⏹</span> Finalizar & Salvar
@@ -964,6 +1217,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=2"></script>
+  <script src="app.js?v=20261030_final3"></script>
 </body>
 </html>

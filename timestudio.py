@@ -95,12 +95,13 @@ def setup(app, db, auth, editor, utc):
         now = int(time.time())
         with db() as c:
             row = c.execute(text('''
-                SELECT s.professional_id, s.office_id, p.name, a.email, o.name
+                SELECT s.professional_id, s.office_id, p.name, COALESCE(a.email, u.email, 'admin@banca.adv.br'), o.name
                 FROM timestudio_sessions s
                 JOIN professionals p ON p.id = s.professional_id AND p.office_id = s.office_id
-                JOIN professional_accounts a ON a.professional_id = s.professional_id AND a.office_id = s.office_id
-                JOIN offices o ON o.id = s.office_id
-                WHERE s.token_hash = :token AND s.expires_at > :now AND a.is_active = 1
+                LEFT JOIN professional_accounts a ON a.professional_id = s.professional_id AND a.office_id = s.office_id
+                LEFT JOIN offices o ON o.id = s.office_id
+                LEFT JOIN users u ON u.office_id = s.office_id AND u.role = 'admin'
+                WHERE s.token_hash = :token AND s.expires_at > :now AND COALESCE(a.is_active, 1) = 1
             '''), {'token': key, 'now': now}).fetchone()
         if not row:
             raise HTTPException(401, 'Sessão do Time Studio expirada ou inválida')
@@ -374,24 +375,132 @@ def setup(app, db, auth, editor, utc):
             }
         }
 
+    @app.post('/api/timestudio/auth/sso')
+    def timestudio_sso(authorization: str = Header(default='')):
+        if not authorization.startswith('Bearer '):
+            raise HTTPException(401, 'Token de sessão do DRE ausente')
+        raw_token = authorization[7:].strip()
+        th = hashlib.sha256(raw_token.encode('utf-8')).hexdigest()
+        now = int(time.time())
+        with db() as c:
+            row = c.execute(text('''
+                SELECT u.id, u.office_id, u.role, u.email, o.name
+                FROM sessions s
+                JOIN users u ON u.id = s.user_id
+                JOIN offices o ON o.id = u.office_id
+                WHERE s.token_hash = :th AND s.expires > :now
+            '''), {'th': th, 'now': now}).fetchone()
+            if not row:
+                raise HTTPException(401, 'Sessão do DRE Jurídico expirada ou inválida')
+
+            user_id, office_id, role, email, office_name = row[0], row[1], row[2], row[3], row[4]
+
+            prof = c.execute(text('''
+                SELECT p.id, p.name
+                FROM professionals p
+                WHERE p.office_id = :o
+                ORDER BY 
+                    CASE 
+                        WHEN p.name LIKE '%Alex%' OR p.name LIKE '%Franco%' THEN 1
+                        WHEN p.name LIKE '%Sócio%' OR p.name LIKE '%Coordenador%' THEN 2
+                        ELSE 3
+                    END,
+                    p.created_at ASC
+                LIMIT 1
+            '''), {'o': office_id}).fetchone()
+
+            if prof:
+                prof_id, prof_name = prof[0], prof[1]
+            else:
+                prof_id = f"prof_{user_id[:16]}"
+                prof_name = f"Administrador ({office_name})"
+                created_iso = utc()
+                c.execute(text('''
+                    INSERT INTO professionals (id, office_id, name, hourly_cost_cents, created_at)
+                    VALUES (:id, :o, :name, 0, :dt)
+                '''), {'id': prof_id, 'o': office_id, 'name': prof_name, 'dt': created_iso})
+
+            session_token = secrets.token_urlsafe(32)
+            session_hash = hashlib.sha256(session_token.encode('utf-8')).hexdigest()
+            session_expires = now + SESSION_EXPIRES_SECONDS
+            c.execute(text('INSERT INTO timestudio_sessions VALUES (:th, :p, :o, :exp)'), {
+                'th': session_hash, 'p': prof_id, 'o': office_id, 'exp': session_expires
+            })
+            log_audit(c, office_id, prof_id, 'timestudio.sso_login', prof_id)
+
+        return {
+            'token': session_token,
+            'professional': {
+                'id': prof_id,
+                'name': prof_name,
+                'email': email,
+                'office_id': office_id,
+                'office_name': office_name
+            }
+        }
+
     @app.post('/api/timestudio/auth/login')
     def timestudio_login(data: LoginIn):
         email = data.email.strip().lower()
         now = int(time.time())
         with db() as c:
+            # 1. First check professional_accounts (advogados cadastrados via convite)
             row = c.execute(text('''
                 SELECT a.professional_id, a.office_id, a.password_hash, a.is_active, p.name, o.name
                 FROM professional_accounts a
                 JOIN professionals p ON p.id = a.professional_id AND p.office_id = a.office_id
                 JOIN offices o ON o.id = a.office_id
-                WHERE a.email = :e
+                WHERE LOWER(a.email) = :e
             '''), {'e': email}).fetchone()
-            if not row or not row[3]:
-                raise HTTPException(401, 'Credenciais inválidas ou conta inativa')
-            if not verify_pw(data.password, row[2]):
-                raise HTTPException(401, 'Credenciais inválidas ou senha incorreta')
 
-            prof_id, office_id, prof_name, office_name = row[0], row[1], row[4], row[5]
+            if row:
+                if not row[3]:
+                    raise HTTPException(401, 'Conta de advogado inativa. Contate o administrador da banca.')
+                if not verify_pw(data.password, row[2]):
+                    raise HTTPException(401, 'Credenciais inválidas ou senha incorreta')
+                prof_id, office_id, prof_name, office_name = row[0], row[1], row[4], row[5]
+            else:
+                # 2. Check users table (Administrador / Gestor do DRE Jurídico)
+                u_row = c.execute(text('''
+                    SELECT u.id, u.office_id, u.password_hash, u.role, o.name
+                    FROM users u
+                    JOIN offices o ON o.id = u.office_id
+                    WHERE LOWER(u.email) = :e
+                '''), {'e': email}).fetchone()
+
+                if not u_row:
+                    raise HTTPException(401, 'Credenciais inválidas ou conta não encontrada')
+                if not verify_pw(data.password, u_row[2]):
+                    raise HTTPException(401, 'Credenciais inválidas ou senha incorreta')
+
+                user_id, office_id, role, office_name = u_row[0], u_row[1], u_row[3], u_row[4]
+
+                # Check if a professional exists in this office
+                prof = c.execute(text('''
+                    SELECT p.id, p.name
+                    FROM professionals p
+                    WHERE p.office_id = :o
+                    ORDER BY 
+                        CASE 
+                            WHEN p.name LIKE '%Alex%' OR p.name LIKE '%Franco%' THEN 1
+                            WHEN p.name LIKE '%Sócio%' OR p.name LIKE '%Coordenador%' THEN 2
+                            ELSE 3
+                        END,
+                        p.created_at ASC
+                    LIMIT 1
+                '''), {'o': office_id}).fetchone()
+
+                if prof:
+                    prof_id, prof_name = prof[0], prof[1]
+                else:
+                    prof_id = f"prof_{user_id[:16]}"
+                    prof_name = f"Administrador ({office_name})"
+                    created_iso = utc()
+                    c.execute(text('''
+                        INSERT INTO professionals (id, office_id, name, hourly_cost_cents, created_at)
+                        VALUES (:id, :o, :name, 0, :dt)
+                    '''), {'id': prof_id, 'o': office_id, 'name': prof_name, 'dt': created_iso})
+
             session_token = secrets.token_urlsafe(32)
             session_hash = hashlib.sha256(session_token.encode('utf-8')).hexdigest()
             session_expires = now + SESSION_EXPIRES_SECONDS

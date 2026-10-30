@@ -1,5 +1,5 @@
-// Time Studio PWA Service Worker · v1.0
-const CACHE_NAME = 'timestudio-static-v102';
+// Time Studio PWA Service Worker — v20261030-final3
+const CACHE_NAME = 'timestudio-static-v20261030-final3';
 const STATIC_ASSETS = [
   './index.html',
   './app.js',
@@ -9,20 +9,20 @@ const STATIC_ASSETS = [
 ];
 
 self.addEventListener('install', event => {
-  event.waitUntil((async () => {
-    const cache = await caches.open(CACHE_NAME);
-    await cache.addAll(STATIC_ASSETS);
-    await self.skipWaiting();
-  })());
+  self.skipWaiting();
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS)).catch(err => {
+      console.warn('SW Precache error:', err);
+    })
+  );
 });
 
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
-    for (const key of await caches.keys()) {
-      if (key.startsWith('timestudio-static-') && key !== CACHE_NAME) {
-        await caches.delete(key);
-      }
-    }
+    const keys = await caches.keys();
+    await Promise.all(
+      keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
+    );
     await self.clients.claim();
   })());
 });
@@ -32,26 +32,34 @@ self.addEventListener('fetch', event => {
   const url = new URL(req.url);
 
   // Security rule: NEVER cache /api, session tokens, or sensitive client data
-  if (req.method !== 'GET' || url.pathname.startsWith('/api/')) {
+  if (req.method !== 'GET' || url.pathname.includes('/api/')) {
     return;
   }
 
-  // Handle navigation requests
-  if (req.mode === 'navigate') {
+  // Network-First for HTML and JS to guarantee instant updates without stale cache
+  if (req.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname.endsWith('.js') || url.search.includes('v=')) {
     event.respondWith(
-      fetch(req).catch(() => caches.match('./index.html'))
+      fetch(req).then(networkResponse => {
+        if (networkResponse && networkResponse.ok) {
+          const clone = networkResponse.clone();
+          caches.open(CACHE_NAME).then(c => c.put(req, clone)).catch(() => {});
+        }
+        return networkResponse;
+      }).catch(() => {
+        return caches.match(req).then(cached => cached || caches.match('./index.html'));
+      })
     );
     return;
   }
 
-  // Handle static assets
+  // Cache-First with Network fallback for static media/icons
   event.respondWith(
     caches.match(req).then(cached => {
       if (cached) return cached;
       return fetch(req).then(response => {
-        if (response.ok && STATIC_ASSETS.some(a => url.pathname.endsWith(a.replace('./', '')))) {
+        if (response && response.ok) {
           const clone = response.clone();
-          caches.open(CACHE_NAME).then(c => c.put(req, clone));
+          caches.open(CACHE_NAME).then(c => c.put(req, clone)).catch(() => {});
         }
         return response;
       });

@@ -2,6 +2,9 @@
     RewriteEngine On
     RewriteBase /
 
+    # Preserva cabecalho Authorization no PHP FastCGI/LiteSpeed
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
     # Roteia requisições da API para o proxy.php
     RewriteRule ^api/(.*)$ proxy.php?endpoint=$1 [QSA,L]
 

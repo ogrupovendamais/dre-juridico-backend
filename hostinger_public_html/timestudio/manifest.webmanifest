@@ -1,0 +1,25 @@
+{
+  "name": "Time Studio | DRE Jurídico",
+  "short_name": "Time Studio",
+  "description": "Apontamento inteligente de horas por processo para advogados com cronômetro offline resiliente.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#010E38",
+  "theme_color": "#010E38",
+  "icons": [
+    {
+      "src": "./icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

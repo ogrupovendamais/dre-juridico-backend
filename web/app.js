@@ -1,6 +1,6 @@
 'use strict';
-let entries=[], token=sessionStorage.getItem('dre_token')||'', user=null;
-const $=s=>document.querySelector(s), money=n=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(n), esc=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])), mobile=()=>matchMedia('(max-width:900px)').matches;
+let entries=[], token=sessionStorage.getItem('dre_token')||localStorage.getItem('dre_token')||'', user=null;if(token){try{localStorage.setItem('dre_token',token);}catch(e){}}
+const $=s=>document.querySelector(s), money=n=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number.isFinite(Number(n))?Number(n):0), esc=x=>x==null?'':String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]||c)), mobile=()=>matchMedia('(max-width:900px)').matches, localIsoMonth=(d=new Date())=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'), localIsoDate=(d=new Date())=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 const formatHoursMinutes=m=>{if(m==null||isNaN(m))return'0h 00min';const total=Math.round(Number(m));const isNeg=total<0;const abs=Math.abs(total);const h=Math.floor(abs/60);const min=abs%60;return`${isNeg?'-':''}${h}h ${String(min).padStart(2,'0')}min`;};
 // v2.8: apenas chave aleatoria + digest SHA-256 persistem durante a aba.
 // Nenhum valor, contrato, descricao ou payload financeiro vai ao sessionStorage.
@@ -44,10 +44,10 @@ async function api(url,options={}){
   }
   if(storageKey){sessionStorage.removeItem(storageKey);pendingFinancialRequests.delete(storageKey);}
   return response.json();
-}function showLogin(){token='';user=null;sessionStorage.removeItem('dre_token');clearPendingFinancial28();$('#login-layer').hidden=false;$('#workspace').hidden=true}
-function canWrite(){return Boolean(user&&user.role!=='viewer')}
+}function showLogin(){token='';user=null;sessionStorage.removeItem('dre_token');try{localStorage.removeItem('dre_token');}catch(e){}clearPendingFinancial28();$('#login-layer').hidden=false;$('#login-layer').style.display='';$('#workspace').hidden=true;$('#workspace').style.display='none';document.body.classList.add('unauthenticated')}
+function canWrite(){return Boolean(user&&user.role!=='viewer'&&!mobile())}
 function updateMode(){const readonly=mobile()||user?.role==='viewer';document.querySelectorAll('.desktop-only').forEach(e=>e.style.display=readonly?'none':'');$('#mode').textContent=`${mobile()?'Mobile':'Desktop'} · ${readonly?'somente leitura':'gestão'}`;$('#office-label').textContent=user?user.office:'';}
-function totals(filterMonth){const selMonth=filterMonth!==undefined?filterMonth:($('#painel-month')?.value||'');const list=selMonth?entries.filter(e=>e.data&&e.data.startsWith(selMonth)):entries;const sum=t=>list.filter(e=>e.tipo===t).reduce((a,e)=>a+Number(e.valor),0);const receita=sum('receita'),custo=sum('custo'),despesa=sum('despesa'),patrimonial=sum('patrimonial');return {receita,custo,despesa,patrimonial,resultado:receita-custo-despesa,margem:receita?(receita-custo-despesa)/receita*100:null,count:list.length,month:selMonth}}
+function totals(filterMonth){const selMonth=filterMonth!==undefined?filterMonth:($('#painel-month')?.value||'');const list=selMonth?entries.filter(e=>e.data&&e.data.startsWith(selMonth)):entries;const sum=t=>list.filter(e=>e.tipo===t).reduce((a,e)=>a+(Number(e.valor)||0),0);const receita=sum('receita'),custo=sum('custo'),despesa=sum('despesa'),patrimonial=sum('patrimonial');return {receita,custo,despesa,patrimonial,resultado:receita-custo-despesa,margem:receita>0?(receita-custo-despesa)/receita*100:null,count:list.length,month:selMonth}}
 function render(){
   updateMode();
   const t=totals();
@@ -187,11 +187,11 @@ function filterEntries(){
   if(!empty){empty=document.createElement('tr');empty.id='entries-no-match';empty.innerHTML='<td colspan="6" class="empty">Nenhum lançamento corresponde aos filtros.</td>';tbody.append(empty)}
   empty.hidden=matched.length!==0||total===0;
 }
-for(const id of ['entries-search','entries-kind','entries-month'])document.getElementById(id).addEventListener('input',filterEntries);
-$('#entries-clear').addEventListener('click',()=>{for(const id of ['entries-search','entries-kind','entries-month'])$('#'+id).value='';filterEntries()});
+for(const id of ['entries-search','entries-kind','entries-month'])document.getElementById(id)?.addEventListener('input',filterEntries);
+$('#entries-clear')?.addEventListener('click',()=>{for(const id of ['entries-search','entries-kind','entries-month']){const el=$('#'+id);if(el)el.value='';}filterEntries()});
 $('#painel-month')?.addEventListener('input',()=>render());
 $('#painel-month')?.addEventListener('change',()=>render());
-$('#painel-month-current')?.addEventListener('click',()=>{const pm=$('#painel-month');if(pm){pm.value=new Date().toISOString().slice(0,7);render();}});
+$('#painel-month-current')?.addEventListener('click',()=>{const pm=$('#painel-month');if(pm){pm.value=localIsoMonth();render();}});
 $('#painel-month-clear')?.addEventListener('click',()=>{const pm=$('#painel-month');if(pm){pm.value='';render();}});
 $('#painel-filter-quarter')?.addEventListener('click',()=>{
   const pm=$('#painel-month');
@@ -235,11 +235,23 @@ const DIAGNOSTICO_VIEWS = ['diagnostico', 'saude-funil', 'horas-custo', 'metas-o
 const USUARIOS_VIEWS = ['usuarios', 'acessos-equipe', 'auditoria-logs', 'seguranca-conta'];
 
 function goto(view){
-  if(view==='diagnostico') view='saude-funil';
+  if(mobile()){
+    const MOBILE_ALLOWED_VIEWS = ['painel', 'dre', 'diagnostico', 'saude-funil', 'horas-custo', 'etapas-processuais', 'metas-orcamento'];
+    if(!MOBILE_ALLOWED_VIEWS.includes(view)){
+      view = 'painel';
+    }
+  }
   if(view==='usuarios') view='acessos-equipe';
   document.querySelectorAll('.view').forEach(e=>e.classList.toggle('active',e.id===view));
-  document.querySelectorAll('[data-view]').forEach(e=>e.classList.toggle('active',e.dataset.view===view || (e.dataset.view==='diagnostico' && view==='saude-funil')));
-  document.querySelectorAll('[data-view]').forEach(e=>{if(e.dataset.view===view || (e.dataset.view==='diagnostico' && view==='saude-funil'))e.setAttribute('aria-current','page');else e.removeAttribute('aria-current')});
+  document.querySelectorAll('[data-view]').forEach(e=>{
+    const v = e.dataset.view;
+    const isAct = v === view || (v === 'diagnostico' && DIAGNOSTICO_VIEWS.includes(view));
+    e.classList.toggle('active', isAct);
+    if(isAct) e.setAttribute('aria-current','page'); else e.removeAttribute('aria-current');
+  });
+  document.querySelectorAll('.mobile-diag-tab').forEach(b => {
+    b.classList.toggle('active', b.dataset.view === view);
+  });
   document.querySelectorAll('.ribbon-tab').forEach(t=>t.classList.toggle('active',t.dataset.ribbonTab===view || (t.dataset.ribbonTab==='lancamentos' && view==='movimentacoes') || (t.dataset.ribbonTab==='naturezas' && NATUREZAS_VIEWS.includes(view)) || (t.dataset.ribbonTab==='cadastros' && CADASTROS_VIEWS.includes(view)) || (t.dataset.ribbonTab==='diagnostico' && DIAGNOSTICO_VIEWS.includes(view)) || (t.dataset.ribbonTab==='usuarios' && USUARIOS_VIEWS.includes(view))));
   document.querySelectorAll('.ribbon-pane').forEach(p=>p.classList.toggle('active',p.dataset.ribbonPane===view || (p.dataset.ribbonPane==='lancamentos' && view==='movimentacoes') || (p.dataset.ribbonPane==='naturezas' && NATUREZAS_VIEWS.includes(view)) || (p.dataset.ribbonPane==='cadastros' && CADASTROS_VIEWS.includes(view)) || (p.dataset.ribbonPane==='diagnostico' && DIAGNOSTICO_VIEWS.includes(view)) || (p.dataset.ribbonPane==='usuarios' && USUARIOS_VIEWS.includes(view))));
   $('#page-title').textContent=({
@@ -335,24 +347,27 @@ $('#r-diag-health')?.addEventListener('click',()=>{goto('saude-funil');});
 $('#r-diag-hours')?.addEventListener('click',()=>{goto('horas-custo');});
 // Dark Mode Theme Controller
 function getSavedTheme(){
-  return localStorage.getItem('dre_theme') || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  return localStorage.getItem('dre_theme') || 'light';
 }
 function applyTheme(theme){
   const isDark = theme === 'dark';
   document.body.classList.toggle('dark-mode', isDark);
-  document.documentElement.setAttribute('data-theme', theme);
+  document.documentElement.classList.toggle('dark-mode', isDark);
+  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
   const icon = $('#theme-icon');
   const label = $('#theme-label');
   const btn = $('#theme-toggle-btn');
   const mobileIcon = $('#mobile-theme-icon');
-  if(mobileIcon) mobileIcon.textContent = isDark ? '☀️' : '🌙';
-  if(icon) icon.textContent = isDark ? '☀️' : '🌙';
+  const sunSvg = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
+  const moonSvg = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+  if(mobileIcon) mobileIcon.innerHTML = isDark ? sunSvg : moonSvg;
+  if(icon) icon.innerHTML = isDark ? sunSvg : moonSvg;
   if(label) label.textContent = isDark ? 'Modo Claro' : 'Modo Escuro';
   if(btn) btn.title = isDark ? 'Alternar para Modo Claro' : 'Alternar para Modo Escuro';
-  try { localStorage.setItem('dre_theme', theme); } catch(e){}
+  try { localStorage.setItem('dre_theme', isDark ? 'dark' : 'light'); } catch(e){}
 }
 function toggleTheme(){
-  const isDark = document.body.classList.contains('dark-mode');
+  const isDark = document.documentElement.classList.contains('dark-mode') || document.body.classList.contains('dark-mode');
   applyTheme(isDark ? 'light' : 'dark');
 }
 $('#theme-toggle-btn')?.addEventListener('click', toggleTheme);
@@ -368,11 +383,11 @@ $('#r-user-audit')?.addEventListener('click',()=>{goto('auditoria-logs');});
 $('#r-user-security')?.addEventListener('click',()=>{goto('seguranca-conta');});
 $('#mobile-security-btn')?.addEventListener('click',()=>{goto('seguranca-conta');});
 $('#r-gov-audit')?.addEventListener('click',()=>{goto('auditoria-logs');});
-$('#entry-form').addEventListener('submit',async ev=>{ev.preventDefault();if(!canWrite())return;const valor=Number($('#f-valor').value);if(!(valor>0&&Number.isFinite(valor)))return;try{await api('/entries',{method:'POST',body:JSON.stringify({data:$('#f-data').value,descricao:$('#f-descricao').value.trim(),tipo:$('#f-tipo').value,area:$('#f-area').value,valor:valor.toFixed(2),nature_id:$('#f-nature')?.value||null,subcategory_id:$('#f-subcategory')?.value||null})});ev.target.reset();$('#f-data').value=new Date().toISOString().slice(0,10);if(typeof renderAreasSelect==='function')renderAreasSelect();$('#msg').innerHTML='Lançamento salvo com sucesso no servidor! <a href="javascript:void(0)" data-goto="movimentacoes" style="color:var(--brand-gold,#EBB52C);font-weight:700;text-decoration:underline;margin-left:8px;">Ver em Movimentações Registradas 📋</a>';await refresh()}catch(err){$('#msg').textContent=err.message}});
+$('#entry-form')?.addEventListener('submit',async ev=>{ev.preventDefault();if(!canWrite())return;const valor=Number($('#f-valor').value);if(!(valor>0&&Number.isFinite(valor)))return;try{await api('/entries',{method:'POST',body:JSON.stringify({data:$('#f-data').value,descricao:$('#f-descricao').value.trim(),tipo:$('#f-tipo').value,area:$('#f-area').value,valor:valor.toFixed(2),nature_id:$('#f-nature')?.value||null,subcategory_id:$('#f-subcategory')?.value||null})});ev.target.reset();if($('#f-data'))$('#f-data').value=localIsoDate();if(typeof renderAreasSelect==='function')renderAreasSelect();populateNatureSelects();updateSubcategoriesSelect($('#f-nature')?.value,$('#f-subcategory'));$('#msg').innerHTML='Lançamento salvo com sucesso no servidor! <a href="javascript:void(0)" data-goto="movimentacoes" style="color:var(--brand-gold,#EBB52C);font-weight:700;text-decoration:underline;margin-left:8px;">Ver em Movimentações Registradas 📋</a>';await refresh()}catch(err){$('#msg').textContent=err.message}});
 $('#reset')?.remove();$('#export')?.addEventListener('click', exportEntriesJSON);
-$('#login-form').addEventListener('submit',async ev=>{ev.preventDefault();$('#login-error').textContent='';try{const res=await api('/login',{method:'POST',body:JSON.stringify({email:$('#login-email').value,password:$('#login-password').value,otp:$('#login-otp').value||null})});token=res.token;sessionStorage.setItem('dre_token',token);await start()}catch(err){$('#login-error').textContent=err.message}});
-$('#logout').addEventListener('click',async()=>{try{await api('/logout',{method:'POST'})}catch{}showLogin()});
-async function start(){try{user=await api('/me');$('#login-layer').hidden=true;$('#workspace').hidden=false;$('#f-data').value=new Date().toISOString().slice(0,10);await refresh();if(typeof refreshFinance==='function')await refreshFinance();if(typeof loadAreas==='function')await loadAreas();if(typeof refreshNatures==='function')await refreshNatures();if(typeof refreshCompleteDRE==='function')await refreshCompleteDRE();if(typeof initCommercialHealth==='function')initCommercialHealth();if(typeof initStageIntelligence==='function')initStageIntelligence();}catch(err){console.error('start error:',err);if(!user)showLogin();}}
+$('#login-form')?.addEventListener('submit',async ev=>{ev.preventDefault();$('#login-error').textContent='';const submitBtn=$('#login-submit-btn');const originalText=submitBtn?submitBtn.textContent:'Entrar';if(submitBtn){submitBtn.disabled=true;submitBtn.textContent='Acessando servidor...';}try{const res=await api('/login',{method:'POST',body:JSON.stringify({email:$('#login-email').value,password:$('#login-password').value,otp:$('#login-otp').value||null})});token=res.token;sessionStorage.setItem('dre_token',token);try{localStorage.setItem('dre_token',token);}catch(e){}await start()}catch(err){$('#login-error').textContent=err.message}finally{if(submitBtn){submitBtn.disabled=false;submitBtn.textContent=originalText;}}});
+$('#logout')?.addEventListener('click',async()=>{try{await api('/logout',{method:'POST'})}catch{}showLogin()});
+async function start(){try{user=await api('/me');$('#login-layer').hidden=true;$('#login-layer').style.display='none';$('#workspace').hidden=false;$('#workspace').style.display='';document.body.classList.remove('unauthenticated');if($('#f-data'))$('#f-data').value=localIsoDate();await refresh();if(typeof refreshFinance==='function')await refreshFinance();if(typeof loadAreas==='function')await loadAreas();if(typeof refreshNatures==='function')await refreshNatures();if(typeof refreshCompleteDRE==='function')await refreshCompleteDRE();if(typeof initCommercialHealth==='function')initCommercialHealth();if(typeof initStageIntelligence==='function')initStageIntelligence();}catch(err){console.error('start error:',err);if(!user)showLogin();}}
 window.addEventListener('resize',()=>{if(user){render();filterEntries()}});if(token)start();else showLogin();
 
 // v0.3: separate financial register. Old v0.2 DRE remains an explicitly simplified legacy view.
@@ -388,11 +403,11 @@ function renderBills(){
  $('#bills-count').textContent=`${filtered.length} de ${bills.length} títulos · Página ${billPage+1} de ${pages}. Totais financeiros não são alterados por filtros.`;
  $('#bills-prev').disabled=billPage===0;$('#bills-next').disabled=billPage>=pages-1;
 }
-for(const id of ['bills-search','bills-status','bills-size'])$('#'+id).addEventListener('input',()=>{billPage=0;renderBills()});
-$('#bills-prev').addEventListener('click',()=>{billPage--;renderBills()});$('#bills-next').addEventListener('click',()=>{billPage++;renderBills()});
-$('#bills-clear').addEventListener('click',()=>{$('#bills-search').value='';$('#bills-status').value='';$('#bills-size').value='10';billPage=0;renderBills()});
+for(const id of ['bills-search','bills-status','bills-size'])$('#'+id)?.addEventListener('input',()=>{billPage=0;renderBills()});
+$('#bills-prev')?.addEventListener('click',()=>{billPage--;renderBills()});$('#bills-next')?.addEventListener('click',()=>{billPage++;renderBills()});
+$('#bills-clear')?.addEventListener('click',()=>{if($('#bills-search'))$('#bills-search').value='';if($('#bills-status'))$('#bills-status').value='';if($('#bills-size'))$('#bills-size').value='10';billPage=0;renderBills()});
 function renderBankRows(){const q=($('#bank-search')?.value||'').trim().toLocaleLowerCase('pt-BR'),filter=$('#bank-filter')?.value||'';const filtered=bankRowsCache.filter(x=>(!q||[x.description,x.date].join(' ').toLocaleLowerCase('pt-BR').includes(q))&&(!filter||(filter==='matched'?!!x.matched_movement:!x.matched_movement)));$('#bank-rows').innerHTML=filtered.map(x=>`<tr><td>${esc(x.date)}</td><td>${esc(x.description||'—')}</td><td>${money(x.cents/100)}</td><td>${x.matched_movement?'Conciliado':'Pendente'}</td></tr>`).join('')||'<tr><td colspan="4">Nenhum movimento corresponde aos filtros.</td></tr>';$('#bank-count').textContent=`${filtered.length} de ${bankRowsCache.length} movimentos. Filtro aplicado apenas à visualização.`}
-for(const id of ['bank-search','bank-filter'])$('#'+id).addEventListener('input',renderBankRows);
+for(const id of ['bank-search','bank-filter'])$('#'+id)?.addEventListener('input',renderBankRows);
 
 const opts=(items,label)=>items.map(x=>`<option value="${esc(x.id)}">${esc(label(x))}</option>`).join('');
 
@@ -508,17 +523,17 @@ function renderCustomersAndContracts() {
   const metricsEl = $('#cadastros-metrics-cards');
   if (metricsEl) {
     metricsEl.innerHTML = `
-      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+      <div class="card" style="border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
         <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;">Clientes no Período</div>
-        <div style="font-size:22px;font-weight:800;color:#010E38;margin-top:2px;">${filteredCustomers.length}</div>
+        <div style="font-size:22px;font-weight:800;color:var(--brand-navy,#010E38);margin-top:2px;">${filteredCustomers.length}</div>
         <div style="font-size:11px;color:#475569;margin-top:2px;">Cadastrados / ativos</div>
       </div>
-      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+      <div class="card" style="border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
         <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;">Contratos Assinados</div>
-        <div style="font-size:22px;font-weight:800;color:#010E38;margin-top:2px;">${filteredContracts.length}</div>
+        <div style="font-size:22px;font-weight:800;color:var(--brand-navy,#010E38);margin-top:2px;">${filteredContracts.length}</div>
         <div style="font-size:11px;color:#475569;margin-top:2px;">Honorários vigentes</div>
       </div>
-      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+      <div class="card" style="border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <span style="font-size:11px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:0.5px;">Vol. Fechado (Info)</span>
           <span style="font-size:9.5px;font-weight:700;background:#dcfce7;color:#15803d;padding:1px 5px;border-radius:8px;">Informativo</span>
@@ -526,12 +541,12 @@ function renderCustomersAndContracts() {
         <div style="font-size:20px;font-weight:800;color:#059669;margin-top:2px;">${money(totalClosedVal)}</div>
         <div style="font-size:11px;color:#64748b;margin-top:2px;">Ticket Médio: <strong>${money(ticketMedio)}</strong></div>
       </div>
-      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+      <div class="card" style="border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
         <div style="font-size:11px;font-weight:700;color:#0369a1;text-transform:uppercase;letter-spacing:0.5px;">Marketing (G06)</div>
         <div style="font-size:22px;font-weight:800;color:#0369a1;margin-top:2px;">${mktCount}</div>
         <div style="font-size:11px;color:#64748b;margin-top:2px;">Captação digital/anúncios</div>
       </div>
-      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+      <div class="card" style="border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
         <div style="font-size:11px;font-weight:700;color:#925d00;text-transform:uppercase;letter-spacing:0.5px;">Atendimento Escritório</div>
         <div style="font-size:22px;font-weight:800;color:#925d00;margin-top:2px;">${deskCount}</div>
         <div style="font-size:11px;color:#64748b;margin-top:2px;">Indicação / Balcão</div>
@@ -574,14 +589,16 @@ function renderCustomersAndContracts() {
     } else {
       contEl.innerHTML = filteredContracts.map(x => {
         const isMkt = (x.origin === 'marketing' || x.origin === 'mkt');
-        const badge = isMkt ? '<span style="background:#e8eef6;color:#010E38;font-size:11px;padding:2px 7px;border-radius:4px;font-weight:700;">Marketing (G06)</span>' : '<span style="background:#fff8e6;color:#925d00;font-size:11px;padding:2px 7px;border-radius:4px;font-weight:700;">Atendimento Escritório</span>';
+        const badge = isMkt
+          ? '<span class="badge-origem badge-origem-mkt"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-5-5 18-4-7-9-6z"/></svg> Marketing (G06)</span>'
+          : '<span class="badge-origem badge-origem-atend"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> Atendimento Escritório</span>';
         const subLabel = getSuboriginLabel(x.origin, x.suborigin);
-        const subBadge = subLabel ? `<span style="background:#f1f5f9;color:#334155;font-size:11px;padding:2px 7px;border-radius:4px;font-weight:600;" title="Suborigem do cliente">📍 ${esc(subLabel)}</span>` : '';
+        const subBadge = subLabel ? `<span class="badge-origem" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;font-size:11px;" title="Suborigem do cliente">📍 ${esc(subLabel)}</span>` : '';
         const sDate = x.signed_date ? formatPtDate(x.signed_date) : (x.created_at ? formatPtDate(x.created_at) : '20/10/2026');
         const custName = x.customer_name || (customers.find(c => c.id === x.customer_id)?.name) || 'Cliente';
         const valBadge = (x.contract_value && x.contract_value > 0)
-          ? `<span style="background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;font-size:11px;padding:2px 7px;border-radius:4px;font-weight:700;" title="Valor do Contrato (Modo Informativo)">💰 ${money(x.contract_value)}</span>`
-          : `<span style="background:#f8fafc;color:#94a3b8;border:1px solid #e2e8f0;font-size:10.5px;padding:2px 6px;border-radius:4px;" title="Sem valor contratual informado">💰 R$ 0,00</span>`;
+          ? `<span style="background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;font-size:11px;padding:3px 8px;border-radius:20px;font-weight:700;display:inline-flex;align-items:center;gap:4px;" title="Valor do Contrato (Modo Informativo)">💰 ${money(x.contract_value)}</span>`
+          : `<span style="background:#f8fafc;color:#94a3b8;border:1px solid #e2e8f0;font-size:10.5px;padding:2px 7px;border-radius:20px;" title="Sem valor contratual informado">💰 R$ 0,00</span>`;
 
         return `<div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f1f5f9;padding:10px 0;flex-wrap:wrap;gap:8px;">
           <div>
@@ -636,7 +653,7 @@ $('#contract-form')?.addEventListener('submit',async e=>{
 $('#account-form')?.addEventListener('submit',e=>{e.preventDefault();if(canWrite())financeSubmit(e.target,'/accounts',{code:$('#account-code').value,name:$('#account-name').value,kind:$('#account-kind').value})});
 $('#bill-form')?.addEventListener('submit',e=>{e.preventDefault();if(canWrite())financeSubmit(e.target,'/bills',{account_id:$('#bill-account').value,contract_id:$('#bill-contract').value||null,description:$('#bill-description').value,competence:$('#bill-competence').value,due_date:$('#bill-due').value,amount:$('#bill-amount').value,nature_id:$('#bill-nature')?.value||null,subcategory_id:$('#bill-subcategory')?.value||null})});
 document.addEventListener('click',async e=>{const el=e.target.closest('[data-settle]');if(!el||!canWrite())return;const bill=bills.find(x=>x.id===el.dataset.settle);if(!bill)return;const amount=prompt('Valor da baixa em reais (até '+((bill.cents-bill.settled_cents)/100).toFixed(2)+')');if(amount===null)return;const date=prompt('Data da baixa AAAA-MM-DD',new Date().toISOString().slice(0,10));if(date===null)return;const cleanAmount=String(amount).trim().replace(',','.');try{await api('/bills/'+encodeURIComponent(bill.id)+'/settle',{method:'POST',body:JSON.stringify({amount:cleanAmount,date})});await refreshFinance()}catch(err){$('#finance-message').textContent=err.message}});
-const oldStart=start;start=async function(){await oldStart();if(user){$('#bill-competence').value=new Date().toISOString().slice(0,7);$('#bill-due').value=new Date().toISOString().slice(0,10);if($('#customer-date')&&!$('#customer-date').value)$('#customer-date').value=new Date().toISOString().slice(0,10);if($('#contract-signed-date')&&!$('#contract-signed-date').value)$('#contract-signed-date').value=new Date().toISOString().slice(0,10);if($('#cadastros-filter-month')&&!$('#cadastros-filter-month').value)$('#cadastros-filter-month').value=new Date().toISOString().slice(0,7);await refreshFinance()}};
+const oldStart=start;start=async function(){await oldStart();if(user){if($('#bill-competence'))$('#bill-competence').value=localIsoMonth();$('#bill-due').value=new Date().toISOString().slice(0,10);if($('#customer-date')&&!$('#customer-date').value)$('#customer-date').value=new Date().toISOString().slice(0,10);if($('#contract-signed-date')&&!$('#contract-signed-date').value)$('#contract-signed-date').value=new Date().toISOString().slice(0,10);if($('#cadastros-filter-month')&&!$('#cadastros-filter-month').value)$('#cadastros-filter-month').value=new Date().toISOString().slice(0,7);await refreshFinance()}};
 
 // v0.4 read-only cash activity and internal settlement reconciliation.
 async function refreshCash(){
@@ -662,9 +679,9 @@ async function refreshBank(){if(!user)return;
  $('#bank-suggestions').innerHTML=rows.filter(x=>suggested.has(x.id)).map(x=>`<p>${esc(x.date)} · ${money(x.cents/100)} ${canWrite()?`<button type="button" class="btn secondary" data-bank-match="${esc(x.id)}" data-movement-id="${esc(suggested.get(x.id))}">Aprovar</button>`:'<span>· Aguardando aprovação</span>'}</p>`).join('')||'<p class="muted">Sem sugestões de correspondência exata.</p>';
  $('#bank-status').innerHTML=status.months.map(x=>`<p>${esc(x.month)} · Extrato: ${x.statement_rows} · Conciliados: ${x.matched} · Pendentes: ${x.pending}</p>`).join('')+(status.closed.length?'<p><strong>Períodos fechados:</strong> '+status.closed.map(x=>esc(x.month)).join(', ')+'</p>':'');
  }catch(e){$('#bank-message').textContent=e.message;}}
-$('#bank-form').addEventListener('submit',async e=>{e.preventDefault();if(!canWrite())return;const f=$('#bank-file').files[0];if(!f)return;const body=new FormData();body.append('file',f);try{const r=await fetch('/api/bank/import',{method:'POST',headers:{Authorization:'Bearer '+token},body});const data=await r.json();if(!r.ok)throw Error(typeof data.detail==='string'?data.detail:'Erro ao importar');$('#bank-message').textContent=`Importados: ${data.inserted}. Duplicados: ${data.duplicates_skipped}.`;await refreshBank();}catch(err){$('#bank-message').textContent=err.message;}});
+$('#bank-form')?.addEventListener('submit',async e=>{e.preventDefault();if(!canWrite())return;const f=$('#bank-file').files[0];if(!f)return;const body=new FormData();body.append('file',f);try{const r=await fetch('/api/bank/import',{method:'POST',headers:{Authorization:'Bearer '+token},body});const data=await r.json();if(!r.ok)throw Error(typeof data.detail==='string'?data.detail:'Erro ao importar');$('#bank-message').textContent=`Importados: ${data.inserted}. Duplicados: ${data.duplicates_skipped}.`;await refreshBank();}catch(err){$('#bank-message').textContent=err.message;}});
 document.addEventListener('click',async e=>{const t=e.target.closest('[data-bank-match]');if(!t||!canWrite())return;if(!confirm('Confirmar a correspondência deste movimento?'))return;try{await api('/bank/match',{method:'POST',body:JSON.stringify({statement_id:t.dataset.bankMatch,movement_id:t.dataset.movementId})});await refreshBank()}catch(err){$('#bank-message').textContent=err.message;}});
-$('#close-form').addEventListener('submit',async e=>{e.preventDefault();if(!canWrite())return;const month=$('#close-month').value;if(!confirm(`Fechar ${month}? O período ficará bloqueado para novas conciliações e baixas.`))return;try{await api('/finance/close',{method:'POST',body:JSON.stringify({month})});$('#bank-message').textContent='Mês fechado para novas conciliações e baixas.';await refreshBank()}catch(err){$('#bank-message').textContent=err.message;}});
+$('#close-form')?.addEventListener('submit',async e=>{e.preventDefault();if(!canWrite())return;const month=$('#close-month').value;if(!confirm(`Fechar ${month}? O período ficará bloqueado para novas conciliações e baixas.`))return;try{await api('/finance/close',{method:'POST',body:JSON.stringify({month})});$('#bank-message').textContent='Mês fechado para novas conciliações e baixas.';await refreshBank()}catch(err){$('#bank-message').textContent=err.message;}});
 const previousRefreshFinance=refreshFinance;refreshFinance=async function(){await previousRefreshFinance();await refreshBank();};
 
 // v0.6: read-only integrated executive accounting estimates from bills only.
@@ -717,7 +734,7 @@ async function refreshManagement(){if(!user)return;try{
  const diffCents=d.meta.diferenca_centavos;
  
  $('#manage-totals').innerHTML=`
-  <article class="card" style="border-left:4px solid var(--brand-gold,#EBB52C);background:#fff;padding:14px 16px;border-radius:10px;border:1px solid #e2e8f0;border-left-width:4px;">
+  <article class="card" style="border-left:4px solid var(--brand-gold,#EBB52C);padding:14px 16px;border-radius:10px;border:1px solid #e2e8f0;border-left-width:4px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
       <span class="label" style="font-size:12px;font-weight:700;color:#64748b;">Meta Fixada (Receita)</span>
       <span style="font-size:16px;">🎯</span>
@@ -726,7 +743,7 @@ async function refreshManagement(){if(!user)return;try{
     <div style="font-size:11px;color:#b45309;font-weight:600;margin-top:4px;">Planejamento estratégico mensal</div>
   </article>
 
-  <article class="card" style="border-left:4px solid #0284c7;background:#fff;padding:14px 16px;border-radius:10px;border:1px solid #e2e8f0;border-left-width:4px;">
+  <article class="card" style="border-left:4px solid #0284c7;padding:14px 16px;border-radius:10px;border:1px solid #e2e8f0;border-left-width:4px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
       <span class="label" style="font-size:12px;font-weight:700;color:#64748b;">Receita Realizada</span>
       <span style="font-size:16px;">💰</span>
@@ -735,7 +752,7 @@ async function refreshManagement(){if(!user)return;try{
     <div style="font-size:11px;color:#0284c7;font-weight:600;margin-top:4px;">Honorários faturados no período</div>
   </article>
 
-  <article class="card" style="border-left:4px solid #16a34a;background:#fff;padding:14px 16px;border-radius:10px;border:1px solid #e2e8f0;border-left-width:4px;">
+  <article class="card" style="border-left:4px solid #16a34a;padding:14px 16px;border-radius:10px;border:1px solid #e2e8f0;border-left-width:4px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
       <span class="label" style="font-size:12px;font-weight:700;color:#64748b;">% Atingimento da Meta</span>
       <span style="font-size:16px;">🚀</span>
@@ -747,7 +764,7 @@ async function refreshManagement(){if(!user)return;try{
     <div style="font-size:11px;color:#15803d;font-weight:600;margin-top:4px;">${diffCents!=null?(diffCents>=0?'Superávit de +'+cents(diffCents):'Déficit de '+cents(diffCents)):'Sem meta cadastrada'}</div>
   </article>
 
-  <article class="card" style="border-left:4px solid #8b5cf6;background:#fff;padding:14px 16px;border-radius:10px;border:1px solid #e2e8f0;border-left-width:4px;">
+  <article class="card" style="border-left:4px solid #8b5cf6;padding:14px 16px;border-radius:10px;border:1px solid #e2e8f0;border-left-width:4px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
       <span class="label" style="font-size:12px;font-weight:700;color:#64748b;">Resultado Operacional</span>
       <span style="font-size:16px;">📈</span>
@@ -839,10 +856,10 @@ async function refreshManagement(){if(!user)return;try{
   </div>
  `:'<div style="background:#f8fafc;padding:20px;border-radius:10px;text-align:center;color:#64748b;font-size:13px;border:1px solid #e2e8f0;">Nenhum título atribuído a especialidades neste período. Utilize o formulário abaixo para classificar contratos da banca.</div>';
 
- $('#manage-specialty').innerHTML=d.especialidades.map(a=>`<option value="${esc(a)}">${esc(a)}</option>`).join('');
- $('#manage-contract').innerHTML=contracts.map(c=>`<option value="${esc(c.id)}">${esc(c.label)}${d.classificacoes[c.id]?' · '+esc(d.classificacoes[c.id]):''}</option>`).join('');
- $('#manage-target-month').value||=d.mes_selecionado||month;
- $('#manage-status').textContent=`Classificação de integridade: ${cents(d.valores_segretados_total.sem_area_centavos)} sem área no acumulado geral. Honorários condicionais segregados: ${cents(d.valores_segretados_total.condicionais_centavos)}.`;
+ if($('#manage-specialty')) $('#manage-specialty').innerHTML=d.especialidades.map(a=>`<option value="${esc(a)}">${esc(a)}</option>`).join('');
+ if($('#manage-contract')) $('#manage-contract').innerHTML=contracts.map(c=>`<option value="${esc(c.id)}">${esc(c.label)}${d.classificacoes[c.id]?' · '+esc(d.classificacoes[c.id]):''}</option>`).join('');
+ if($('#manage-target-month')) $('#manage-target-month').value||=d.mes_selecionado||month;
+ if($('#manage-status')) $('#manage-status').textContent=`Classificação de integridade: ${cents(d.valores_segretados_total.sem_area_centavos)} sem área no acumulado geral. Honorários condicionais segregados: ${cents(d.valores_segretados_total.condicionais_centavos)}.`;
  }catch(e){$('#manage-status').textContent='Erro na gestão de metas: '+e.message;}}
 
 $('#manage-month')?.addEventListener('change',()=>{
@@ -886,7 +903,7 @@ async function refreshProductivity(){if(!user)return;try{
  const avgMargin=totalRev>0?(((totalRev-d.totals.cost_hours_cents)/totalRev)*100).toFixed(1):null;
 
  $('#prod-summary').innerHTML=`
-  <article class="card" style="border-left:4px solid #0284c7;background:#fff;padding:14px 16px;border-radius:10px;border:1px solid #e2e8f0;border-left-width:4px;">
+  <article class="card" style="border-left:4px solid #0284c7;padding:14px 16px;border-radius:10px;border:1px solid #e2e8f0;border-left-width:4px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
       <span class="label" style="font-size:12px;font-weight:700;color:#64748b;">Tempo Total Alocado</span>
       <span style="font-size:16px;">⏱️</span>
@@ -895,7 +912,7 @@ async function refreshProductivity(){if(!user)return;try{
     <div style="font-size:11px;color:#0284c7;font-weight:600;margin-top:4px;">Horas e minutos apontados</div>
   </article>
 
-  <article class="card" style="border-left:4px solid #d97706;background:#fff;padding:14px 16px;border-radius:10px;border:1px solid #e2e8f0;border-left-width:4px;">
+  <article class="card" style="border-left:4px solid #d97706;padding:14px 16px;border-radius:10px;border:1px solid #e2e8f0;border-left-width:4px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
       <span class="label" style="font-size:12px;font-weight:700;color:#64748b;">Custo Teórico de Equipe</span>
       <span style="font-size:16px;">💰</span>
@@ -904,7 +921,7 @@ async function refreshProductivity(){if(!user)return;try{
     <div style="font-size:11px;color:#64748b;font-weight:600;margin-top:4px;">Valor-hora acumulado da equipe</div>
   </article>
 
-  <article class="card" style="border-left:4px solid #16a34a;background:#fff;padding:14px 16px;border-radius:10px;border:1px solid #e2e8f0;border-left-width:4px;">
+  <article class="card" style="border-left:4px solid #16a34a;padding:14px 16px;border-radius:10px;border:1px solid #e2e8f0;border-left-width:4px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
       <span class="label" style="font-size:12px;font-weight:700;color:#64748b;">Receita de Honorários</span>
       <span style="font-size:16px;">💳</span>
@@ -913,7 +930,7 @@ async function refreshProductivity(){if(!user)return;try{
     <div style="font-size:11px;color:#15803d;font-weight:600;margin-top:4px;">Contratos com horas e minutos no período</div>
   </article>
 
-  <article class="card" style="border-left:4px solid var(--brand-gold,#EBB52C);background:#fff;padding:14px 16px;border-radius:10px;border:1px solid #e2e8f0;border-left-width:4px;">
+  <article class="card" style="border-left:4px solid var(--brand-gold,#EBB52C);padding:14px 16px;border-radius:10px;border:1px solid #e2e8f0;border-left-width:4px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
       <span class="label" style="font-size:12px;font-weight:700;color:#64748b;">Margem Média da Banca</span>
       <span style="font-size:16px;">📈</span>
@@ -1087,14 +1104,13 @@ async function refreshProductivity(){if(!user)return;try{
   </div>
  `:'<p class="muted" style="padding:16px;text-align:center;">Nenhum profissional cadastrado na banca ainda.</p>';
 
- $('#prod-pro').innerHTML=pros.map(p=>`<option value="${esc(p.id)}">${esc(p.name)} · ${fmt(p.hourly_cost_cents)}/h</option>`).join('');
- $('#prod-contract').innerHTML=contracts.map(p=>`<option value="${esc(p.id)}">${esc(p.label)}</option>`).join('');
+ if($('#prod-pro')) $('#prod-pro').innerHTML=pros.map(p=>`<option value="${esc(p.id)}">${esc(p.name)} · ${fmt(p.hourly_cost_cents)}/h</option>`).join('');
+ if($('#prod-contract')) $('#prod-contract').innerHTML=contracts.map(p=>`<option value="${esc(p.id)}">${esc(p.label)}</option>`).join('');
  if($('#ts-invite-pro')) $('#ts-invite-pro').innerHTML=pros.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
  if($('#prod-date')&&!$('#prod-date').value){
-  const today=new Date().toISOString().split('T')[0];
-  $('#prod-date').value=today;
+  $('#prod-date').value=localIsoDate();
  }
- $('#prod-status').textContent='';
+ if($('#prod-status')) $('#prod-status').textContent='';
  await refreshTimeStudioAdmin();
  await refreshRecentWorklogs();
  }catch(err){console.error('refreshProductivity error:',err);$('#prod-status').textContent='Erro no relatório: '+err.message;}}
@@ -1497,7 +1513,7 @@ $('#btn-ts-copy-link')?.addEventListener('click',()=>{
 $('#ts-filter-status')?.addEventListener('change',refreshTimeStudioAdmin);
 $('#btn-refresh-approvals')?.addEventListener('click',refreshTimeStudioAdmin);
 
-$('#prod-month').addEventListener('change',refreshProductivity);
+$('#prod-month')?.addEventListener('change',refreshProductivity);
 $('#btn-prod-cur-month')?.addEventListener('click',()=>{if($('#prod-month')){$('#prod-month').value='2026-10';refreshProductivity();}});
 $('#btn-prod-all-months')?.addEventListener('click',()=>{if($('#prod-month')){$('#prod-month').value='';refreshProductivity();}});
 $('#btn-prod-goto-log')?.addEventListener('click',()=>{document.getElementById('prod-forms-container')?.scrollIntoView({behavior:'smooth'});$('#prod-minutes')?.focus();});
@@ -1688,7 +1704,7 @@ $('#btn-recent-current')?.addEventListener('click', () => {
 
 $('#btn-refresh-recent-logs')?.addEventListener('click', refreshRecentWorklogs);
 
-$('#prod-log-form').addEventListener('submit', async e => {
+$('#prod-log-form')?.addEventListener('submit', async e => {
   e.preventDefault();
   if(!canWrite()) return;
   const feedback = $('#prod-log-feedback');
@@ -1809,7 +1825,7 @@ async function refreshPlanning(){if(!user)return;try{
  const totalPoolAmount=data.pools.reduce((sum,p)=>sum+(p.amount_cents||0),0);
 
  $('#plan-summary').innerHTML=`
-  <article class="card" style="border-left:4px solid #0284c7;background:#fff;padding:14px 16px;border-radius:10px;border:1px solid #e2e8f0;border-left-width:4px;">
+  <article class="card" style="border-left:4px solid #0284c7;padding:14px 16px;border-radius:10px;border:1px solid #e2e8f0;border-left-width:4px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
       <span class="label" style="font-size:12px;font-weight:700;color:#64748b;">Horas e Minutos Alocados</span>
       <span style="font-size:16px;">⏱️</span>
@@ -1818,7 +1834,7 @@ async function refreshPlanning(){if(!user)return;try{
     <div style="font-size:11px;color:#0284c7;font-weight:600;margin-top:4px;">Tempo apontado nos casos ativos</div>
   </article>
 
-  <article class="card" style="border-left:4px solid var(--brand-gold,#EBB52C);background:#fff;padding:14px 16px;border-radius:10px;border:1px solid #e2e8f0;border-left-width:4px;">
+  <article class="card" style="border-left:4px solid var(--brand-gold,#EBB52C);padding:14px 16px;border-radius:10px;border:1px solid #e2e8f0;border-left-width:4px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
       <span class="label" style="font-size:12px;font-weight:700;color:#64748b;">Capacidade Total Declarada</span>
       <span style="font-size:16px;">👥</span>
@@ -1827,7 +1843,7 @@ async function refreshPlanning(){if(!user)return;try{
     <div style="font-size:11px;color:#b45309;font-weight:600;margin-top:4px;">Disponibilidade mensal da equipe</div>
   </article>
 
-  <article class="card" style="border-left:4px solid #16a34a;background:#fff;padding:14px 16px;border-radius:10px;border:1px solid #e2e8f0;border-left-width:4px;">
+  <article class="card" style="border-left:4px solid #16a34a;padding:14px 16px;border-radius:10px;border:1px solid #e2e8f0;border-left-width:4px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
       <span class="label" style="font-size:12px;font-weight:700;color:#64748b;">Taxa de Ocupação Média</span>
       <span style="font-size:16px;">📊</span>
@@ -1836,7 +1852,7 @@ async function refreshPlanning(){if(!user)return;try{
     <div style="font-size:11px;color:#15803d;font-weight:600;margin-top:4px;">${formatMinutes(Math.max(0,totalAvail-totalLogged))} livres para novos clientes</div>
   </article>
 
-  <article class="card" style="border-left:4px solid #8b5cf6;background:#fff;padding:14px 16px;border-radius:10px;border:1px solid #e2e8f0;border-left-width:4px;">
+  <article class="card" style="border-left:4px solid #8b5cf6;padding:14px 16px;border-radius:10px;border:1px solid #e2e8f0;border-left-width:4px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
       <span class="label" style="font-size:12px;font-weight:700;color:#64748b;">Despesas Indiretas (Pools)</span>
       <span style="font-size:16px;">🏢</span>
@@ -1887,7 +1903,7 @@ async function refreshPlanning(){if(!user)return;try{
  `:'<p class="muted">Nenhum profissional cadastrado.</p>';
 
  $('#plan-pools').innerHTML=data.pools.length?data.pools.map(p=>`
-  <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px;box-shadow:0 1px 4px rgba(1,14,56,0.04);display:flex;flex-direction:column;gap:12px;">
+  <div class="card" style="border:1px solid #e2e8f0;border-radius:12px;padding:16px;box-shadow:0 1px 4px rgba(1,14,56,0.04);display:flex;flex-direction:column;gap:12px;">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;border-bottom:1px solid #f1f5f9;padding-bottom:10px;">
       <div>
         <strong style="font-size:14px;color:var(--brand-navy,#010E38);display:block;">${esc(p.label)}</strong>
@@ -2033,7 +2049,7 @@ $('#gov-export')?.addEventListener('click',async()=>{
   const blob=await r.blob();
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
-  a.href=url;a.download='lancamentos-piloto.csv';a.click();
+  a.href=url;a.download='lancamentos-dre-juridico.csv';a.click();
   setTimeout(()=>URL.revokeObjectURL(url),2000);
  }catch(err){
   const st=$('#gov-status');if(st)st.textContent=err.message;
@@ -2046,7 +2062,7 @@ window.addEventListener('resize',()=>{if(user)refreshGovernance()});
 // v1.1: password change from desktop, all previously issued sessions revoked server-side.
 const start11=start;
 start=async function(){await start11();if($('#account-panel'))$('#account-panel').hidden=false;};
-$('#account-password-form').addEventListener('submit',async e=>{
+$('#account-password-form')?.addEventListener('submit',async e=>{
  e.preventDefault(); if(!user||mobile())return;
  const output=$('#account-password-status');output.textContent='Atualizando credenciais…';
  try{
@@ -2057,10 +2073,147 @@ $('#account-password-form').addEventListener('submit',async e=>{
 });
 window.addEventListener('resize',()=>{if($('#account-panel'))$('#account-panel').hidden=false;});
 
-// MFA enrollment and session controls, desktop only.
-$('#mfa-setup')?.addEventListener('click',async()=>{try{const r=await api('/account/mfa/setup',{method:'POST'});$('#mfa-secret').textContent='Segredo MFA: '+r.secret+'\nURI: '+r.otpauth_uri;$('#mfa-message').textContent='Cadastre no autenticador e confirme o codigo.'}catch(e){$('#mfa-message').textContent=e.message}});
-$('#mfa-confirm-form')?.addEventListener('submit',async e=>{e.preventDefault();try{await api('/account/mfa/confirm',{method:'POST',body:JSON.stringify({code:$('#mfa-code').value})});sessionStorage.removeItem('dre_token');location.reload()}catch(err){$('#mfa-message').textContent=err.message}});
-$('#session-revoke')?.addEventListener('click',async()=>{try{await api('/account/sessions/revoke-all',{method:'POST'});sessionStorage.removeItem('dre_token');location.reload()}catch(e){$('#mfa-message').textContent=e.message}});
+// MFA enrollment and session controls com UX/UI assistida e validacao amigavel
+let mfaSetupInitiated = false;
+
+async function checkMfaStatus() {
+  try {
+    const s = await api('/account/mfa/status');
+    const badge = $('#mfa-status-badge');
+    const form = $('#mfa-confirm-form');
+    const setupBtn = $('#mfa-setup');
+    if (s && s.enabled) {
+      if (badge) {
+        badge.innerHTML = '<span>✅ MFA Ativo & Protegido</span>';
+        badge.style.background = '#dcfce7';
+        badge.style.color = '#15803d';
+      }
+      if (setupBtn) {
+        setupBtn.style.display = 'none';
+      }
+      if (form) {
+        form.innerHTML = `
+          <div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:12px 14px;border-radius:8px;color:#166534;font-size:12.5px;margin-top:8px;line-height:1.5;">
+            <strong>Sua conta já possui Autenticação em Dois Fatores ativada!</strong><br/>
+            O código gerado no seu aplicativo autenticador será solicitado sempre que você fizer login.
+          </div>
+        `;
+      }
+    } else {
+      if (badge) {
+        badge.innerHTML = '<span>⚠️ MFA Não Configurado</span>';
+        badge.style.background = '#fef3c7';
+        badge.style.color = '#b45309';
+      }
+    }
+  } catch (err) {
+    // Silencioso se status falhar
+  }
+}
+
+// Ao abrir ou carregar, checa status de MFA
+if (window.user || sessionStorage.getItem('dre_token')) {
+  setTimeout(checkMfaStatus, 600);
+}
+
+$('#mfa-setup')?.addEventListener('click', async () => {
+  const msgEl = $('#mfa-message');
+  const setupDisplay = $('#mfa-setup-display');
+  const qrImg = $('#mfa-qr-img');
+  const secretCode = $('#mfa-secret-code');
+  if (msgEl) {
+    msgEl.style.color = '#0284c7';
+    msgEl.textContent = 'Gerando chave de segurança...';
+  }
+  try {
+    const r = await api('/account/mfa/setup', { method: 'POST' });
+    mfaSetupInitiated = true;
+    if (setupDisplay) setupDisplay.style.display = 'block';
+    if (secretCode) secretCode.textContent = r.secret;
+    if (qrImg && r.otpauth_uri) {
+      qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=' + encodeURIComponent(r.otpauth_uri);
+    }
+    if (msgEl) {
+      msgEl.style.color = '#059669';
+      msgEl.textContent = '✅ Chave gerada! Escaneie o QR Code no seu app (Google Authenticator / Authy) e digite o código de 6 dígitos abaixo:';
+    }
+    $('#mfa-code')?.focus();
+  } catch (e) {
+    if (msgEl) {
+      msgEl.style.color = '#dc2626';
+      msgEl.textContent = e.message === 'MFA ja ativado' 
+        ? 'A autenticação de dois fatores já está ativada nesta conta.' 
+        : e.message;
+    }
+  }
+});
+
+$('#btn-copy-mfa-secret')?.addEventListener('click', () => {
+  const code = $('#mfa-secret-code')?.textContent;
+  if (code) {
+    navigator.clipboard?.writeText(code).then(() => {
+      const btn = $('#btn-copy-mfa-secret');
+      if (btn) {
+        const oldText = btn.textContent;
+        btn.textContent = 'Copiado! ✓';
+        setTimeout(() => { btn.textContent = oldText; }, 2000);
+      }
+    });
+  }
+});
+
+$('#mfa-confirm-form')?.addEventListener('submit', async e => {
+  e.preventDefault();
+  const msgEl = $('#mfa-message');
+  const codeVal = $('#mfa-code')?.value?.trim();
+  
+  if (!codeVal || codeVal.length !== 6) {
+    if (msgEl) {
+      msgEl.style.color = '#dc2626';
+      msgEl.textContent = 'Por favor, digite o código completo de 6 dígitos gerado pelo seu app autenticador.';
+    }
+    return;
+  }
+
+  if (msgEl) {
+    msgEl.style.color = '#0284c7';
+    msgEl.textContent = 'Validando código de segurança...';
+  }
+
+  try {
+    await api('/account/mfa/confirm', { method: 'POST', body: JSON.stringify({ code: codeVal }) });
+    if (msgEl) {
+      msgEl.style.color = '#15803d';
+      msgEl.textContent = '✅ MFA Ativado com Sucesso! Redirecionando...';
+    }
+    setTimeout(() => {
+      sessionStorage.removeItem('dre_token');try{localStorage.removeItem('dre_token');}catch(e){}
+      location.reload();
+    }, 1200);
+  } catch (err) {
+    if (msgEl) {
+      msgEl.style.color = '#dc2626';
+      if (err.message && err.message.includes('Cadastro MFA indisponivel')) {
+        msgEl.innerHTML = '⚠️ <strong>Chave não vinculada:</strong> Clique primeiro no botão <strong>"⚙️ 1. Preparar Chave / QR Code"</strong> acima para vincular sua conta antes de confirmar o código.';
+      } else if (err.message && err.message.includes('Codigo invalido')) {
+        msgEl.textContent = 'Código incorreto ou expirado. Verifique o relógio do seu celular e tente o novo código de 6 dígitos gerado no app.';
+      } else {
+        msgEl.textContent = err.message || 'Não foi possível validar o código. Tente novamente.';
+      }
+    }
+  }
+});
+
+$('#session-revoke')?.addEventListener('click', async () => {
+  if (!confirm('Deseja realmente encerrar todas as outras sessões ativas da sua conta?')) return;
+  try {
+    await api('/account/sessions/revoke-all', { method: 'POST' });
+    sessionStorage.removeItem('dre_token');try{localStorage.removeItem('dre_token');}catch(e){}
+    location.reload();
+  } catch (e) {
+    $('#mfa-message').textContent = e.message;
+  }
+});
 
 // V2.2: feedback unificado de carregamento e erros para requisicoes autenticadas.
 let pendingRequests22=0;
@@ -2142,7 +2295,19 @@ window.addEventListener('appinstalled', () => {
 });
 function connectionState30(){const el=document.getElementById('offline-indicator');if(el)el.hidden=navigator.onLine;}
 window.addEventListener('online',connectionState30);window.addEventListener('offline',connectionState30);connectionState30();
-document.getElementById('onboarding-dismiss')?.addEventListener('click',()=>{document.getElementById('onboarding-v30').hidden=true;});
+const obCardEl = document.getElementById('onboarding-v30');
+if (obCardEl) {
+  obCardEl.hidden = true;
+  obCardEl.style.setProperty('display', 'none', 'important');
+}
+document.getElementById('onboarding-dismiss')?.addEventListener('click', () => {
+  try { localStorage.setItem('dre_onboarding_dismissed', 'true'); } catch (e) {}
+  const el = document.getElementById('onboarding-v30');
+  if (el) {
+    el.hidden = true;
+    el.style.setProperty('display', 'none', 'important');
+  }
+});
 if('serviceWorker' in navigator && window.isSecureContext){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}
 
 // ==========================================
@@ -2171,25 +2336,58 @@ async function refreshNatures() {
   }
 }
 
+function getEffectiveNatureOperationType(kind) {
+  return kind || 'receita';
+}
+
+function renderNatureOptionsHtml(naturesList, selectedId, placeholder = 'Selecione a natureza...') {
+  if (!naturesList || !naturesList.length) {
+    return `<option value="">${placeholder}</option>`;
+  }
+
+  // Agrupar por grupo DRE (ex: G01 - Receitas Brutas)
+  const groupsMap = new Map();
+  naturesList.forEach(n => {
+    const gKey = n.group_id || 'OUTROS';
+    const gName = n.group_name ? `${n.group_code || n.group_id} - ${n.group_name}` : (n.group_code || n.group_id || 'Outros');
+    if (!groupsMap.has(gKey)) {
+      groupsMap.set(gKey, { label: gName, items: [] });
+    }
+    groupsMap.get(gKey).items.push(n);
+  });
+
+  let html = `<option value="">${placeholder}</option>`;
+  for (const [_, grp] of groupsMap.entries()) {
+    grp.items.sort((a, b) => (a.code || '').localeCompare(b.code || '', undefined, { numeric: true }));
+    const opts = grp.items.map(n => {
+      const isSel = n.id === selectedId ? 'selected' : '';
+      const customTag = n.is_system_default === 0 ? ' [Escritório]' : '';
+      return `<option value="${esc(n.id)}" ${isSel}>${esc(n.code)} · ${esc(n.name)}${customTag}</option>`;
+    }).join('');
+    html += `<optgroup label="${esc(grp.label)}">${opts}</optgroup>`;
+  }
+  return html;
+}
+
 function populateNatureSelects() {
   const currentKind = $('#f-tipo')?.value || 'receita';
-  const entryNatures = operationNatures.filter(n => n.is_active && (n.operation_type === currentKind || (currentKind === 'receita' && n.operation_type === 'receita')));
+  const targetType = getEffectiveNatureOperationType(currentKind);
+  const entryNatures = (operationNatures || []).filter(n => n.is_active && n.operation_type === targetType);
   
   if ($('#f-nature')) {
     const prev = $('#f-nature').value;
-    $('#f-nature').innerHTML = '<option value="">Selecione a natureza...</option>' +
-      entryNatures.map(n => `<option value="${esc(n.id)}" ${n.id===prev?'selected':''}>${esc(n.code)} · ${esc(n.name)}</option>`).join('');
+    $('#f-nature').innerHTML = renderNatureOptionsHtml(entryNatures, prev, 'Selecione a natureza...');
   }
 
   if ($('#bill-nature')) {
     const prev = $('#bill-nature').value;
-    $('#bill-nature').innerHTML = '<option value="">Selecione a natureza...</option>' +
-      operationNatures.filter(n => n.is_active).map(n => `<option value="${esc(n.id)}" ${n.id===prev?'selected':''}>${esc(n.code)} · ${esc(n.name)} (${esc(n.group_code)})</option>`).join('');
+    const activeNatures = (operationNatures || []).filter(n => n.is_active);
+    $('#bill-nature').innerHTML = renderNatureOptionsHtml(activeNatures, prev, 'Selecione a natureza...');
   }
 
   if ($('#sub-nature-select')) {
-    $('#sub-nature-select').innerHTML = '<option value="">Selecione uma natureza...</option>' +
-      operationNatures.map(n => `<option value="${esc(n.id)}">${esc(n.code)} · ${esc(n.name)}</option>`).join('');
+    const prev = $('#sub-nature-select').value;
+    $('#sub-nature-select').innerHTML = renderNatureOptionsHtml(operationNatures, prev, 'Selecione uma natureza...');
   }
 }
 
@@ -2410,8 +2608,8 @@ function renderNaturesTable() {
   tbody.innerHTML = filtered.map(n => {
     const isSys = n.is_system_default;
     const originPill = isSys
-      ? '<span class="pill-system">Sistema</span>'
-      : '<span class="pill-custom">Escritório</span>';
+      ? '<span class="badge-origem badge-origem-system"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg> Sistema</span>'
+      : '<span class="badge-origem badge-origem-custom"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg> Escritório</span>';
     const statusPill = n.is_active
       ? '<span class="pill-active">Ativa</span>'
       : '<span class="pill-inactive">Inativa</span>';
@@ -2441,7 +2639,7 @@ function renderNaturesTable() {
     }
 
     const actions = canWrite() ? `
-      <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;">
+      <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;justify-content:center;">
         <button type="button" class="btn-action edit" data-edit-nature="${esc(n.id)}" title="Editar dados da natureza">
           <span>✏️</span> Editar
         </button>
@@ -2462,11 +2660,11 @@ function renderNaturesTable() {
           <strong>${esc(n.name)}</strong>
           ${n.description ? `<br><small class="muted">${esc(n.description)}</small>` : ''}
         </td>
-        <td><span style="text-transform:capitalize;">${esc(n.operation_type)}</span></td>
+        <td style="text-align:center;"><span style="text-transform:capitalize;">${esc(n.operation_type)}</span></td>
         <td>${subsHtml}</td>
-        <td>${originPill}</td>
-        <td>${statusPill}</td>
-        <td>${actions}</td>
+        <td style="text-align:center;">${originPill}</td>
+        <td style="text-align:center;">${statusPill}</td>
+        <td style="text-align:center;">${actions}</td>
       </tr>
     `;
   }).join('');
@@ -2994,19 +3192,19 @@ function renderSubcategoriesTable() {
 
   tbody.innerHTML = allSubs.map(s => {
     const originBadge = s.is_system_default
-      ? '<span class="pill" style="font-size:11px;background:#f1f5f9;color:#475569;">Padrão Sistema</span>'
-      : '<span class="pill" style="font-size:11px;background:#fef3c7;color:#b45309;font-weight:700;">Personalizada (Banca)</span>';
+      ? '<span class="badge-origem badge-origem-system"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg> Sistema</span>'
+      : '<span class="badge-origem badge-origem-custom"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg> Escritório</span>';
 
     const actionBtn = !s.is_system_default
-      ? `<button type="button" class="btn secondary" data-edit-sub="${esc(s.id)}" data-sub-name="${esc(s.name)}" data-nature-id="${esc(s.nature_id)}" style="padding:3px 8px;font-size:11px;border-radius:6px;" title="Editar subcategoria">✏️ Editar</button>`
-      : '<span class="muted" style="font-size:11.5px;">Fixa</span>';
+      ? `<button type="button" class="btn secondary" data-edit-sub="${esc(s.id)}" data-sub-name="${esc(s.name)}" data-nature-id="${esc(s.nature_id)}" style="padding:4px 10px;font-size:11.5px;border-radius:6px;font-weight:700;" title="Editar subcategoria">✏️ Editar</button>`
+      : '<span class="muted" style="font-size:11.5px;font-weight:600;opacity:0.75;">Fixa</span>';
 
     return `<tr>
       <td><strong>${esc(s.name)}</strong></td>
       <td><span style="font-family:monospace;font-weight:700;color:var(--brand-navy,#010E38);">${esc(s.nature_code)}</span> · ${esc(s.nature_name)}</td>
       <td><span class="muted" style="font-size:12px;">${esc(s.group_id)} - ${esc(s.group_name)}</span></td>
-      <td>${originBadge}</td>
-      <td>${actionBtn}</td>
+      <td style="text-align:center;">${originBadge}</td>
+      <td style="text-align:center;">${actionBtn}</td>
     </tr>`;
   }).join('');
 }
@@ -3039,12 +3237,12 @@ function renderAreasPageTable() {
 
   tbody.innerHTML = list.map(a => {
     const originBadge = a.is_custom
-      ? '<span class="pill" style="font-size:11px;background:#ede9fe;color:#7c3aed;font-weight:700;">Personalizada (Banca)</span>'
-      : '<span class="pill" style="font-size:11px;background:#f1f5f9;color:#475569;">Padrão OAB</span>';
+      ? '<span class="badge-origem badge-origem-custom"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg> Escritório</span>'
+      : '<span class="badge-origem badge-origem-oab"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="3" x2="12" y2="21"/><path d="m19 8-7-3-7 3"/><path d="M5 16l-3-7h6l-3 7a3 3 0 0 0 6 0"/><path d="M19 16l-3-7h6l-3 7a3 3 0 0 0 6 0"/><path d="M9 21h6"/></svg> Padrão OAB</span>';
 
     return `<tr>
       <td><div style="display:flex;align-items:center;gap:8px;"><span style="color:#7c3aed;font-size:14px;">⚖️</span><strong>${esc(a.name)}</strong></div></td>
-      <td>${originBadge}</td>
+      <td style="text-align:center;">${originBadge}</td>
       <td><span style="color:#16a34a;font-weight:600;font-size:12px;">✓ Disponível em Lançamentos & Contratos</span></td>
     </tr>`;
   }).join('');
@@ -3063,7 +3261,7 @@ $('#area-page-form')?.addEventListener('submit', async ev => {
   try {
     await api('/areas', { method: 'POST', body: JSON.stringify({ name }) });
     if (inputEl) inputEl.value = '';
-    if (msgEl) msgEl.innerHTML = `Área jurídica "${name}" cadastrada com sucesso! <button type="button" class="btn secondary" data-goto="naturezas" style="padding:2px 8px;font-size:11px;margin-left:6px;">Ver Catálogo</button>`;
+    if (msgEl) msgEl.innerHTML = `Área jurídica "${esc(name)}" cadastrada com sucesso! <button type="button" class="btn secondary" data-goto="naturezas" style="padding:2px 8px;font-size:11px;margin-left:6px;">Ver Catálogo</button>`;
     await loadAreas(name);
     renderAreasPageTable();
   } catch (err) {
@@ -3297,255 +3495,285 @@ async function refreshCompleteDRE() {
         <!-- Conteúdo das Abas / Blocos -->
         <div id="cac-tabs-content">
           <!-- Bloco 1: CAC Comercial (Marketing e Captação • Grupo G06) -->
-          <div id="cac-card-mkt" class="cac-pane" style="margin-bottom:18px;padding:16px;background:#f8fafc;border:1px solid #dce4ee;border-left:4px solid #010E38;border-radius:10px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
-              <div>
-                <strong style="color:#010E38;font-size:14px;font-weight:700;">1. CAC Comercial (Marketing, Anúncios e Captação • Grupo G06)</strong>
+          <div id="cac-card-mkt" class="cac-pane cac-accordion-pane open" style="margin-bottom:14px;background:#f8fafc;border:1px solid #dce4ee;border-left:4px solid #010E38;border-radius:10px;">
+            <div class="cac-accordion-header" role="button" tabindex="0" aria-expanded="true" aria-controls="cac-body-mkt">
+              <div style="flex:1;min-width:0;">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                  <strong style="color:#010E38;font-size:14px;font-weight:700;">1. CAC Comercial (Marketing, Anúncios e Captação • Grupo G06)</strong>
+                  <span style="font-size:10.5px;background:#e8eef6;color:#010E38;padding:2px 8px;border-radius:4px;font-weight:600;">Provimento CFOAB nº 205/2021</span>
+                </div>
                 <div style="font-size:11px;color:#64748b;margin-top:2px;">Origem: Tráfego pago, campanhas digitais, conteúdo educativo OAB e prospecção institucional.</div>
               </div>
-              <span style="font-size:11px;background:#e8eef6;color:#010E38;padding:2px 8px;border-radius:4px;font-weight:600;">Provimento CFOAB nº 205/2021</span>
-            </div>
-            
-            <div class="cards">
-              <article class="card">
-                <div class="label">Investimento Comercial (G06)</div>
-                <strong style="font-size:15.5px;color:#010E38;">${fmt(cac.despesas_comerciais_g06)}</strong>
-                <div class="meta">Verba de marketing apurada</div>
-              </article>
-
-              <article class="card" style="border:2px solid #010E38;box-shadow:0 2px 8px rgba(1,14,56,0.08);">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <span class="label" style="color:#010E38;font-weight:700;">Contratos via Marketing</span>
-                  <span style="font-size:9.5px;background:#e8eef6;color:#010E38;padding:1px 5px;border-radius:4px;font-weight:700;">Automático</span>
-                </div>
-                <div style="display:flex;align-items:baseline;gap:5px;margin:2px 0;">
-                  <strong style="font-size:18px;color:#010E38;font-weight:800;" class="cac-val-mkt-cnt">${initialMkt}</strong>
-                  <span style="font-size:11px;color:#64748b;font-weight:600;">contratos apurados</span>
-                </div>
-                <div class="meta" style="color:#475569;">Origem: Marketing</div>
-              </article>
-
-              <article class="card">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <span class="label" style="color:#059669;font-weight:700;">Volume Fechado (Mkt)</span>
-                  <span style="font-size:9.5px;background:#dcfce7;color:#15803d;padding:1px 5px;border-radius:4px;font-weight:700;">Informativo</span>
-                </div>
-                <strong id="cac-mkt-card-vol" style="font-size:15.5px;color:#059669;display:block;margin:2px 0;">${fmt(mktValTotal)}</strong>
-                <div class="meta">Ticket Médio: <strong id="cac-mkt-card-tkt" style="color:#059669;">${fmt(mktTicketMedio)}</strong></div>
-              </article>
-
-              <article class="card">
-                <div class="label">CAC Marketing Unitário</div>
-                <strong id="cac-mkt-card-unit" class="cac-unit-badge"><span class="cac-val-main">${fmt(initialMkt > 0 ? cac.despesas_comerciais_g06 / initialMkt : 0)}</span><span class="cac-val-suffix">/ contrato</span></strong>
-                <div class="meta">Custo por contrato captado</div>
-              </article>
-
-              <article class="card">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <span class="label">CAC / Vol. Fechado</span>
-                  <span style="font-size:9.5px;background:#fef3c7;color:#b45309;padding:1px 5px;border-radius:4px;font-weight:700;">Informativo</span>
-                </div>
-                <strong id="cac-mkt-card-ratio" style="font-size:15.5px;color:#010E38;display:block;margin:2px 0;">${mktValTotal > 0 ? ((cac.despesas_comerciais_g06 / mktValTotal) * 100).toFixed(1) + '%' : '0.0%'}</strong>
-                <div class="meta">Investimento s/ carteira</div>
-              </article>
-
-              <article class="card">
-                <div class="label">% da Receita Bruta DRE</div>
-                <strong id="cac-mkt-card-pct" style="font-size:15.5px;color:#010E38;display:block;margin:2px 0;">${d.receita_bruta > 0 ? ((cac.despesas_comerciais_g06 / d.receita_bruta) * 100).toFixed(2) : '0.00'}%</strong>
-                <div class="meta">Referência: 3% a 10%</div>
-              </article>
+              <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+                <span class="cac-mobile-pill" style="background:#010E38;color:#fff;">${initialMkt} contr.</span>
+                <span class="cac-accordion-chevron" aria-hidden="true">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </span>
+              </div>
             </div>
 
-            <div id="cac-mkt-status-box" style="font-size:12px;color:#334155;background:#fff;padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;">
-              <strong>Diagnóstico de Captação:</strong> <span id="cac-mkt-status-text">${esc(cac.status)}</span>
+            <div id="cac-body-mkt" class="cac-accordion-body">
+              <div class="cards">
+                <article class="card">
+                  <div class="label">Investimento Comercial (G06)</div>
+                  <strong style="font-size:15.5px;color:#010E38;">${fmt(cac.despesas_comerciais_g06)}</strong>
+                  <div class="meta">Verba de marketing apurada</div>
+                </article>
+
+                <article class="card" style="border:2px solid #010E38;box-shadow:0 2px 8px rgba(1,14,56,0.08);">
+                  <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span class="label" style="color:#010E38;font-weight:700;">Contratos via Marketing</span>
+                    <span style="font-size:9.5px;background:#e8eef6;color:#010E38;padding:1px 5px;border-radius:4px;font-weight:700;">Automático</span>
+                  </div>
+                  <div style="display:flex;align-items:baseline;gap:5px;margin:2px 0;">
+                    <strong style="font-size:18px;color:#010E38;font-weight:800;" class="cac-val-mkt-cnt">${initialMkt}</strong>
+                    <span style="font-size:11px;color:#64748b;font-weight:600;">contratos apurados</span>
+                  </div>
+                  <div class="meta" style="color:#475569;">Origem: Marketing</div>
+                </article>
+
+                <article class="card">
+                  <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span class="label" style="color:#059669;font-weight:700;">Volume Fechado (Mkt)</span>
+                    <span style="font-size:9.5px;background:#dcfce7;color:#15803d;padding:1px 5px;border-radius:4px;font-weight:700;">Informativo</span>
+                  </div>
+                  <strong id="cac-mkt-card-vol" style="font-size:15.5px;color:#059669;display:block;margin:2px 0;">${fmt(mktValTotal)}</strong>
+                  <div class="meta">Ticket Médio: <strong id="cac-mkt-card-tkt" style="color:#059669;">${fmt(mktTicketMedio)}</strong></div>
+                </article>
+
+                <article class="card">
+                  <div class="label">CAC Marketing Unitário</div>
+                  <strong id="cac-mkt-card-unit" class="cac-unit-badge"><span class="cac-val-main">${fmt(initialMkt > 0 ? cac.despesas_comerciais_g06 / initialMkt : 0)}</span><span class="cac-val-suffix">/ contrato</span></strong>
+                  <div class="meta">Custo por contrato captado</div>
+                </article>
+
+                <article class="card">
+                  <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span class="label">CAC / Vol. Fechado</span>
+                    <span style="font-size:9.5px;background:#fef3c7;color:#b45309;padding:1px 5px;border-radius:4px;font-weight:700;">Informativo</span>
+                  </div>
+                  <strong id="cac-mkt-card-ratio" style="font-size:15.5px;color:#010E38;display:block;margin:2px 0;">${mktValTotal > 0 ? ((cac.despesas_comerciais_g06 / mktValTotal) * 100).toFixed(1) + '%' : '0.0%'}</strong>
+                  <div class="meta">Investimento s/ carteira</div>
+                </article>
+
+                <article class="card">
+                  <div class="label">% da Receita Bruta DRE</div>
+                  <strong id="cac-mkt-card-pct" style="font-size:15.5px;color:#010E38;display:block;margin:2px 0;">${d.receita_bruta > 0 ? ((cac.despesas_comerciais_g06 / d.receita_bruta) * 100).toFixed(2) : '0.00'}%</strong>
+                  <div class="meta">Referência: 3% a 10%</div>
+                </article>
+              </div>
+
+              <div id="cac-mkt-status-box" class="card" style="font-size:12px;color:#334155;padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;">
+                <strong>Diagnóstico de Captação:</strong> <span id="cac-mkt-status-text">${esc(cac.status)}</span>
+              </div>
             </div>
           </div>
 
           <!-- Bloco 2: CAC do Atendimento do Escritório (Despesas Operacionais e de Atendimento • G04 a G08) -->
-          <div id="cac-card-desk" class="cac-pane" style="margin-bottom:18px;padding:16px;background:#f8fafc;border:1px solid #dce4ee;border-left:4px solid #EBB52C;border-radius:10px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
-              <div>
-                <strong style="color:#010E38;font-size:14px;font-weight:700;">2. CAC Atendimento do Escritório (Despesas Operacionais e Overhead • G04 a G08)</strong>
+          <div id="cac-card-desk" class="cac-pane cac-accordion-pane collapsed" style="margin-bottom:14px;background:#f8fafc;border:1px solid #dce4ee;border-left:4px solid #EBB52C;border-radius:10px;">
+            <div class="cac-accordion-header" role="button" tabindex="0" aria-expanded="false" aria-controls="cac-body-desk">
+              <div style="flex:1;min-width:0;">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                  <strong style="color:#010E38;font-size:14px;font-weight:700;">2. CAC Atendimento do Escritório (Despesas Operacionais • G04 a G08)</strong>
+                  <span style="font-size:10.5px;background:#fff8e6;color:#925d00;padding:2px 8px;border-radius:4px;font-weight:600;">Overhead & Retenção</span>
+                </div>
                 <div style="font-size:11px;color:#64748b;margin-top:2px;">Origem: Indicações, balcão, clientes da carteira, relacionamento e networking dos sócios.</div>
               </div>
-              <span style="font-size:11px;background:#fff8e6;color:#925d00;padding:2px 8px;border-radius:4px;font-weight:600;">Overhead & Retenção</span>
+              <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+                <span class="cac-mobile-pill" style="background:#925d00;color:#fff;">${initialDesk} contr.</span>
+                <span class="cac-accordion-chevron" aria-hidden="true">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </span>
+              </div>
             </div>
 
-            <div class="cards">
-              <article class="card">
-                <div class="label">Despesas do Escritório</div>
-                <strong style="font-size:15.5px;color:#010E38;">${fmt(cac_op.despesas_escritorio_total)}</strong>
-                <div class="meta">G04 a G08 (pessoal, sede, TI)</div>
-              </article>
+            <div id="cac-body-desk" class="cac-accordion-body">
+              <div class="cards">
+                <article class="card">
+                  <div class="label">Despesas do Escritório</div>
+                  <strong style="font-size:15.5px;color:#010E38;">${fmt(cac_op.despesas_escritorio_total)}</strong>
+                  <div class="meta">G04 a G08 (pessoal, sede, TI)</div>
+                </article>
 
-              <article class="card" style="border:2px solid #EBB52C;box-shadow:0 2px 8px rgba(235,181,44,0.15);">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <span class="label" style="color:#010E38;font-weight:700;">Contratos Atendimento</span>
-                  <span style="font-size:9.5px;background:#fff8e6;color:#925d00;padding:1px 5px;border-radius:4px;font-weight:700;">Automático</span>
-                </div>
-                <div style="display:flex;align-items:baseline;gap:5px;margin:2px 0;">
-                  <strong style="font-size:18px;color:#010E38;font-weight:800;" class="cac-val-desk-cnt">${initialDesk}</strong>
-                  <span style="font-size:11px;color:#64748b;font-weight:600;">contratos apurados</span>
-                </div>
-                <div class="meta" style="color:#475569;">Origem: Atendimento</div>
-              </article>
+                <article class="card" style="border:2px solid #EBB52C;box-shadow:0 2px 8px rgba(235,181,44,0.15);">
+                  <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span class="label" style="color:#010E38;font-weight:700;">Contratos Atendimento</span>
+                    <span style="font-size:9.5px;background:#fff8e6;color:#925d00;padding:1px 5px;border-radius:4px;font-weight:700;">Automático</span>
+                  </div>
+                  <div style="display:flex;align-items:baseline;gap:5px;margin:2px 0;">
+                    <strong style="font-size:18px;color:#010E38;font-weight:800;" class="cac-val-desk-cnt">${initialDesk}</strong>
+                    <span style="font-size:11px;color:#64748b;font-weight:600;">contratos apurados</span>
+                  </div>
+                  <div class="meta" style="color:#475569;">Origem: Atendimento</div>
+                </article>
 
-              <article class="card">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <span class="label" style="color:#925d00;font-weight:700;">Volume Fechado (Atend.)</span>
-                  <span style="font-size:9.5px;background:#fef3c7;color:#b45309;padding:1px 5px;border-radius:4px;font-weight:700;">Informativo</span>
-                </div>
-                <strong id="cac-desk-card-vol" style="font-size:15.5px;color:#925d00;display:block;margin:2px 0;">${fmt(deskValTotal)}</strong>
-                <div class="meta">Ticket Médio: <strong id="cac-desk-card-tkt" style="color:#925d00;">${fmt(deskTicketMedio)}</strong></div>
-              </article>
+                <article class="card">
+                  <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span class="label" style="color:#925d00;font-weight:700;">Volume Fechado (Atend.)</span>
+                    <span style="font-size:9.5px;background:#fef3c7;color:#b45309;padding:1px 5px;border-radius:4px;font-weight:700;">Informativo</span>
+                  </div>
+                  <strong id="cac-desk-card-vol" style="font-size:15.5px;color:#925d00;display:block;margin:2px 0;">${fmt(deskValTotal)}</strong>
+                  <div class="meta">Ticket Médio: <strong id="cac-desk-card-tkt" style="color:#925d00;">${fmt(deskTicketMedio)}</strong></div>
+                </article>
 
-              <article class="card">
-                <div class="label">CAC Atendimento Unitário</div>
-                <strong id="cac-desk-card-unit" class="cac-unit-badge"><span class="cac-val-main">${fmt(initialDesk > 0 ? cac_op.despesas_escritorio_total / initialDesk : 0)}</span><span class="cac-val-suffix">/ contrato</span></strong>
-                <div class="meta">Custo estrutural por contrato</div>
-              </article>
+                <article class="card">
+                  <div class="label">CAC Atendimento Unitário</div>
+                  <strong id="cac-desk-card-unit" class="cac-unit-badge"><span class="cac-val-main">${fmt(initialDesk > 0 ? cac_op.despesas_escritorio_total / initialDesk : 0)}</span><span class="cac-val-suffix">/ contrato</span></strong>
+                  <div class="meta">Custo estrutural por contrato</div>
+                </article>
 
-              <article class="card">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <span class="label">CAC / Vol. Fechado</span>
-                  <span style="font-size:9.5px;background:#fef3c7;color:#b45309;padding:1px 5px;border-radius:4px;font-weight:700;">Informativo</span>
-                </div>
-                <strong id="cac-desk-card-ratio" style="font-size:15.5px;color:#010E38;display:block;margin:2px 0;">${deskValTotal > 0 ? ((cac_op.despesas_escritorio_total / deskValTotal) * 100).toFixed(1) + '%' : '0.0%'}</strong>
-                <div class="meta">Custo operacional s/ contratos</div>
-              </article>
+                <article class="card">
+                  <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span class="label">CAC / Vol. Fechado</span>
+                    <span style="font-size:9.5px;background:#fef3c7;color:#b45309;padding:1px 5px;border-radius:4px;font-weight:700;">Informativo</span>
+                  </div>
+                  <strong id="cac-desk-card-ratio" style="font-size:15.5px;color:#010E38;display:block;margin:2px 0;">${deskValTotal > 0 ? ((cac_op.despesas_escritorio_total / deskValTotal) * 100).toFixed(1) + '%' : '0.0%'}</strong>
+                  <div class="meta">Custo operacional s/ contratos</div>
+                </article>
 
-              <article class="card">
-                <div class="label">% Receita Bruta (Overhead)</div>
-                <strong id="cac-desk-card-pct" style="font-size:15.5px;color:#010E38;display:block;margin:2px 0;">${d.receita_bruta > 0 ? ((cac_op.despesas_escritorio_total / d.receita_bruta) * 100).toFixed(2) : '0.00'}%</strong>
-                <div class="meta">Referência: 30% a 50%</div>
-              </article>
-            </div>
+                <article class="card">
+                  <div class="label">% Receita Bruta (Overhead)</div>
+                  <strong id="cac-desk-card-pct" style="font-size:15.5px;color:#010E38;display:block;margin:2px 0;">${d.receita_bruta > 0 ? ((cac_op.despesas_escritorio_total / d.receita_bruta) * 100).toFixed(2) : '0.00'}%</strong>
+                  <div class="meta">Referência: 30% a 50%</div>
+                </article>
+              </div>
 
-            <div id="cac-desk-status-box" style="font-size:12px;color:#334155;background:#fff;padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;">
-              <strong>Diagnóstico Operacional:</strong> <span id="cac-desk-status-text">${esc(cac_op.status)}</span>
+              <div id="cac-desk-status-box" class="card" style="font-size:12px;color:#334155;padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;">
+                <strong>Diagnóstico Operacional:</strong> <span id="cac-desk-status-text">${esc(cac_op.status)}</span>
+              </div>
             </div>
           </div>
 
           <!-- Bloco 3: CAC Total Consolidado do Escritório (Contexto Geral DRE) -->
-          <div id="cac-card-tot" class="cac-pane" style="padding:16px;background:#f0f4f9;border:1px solid #cbd5e1;border-left:4px solid #137333;border-radius:10px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
-              <div>
-                <strong style="color:#010E38;font-size:14px;font-weight:800;">3. CAC Total Consolidado do Escritório (Contexto Geral da DRE)</strong>
+          <div id="cac-card-tot" class="cac-pane cac-accordion-pane collapsed" style="padding:0;background:#f0f4f9;border:1px solid #cbd5e1;border-left:4px solid #137333;border-radius:10px;">
+            <div class="cac-accordion-header" role="button" tabindex="0" aria-expanded="false" aria-controls="cac-body-tot">
+              <div style="flex:1;min-width:0;">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                  <strong style="color:#010E38;font-size:14px;font-weight:800;">3. CAC Total Consolidado do Escritório (Contexto Geral DRE)</strong>
+                  <span style="font-size:10.5px;background:#e6f4ea;color:#137333;padding:2px 8px;border-radius:4px;font-weight:700;">Visão Unificada DRE</span>
+                </div>
                 <div style="font-size:11px;color:#475569;margin-top:2px;">
                   Consolidação macroeconômica da banca que une a captação comercial e o suporte operacional sobre a totalidade de contratos.
                 </div>
               </div>
-              <span style="font-size:11px;background:#e6f4ea;color:#137333;padding:2px 8px;border-radius:4px;font-weight:700;">Visão Unificada DRE</span>
-            </div>
-
-            <div class="cards">
-              <article class="card">
-                <div class="label">Investimento Global (G04 a G08)</div>
-                <strong id="cac-tot-card-exp" style="font-size:15.5px;color:#010E38;">${fmt(cac.despesas_comerciais_g06 + cac_op.despesas_escritorio_total)}</strong>
-                <div class="meta">Marketing + Despesas Escritório</div>
-              </article>
-
-              <article class="card">
-                <div class="label">Total de Contratos</div>
-                <div style="display:flex;align-items:baseline;gap:5px;margin:2px 0;">
-                  <strong id="cac-tot-card-cnt" style="font-size:17px;color:#010E38;font-weight:800;">${initialMkt + initialDesk}</strong>
-                  <span style="font-size:11px;color:#64748b;font-weight:600;">contratos totais</span>
-                </div>
-                <div class="meta"><span class="cac-val-mkt-cnt">${initialMkt}</span> mkt + <span class="cac-val-desk-cnt">${initialDesk}</span> atend.</div>
-              </article>
-
-              <article class="card">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <span class="label" style="color:#137333;font-weight:700;">Volume Total Fechado</span>
-                  <span style="font-size:9.5px;background:#e6f4ea;color:#137333;padding:1px 5px;border-radius:4px;font-weight:700;">Informativo</span>
-                </div>
-                <strong id="cac-tot-card-vol" style="font-size:15.5px;color:#137333;display:block;margin:2px 0;">${fmt(totalContractsVal)}</strong>
-                <div class="meta">Ticket Médio Geral: <strong id="cac-tot-card-tkt" style="color:#137333;">${fmt(totalTicketMedio)}</strong></div>
-              </article>
-
-              <article class="card" style="border:2px solid #137333;box-shadow:0 2px 8px rgba(19,115,51,0.12);">
-                <div class="label" style="color:#137333;font-weight:700;">CAC Total Consolidado</div>
-                <strong id="cac-tot-card-unit" class="cac-unit-badge"><span class="cac-val-main">${fmt((initialMkt + initialDesk) > 0 ? (cac.despesas_comerciais_g06 + cac_op.despesas_escritorio_total) / (initialMkt + initialDesk) : 0)}</span><span class="cac-val-suffix">/ contrato</span></strong>
-                <div class="meta" style="color:#137333;font-weight:600;">Custo médio total por contrato</div>
-              </article>
-
-              <article class="card">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <span class="label">CAC Global / Vol. Fechado</span>
-                  <span style="font-size:9.5px;background:#fef3c7;color:#b45309;padding:1px 5px;border-radius:4px;font-weight:700;">Informativo</span>
-                </div>
-                <strong id="cac-tot-card-ratio" style="font-size:15.5px;color:#010E38;display:block;margin:2px 0;">${totalContractsVal > 0 ? (((cac.despesas_comerciais_g06 + cac_op.despesas_escritorio_total) / totalContractsVal) * 100).toFixed(1) + '%' : '0.0%'}</strong>
-                <div class="meta">Custo total s/ carteira</div>
-              </article>
-
-              <article class="card">
-                <div class="label">% Total s/ Receita Bruta</div>
-                <strong id="cac-tot-card-pct" style="font-size:15.5px;color:#010E38;display:block;margin:2px 0;">${d.receita_bruta > 0 ? (((cac.despesas_comerciais_g06 + cac_op.despesas_escritorio_total) / d.receita_bruta) * 100).toFixed(2) : '0.00'}%</strong>
-                <div class="meta">Captação + Suporte</div>
-              </article>
-            </div>
-
-            <!-- Tabela Comparativa de Canais e Eficiência -->
-            <div style="background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:12px;margin-bottom:12px;">
-              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
-                <strong style="font-size:13px;color:#010E38;">Quadro Comparativo por Canal de Originação (Contexto DRE & Fechamentos):</strong>
-                <span class="pill" style="font-size:10px;font-weight:700;background:#fef3c7;color:#b45309;">Modo Informativo Ativo</span>
+              <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+                <span class="cac-mobile-pill" style="background:#137333;color:#fff;">${initialMkt + initialDesk} total</span>
+                <span class="cac-accordion-chevron" aria-hidden="true">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </span>
               </div>
-              <div class="tablewrap">
-                <table style="font-size:12px;margin:0;">
-                  <thead>
-                    <tr style="background:#f8fafc;">
-                      <th>Canal / Origem</th>
-                      <th class="num">Investimento Alocado</th>
-                      <th class="num">Contratos Atribuídos</th>
-                      <th class="num">Vol. Fechado (Info)</th>
-                      <th class="num">Ticket Médio</th>
-                      <th class="num">CAC Unitário do Canal</th>
-                      <th class="num">% s/ Receita Bruta</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td><strong>1. Canal Marketing (G06)</strong> <small style="display:block;color:#64748b;">Anúncios, SEO, mídias permitidas OAB</small></td>
-                      <td class="num">${fmt(cac.despesas_comerciais_g06)}</td>
-                      <td class="num"><strong class="cac-val-mkt-cnt">${initialMkt}</strong></td>
-                      <td class="num"><strong id="cac-comp-mkt-vol" style="color:#059669;">${fmt(mktValTotal)}</strong></td>
-                      <td class="num" id="cac-comp-mkt-tkt">${fmt(mktTicketMedio)}</td>
-                      <td class="num"><strong id="cac-comp-mkt-unit">${fmt(initialMkt > 0 ? cac.despesas_comerciais_g06 / initialMkt : 0)}</strong></td>
-                      <td class="num" id="cac-comp-mkt-pct">${d.receita_bruta > 0 ? ((cac.despesas_comerciais_g06 / d.receita_bruta) * 100).toFixed(2) : '0.00'}%</td>
-                    </tr>
-                    <tr>
-                      <td><strong>2. Atendimento do Escritório</strong> <small style="display:block;color:#64748b;">Indicações, balcão e base interna</small></td>
-                      <td class="num">${fmt(cac_op.despesas_escritorio_total)}</td>
-                      <td class="num"><strong class="cac-val-desk-cnt">${initialDesk}</strong></td>
-                      <td class="num"><strong id="cac-comp-desk-vol" style="color:#925d00;">${fmt(deskValTotal)}</strong></td>
-                      <td class="num" id="cac-comp-desk-tkt">${fmt(deskTicketMedio)}</td>
-                      <td class="num"><strong id="cac-comp-desk-unit">${fmt(initialDesk > 0 ? cac_op.despesas_escritorio_total / initialDesk : 0)}</strong></td>
-                      <td class="num" id="cac-comp-desk-pct">${d.receita_bruta > 0 ? ((cac_op.despesas_escritorio_total / d.receita_bruta) * 100).toFixed(2) : '0.00'}%</td>
-                    </tr>
-                    <tr style="background:#eef6fc;font-weight:700;">
-                      <td><strong>(=) CAC Médio Geral da Banca</strong> <small style="display:block;color:#010E38;">Consolidação geral da DRE</small></td>
-                      <td class="num">${fmt(cac.despesas_comerciais_g06 + cac_op.despesas_escritorio_total)}</td>
-                      <td class="num"><strong class="cac-val-tot-cnt">${initialMkt + initialDesk}</strong></td>
-                      <td class="num"><strong id="cac-comp-tot-vol" style="color:#137333;">${fmt(totalContractsVal)}</strong></td>
-                      <td class="num" id="cac-comp-tot-tkt">${fmt(totalTicketMedio)}</td>
-                      <td class="num"><strong id="cac-comp-tot-unit" style="color:#010E38;">${fmt((initialMkt + initialDesk) > 0 ? (cac.despesas_comerciais_g06 + cac_op.despesas_escritorio_total) / (initialMkt + initialDesk) : 0)}</strong></td>
-                      <td class="num" id="cac-comp-tot-pct" style="color:#010E38;">${d.receita_bruta > 0 ? (((cac.despesas_comerciais_g06 + cac_op.despesas_escritorio_total) / d.receita_bruta) * 100).toFixed(2) : '0.00'}%</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <div style="font-size:11px;color:#64748b;margin-top:8px;">* <strong>Modo Informativo:</strong> Os volumes fechados e tickets médios refletem os valores declarados no cadastro de contratos para acompanhamento gerencial e inteligência de CAC, sem alterar a receita apurada da DRE.</div>
             </div>
 
-            <div id="cac-tot-status-box" style="font-size:12px;color:#1e3a5f;background:#fff;padding:8px 12px;border:1px solid #cbd5e1;border-radius:6px;">
-              <strong>Parecer Estratégico Consolidado:</strong> <span id="cac-tot-status-text">
-                ${((initialMkt + initialDesk) > 0) ? (
-                  ((((cac.despesas_comerciais_g06 + cac_op.despesas_escritorio_total) / d.receita_bruta) * 100) <= 40.0) 
-                  ? 'Equilíbrio financeiro e alta sustentabilidade: o custo conjunto de captação e atendimento consome menos de 40% da receita bruta.' 
-                  : 'Custo global conjunto consome mais de 40% da receita; acompanhe a taxa de conversão dos novos contratos.'
-                ) : 'Sem contratos no período para composição do CAC médio consolidado.'}
-              </span>
+            <div id="cac-body-tot" class="cac-accordion-body">
+              <div class="cards">
+                <article class="card">
+                  <div class="label">Investimento Global (G04 a G08)</div>
+                  <strong id="cac-tot-card-exp" style="font-size:15.5px;color:#010E38;">${fmt(cac.despesas_comerciais_g06 + cac_op.despesas_escritorio_total)}</strong>
+                  <div class="meta">Marketing + Despesas Escritório</div>
+                </article>
+
+                <article class="card">
+                  <div class="label">Total de Contratos</div>
+                  <div style="display:flex;align-items:baseline;gap:5px;margin:2px 0;">
+                    <strong id="cac-tot-card-cnt" style="font-size:17px;color:#010E38;font-weight:800;">${initialMkt + initialDesk}</strong>
+                    <span style="font-size:11px;color:#64748b;font-weight:600;">contratos totais</span>
+                  </div>
+                  <div class="meta"><span class="cac-val-mkt-cnt">${initialMkt}</span> mkt + <span class="cac-val-desk-cnt">${initialDesk}</span> atend.</div>
+                </article>
+
+                <article class="card">
+                  <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span class="label" style="color:#137333;font-weight:700;">Volume Total Fechado</span>
+                    <span style="font-size:9.5px;background:#e6f4ea;color:#137333;padding:1px 5px;border-radius:4px;font-weight:700;">Informativo</span>
+                  </div>
+                  <strong id="cac-tot-card-vol" style="font-size:15.5px;color:#137333;display:block;margin:2px 0;">${fmt(totalContractsVal)}</strong>
+                  <div class="meta">Ticket Médio Geral: <strong id="cac-tot-card-tkt" style="color:#137333;">${fmt(totalTicketMedio)}</strong></div>
+                </article>
+
+                <article class="card" style="border:2px solid #137333;box-shadow:0 2px 8px rgba(19,115,51,0.12);">
+                  <div class="label" style="color:#137333;font-weight:700;">CAC Total Consolidado</div>
+                  <strong id="cac-tot-card-unit" class="cac-unit-badge"><span class="cac-val-main">${fmt((initialMkt + initialDesk) > 0 ? (cac.despesas_comerciais_g06 + cac_op.despesas_escritorio_total) / (initialMkt + initialDesk) : 0)}</span><span class="cac-val-suffix">/ contrato</span></strong>
+                  <div class="meta" style="color:#137333;font-weight:600;">Custo médio total por contrato</div>
+                </article>
+
+                <article class="card">
+                  <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span class="label">CAC Global / Vol. Fechado</span>
+                    <span style="font-size:9.5px;background:#fef3c7;color:#b45309;padding:1px 5px;border-radius:4px;font-weight:700;">Informativo</span>
+                  </div>
+                  <strong id="cac-tot-card-ratio" style="font-size:15.5px;color:#010E38;display:block;margin:2px 0;">${totalContractsVal > 0 ? (((cac.despesas_comerciais_g06 + cac_op.despesas_escritorio_total) / totalContractsVal) * 100).toFixed(1) + '%' : '0.0%'}</strong>
+                  <div class="meta">Custo total s/ carteira</div>
+                </article>
+
+                <article class="card">
+                  <div class="label">% Total s/ Receita Bruta</div>
+                  <strong id="cac-tot-card-pct" style="font-size:15.5px;color:#010E38;display:block;margin:2px 0;">${d.receita_bruta > 0 ? (((cac.despesas_comerciais_g06 + cac_op.despesas_escritorio_total) / d.receita_bruta) * 100).toFixed(2) : '0.00'}%</strong>
+                  <div class="meta">Captação + Suporte</div>
+                </article>
+              </div>
+
+              <!-- Tabela Comparativa de Canais e Eficiência -->
+              <div class="card" style="border:1px solid #cbd5e1;border-radius:8px;padding:12px;margin-bottom:12px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
+                  <strong style="font-size:13px;color:var(--brand-navy,#010E38);">Quadro Comparativo por Canal de Originação (Contexto DRE & Fechamentos):</strong>
+                  <span class="pill" style="font-size:10px;font-weight:700;background:#fef3c7;color:#b45309;">Modo Informativo Ativo</span>
+                </div>
+                <div class="tablewrap">
+                  <table style="font-size:12px;margin:0;">
+                    <thead>
+                      <tr style="background:#f8fafc;">
+                        <th>Canal / Origem</th>
+                        <th class="num">Investimento Alocado</th>
+                        <th class="num">Contratos Atribuídos</th>
+                        <th class="num">Vol. Fechado (Info)</th>
+                        <th class="num">Ticket Médio</th>
+                        <th class="num">CAC Unitário do Canal</th>
+                        <th class="num">% s/ Receita Bruta</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><strong>1. Canal Marketing (G06)</strong> <small style="display:block;color:#64748b;">Anúncios, SEO, mídias permitidas OAB</small></td>
+                        <td class="num">${fmt(cac.despesas_comerciais_g06)}</td>
+                        <td class="num"><strong class="cac-val-mkt-cnt">${initialMkt}</strong></td>
+                        <td class="num"><strong id="cac-comp-mkt-vol" style="color:#059669;">${fmt(mktValTotal)}</strong></td>
+                        <td class="num" id="cac-comp-mkt-tkt">${fmt(mktTicketMedio)}</td>
+                        <td class="num"><strong id="cac-comp-mkt-unit">${fmt(initialMkt > 0 ? cac.despesas_comerciais_g06 / initialMkt : 0)}</strong></td>
+                        <td class="num" id="cac-comp-mkt-pct">${d.receita_bruta > 0 ? ((cac.despesas_comerciais_g06 / d.receita_bruta) * 100).toFixed(2) : '0.00'}%</td>
+                      </tr>
+                      <tr>
+                        <td><strong>2. Atendimento do Escritório</strong> <small style="display:block;color:#64748b;">Indicações, balcão e base interna</small></td>
+                        <td class="num">${fmt(cac_op.despesas_escritorio_total)}</td>
+                        <td class="num"><strong class="cac-val-desk-cnt">${initialDesk}</strong></td>
+                        <td class="num"><strong id="cac-comp-desk-vol" style="color:#925d00;">${fmt(deskValTotal)}</strong></td>
+                        <td class="num" id="cac-comp-desk-tkt">${fmt(deskTicketMedio)}</td>
+                        <td class="num"><strong id="cac-comp-desk-unit">${fmt(initialDesk > 0 ? cac_op.despesas_escritorio_total / initialDesk : 0)}</strong></td>
+                        <td class="num" id="cac-comp-desk-pct">${d.receita_bruta > 0 ? ((cac_op.despesas_escritorio_total / d.receita_bruta) * 100).toFixed(2) : '0.00'}%</td>
+                      </tr>
+                      <tr style="background:#eef6fc;font-weight:700;">
+                        <td><strong>(=) CAC Médio Geral da Banca</strong> <small style="display:block;color:#010E38;">Consolidação geral da DRE</small></td>
+                        <td class="num">${fmt(cac.despesas_comerciais_g06 + cac_op.despesas_escritorio_total)}</td>
+                        <td class="num"><strong class="cac-val-tot-cnt">${initialMkt + initialDesk}</strong></td>
+                        <td class="num"><strong id="cac-comp-tot-vol" style="color:#137333;">${fmt(totalContractsVal)}</strong></td>
+                        <td class="num" id="cac-comp-tot-tkt">${fmt(totalTicketMedio)}</td>
+                        <td class="num"><strong id="cac-comp-tot-unit" style="color:#010E38;">${fmt((initialMkt + initialDesk) > 0 ? (cac.despesas_comerciais_g06 + cac_op.despesas_escritorio_total) / (initialMkt + initialDesk) : 0)}</strong></td>
+                        <td class="num" id="cac-comp-tot-pct" style="color:#010E38;">${d.receita_bruta > 0 ? (((cac.despesas_comerciais_g06 + cac_op.despesas_escritorio_total) / d.receita_bruta) * 100).toFixed(2) : '0.00'}%</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div style="font-size:11px;color:#64748b;margin-top:8px;">* <strong>Modo Informativo:</strong> Os volumes fechados e tickets médios refletem os valores declarados no cadastro de contratos para acompanhamento gerencial e inteligência de CAC, sem alterar a receita apurada da DRE.</div>
+              </div>
+
+              <div id="cac-tot-status-box" class="card" style="font-size:12px;color:#1e3a5f;padding:8px 12px;border:1px solid #cbd5e1;border-radius:6px;">
+                <strong>Parecer Estratégico Consolidado:</strong> <span id="cac-tot-status-text">
+                  ${((initialMkt + initialDesk) > 0) ? (
+                    (d.receita_bruta > 0 && (((cac.despesas_comerciais_g06 + cac_op.despesas_escritorio_total) / d.receita_bruta) * 100) <= 40.0) 
+                    ? 'Equilíbrio financeiro e alta sustentabilidade: o custo conjunto de captação e atendimento consome menos de 40% da receita bruta.' 
+                    : 'Custo global conjunto consome mais de 40% da receita; acompanhe a taxa de conversão dos novos contratos.'
+                  ) : 'Sem contratos no período para composição do CAC médio consolidado.'}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -3881,12 +4109,13 @@ refreshFinance = async function() {
 function populateEditEntryNatureSelect(currentKind, selectedNatureId) {
   const selectEl = $('#edit-entry-nature');
   if (!selectEl) return;
-  const filtered = (operationNatures || []).filter(n => n.is_active && (n.operation_type === currentKind || (currentKind === 'receita' && n.operation_type === 'receita')));
-  selectEl.innerHTML = '<option value="">Selecione a natureza...</option>' +
-    filtered.map(n => `<option value="${esc(n.id)}" ${n.id === selectedNatureId ? 'selected' : ''}>${esc(n.code)} · ${esc(n.name)}</option>`).join('');
+  const targetType = getEffectiveNatureOperationType(currentKind);
+  const filtered = (operationNatures || []).filter(n => n.is_active && n.operation_type === targetType);
+  selectEl.innerHTML = renderNatureOptionsHtml(filtered, selectedNatureId, 'Selecione a natureza...');
 }
 
 function openEditEntryModal(id) {
+  if(mobile() || !canWrite()) return;
   const e = (entries || []).find(x => String(x.id) === String(id));
   if (!e) {
     alert('Lançamento não encontrado.');
@@ -4137,7 +4366,7 @@ function saveCommercialHealthStore(store) {
 
 function getDefaultHealthData(month) {
   return {
-    month: month || new Date().toISOString().slice(0, 7),
+    month: month || localIsoMonth(),
     leads: 45,
     qualified: 32,
     unqualified: 13,
@@ -4159,7 +4388,7 @@ function getDefaultHealthData(month) {
 
 function getCommercialHealthForMonth(month) {
   const store = loadCommercialHealthStore();
-  const targetMonth = month || $('#health-month-select')?.value || new Date().toISOString().slice(0, 7);
+  const targetMonth = month || $('#health-month-select')?.value || localIsoMonth();
   if (store[targetMonth]) {
     return { ...store[targetMonth], month: targetMonth };
   }
@@ -4276,7 +4505,7 @@ function renderCommercialHealth(targetMonth) {
   const panel = $('#commercial-health-panel');
   if (!panel) return;
 
-  const currentMonth = targetMonth || $('#health-month-select')?.value || new Date().toISOString().slice(0, 7);
+  const currentMonth = targetMonth || $('#health-month-select')?.value || localIsoMonth();
   const mInput = $('#health-month-select');
   if (mInput && mInput.value !== currentMonth) {
     mInput.value = currentMonth;
@@ -4343,7 +4572,7 @@ function renderCommercialHealth(targetMonth) {
           <span class="funnel-stage-title" style="display:inline-flex;align-items:center;gap:6px;">
             <span style="display:inline-flex;align-items:center;">${st.iconSvg}</span>
             <span>${st.label}</span>
-            ${st.isWeakest ? '<span class="pill" style="font-size:10px;background:#fef3c7;color:#b45309;padding:1px 6px;font-weight:800;">⚠️ MAIOR GARGALO</span>' : ''}
+            ${st.isWeakest ? '<span class="pill funnel-weakest-badge" style="font-size:10px;background:#fef3c7;color:#b45309;padding:1px 6px;font-weight:800;">⚠️ MAIOR GARGALO</span>' : ''}
           </span>
           <span class="funnel-stage-count">${st.count}</span>
         </div>
@@ -4351,7 +4580,7 @@ function renderCommercialHealth(targetMonth) {
           <div class="funnel-bar-fill ${barClass}" style="width:${fillPct}%"></div>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
-          <span style="font-size:11px;color:#64748b;font-weight:600;">${st.rateStr}</span>
+          <span class="funnel-stage-subtext" style="font-size:11px;color:#64748b;font-weight:600;">${st.rateStr}</span>
           ${st.dropStr ? `<span class="funnel-drop-badge ${st.isWeakest ? 'alert' : ''}">${st.dropStr}</span>` : ''}
         </div>
       </div>
@@ -4361,28 +4590,28 @@ function renderCommercialHealth(targetMonth) {
   // 3. Render Insights Engine Feed
   $('#health-insights-feed').innerHTML = `
     <div class="insight-card-item fact">
-      <div style="font-weight:800;color:#0284c7;margin-bottom:2px;display:flex;align-items:center;gap:6px;">
+      <div class="insight-title fact-title" style="font-weight:800;color:#0284c7;margin-bottom:2px;display:flex;align-items:center;gap:6px;">
         <span>📌</span> Fato Observado
       </div>
       <div>${insights.factText}</div>
     </div>
 
     <div class="insight-card-item bottleneck">
-      <div style="font-weight:800;color:#ea580c;margin-bottom:2px;display:flex;align-items:center;gap:6px;">
+      <div class="insight-title bottleneck-title" style="font-weight:800;color:#ea580c;margin-bottom:2px;display:flex;align-items:center;gap:6px;">
         <span>⚠️</span> Ponto Crítico de Investigação
       </div>
       <div>${insights.bottleneckText}</div>
     </div>
 
     <div class="insight-card-item loss">
-      <div style="font-weight:800;color:#dc2626;margin-bottom:2px;display:flex;align-items:center;gap:6px;">
+      <div class="insight-title loss-title" style="font-weight:800;color:#dc2626;margin-bottom:2px;display:flex;align-items:center;gap:6px;">
         <span>📉</span> Diagnóstico de Perda & Follow-up
       </div>
       <div>${insights.lossText}</div>
     </div>
 
     <div class="insight-card-item hypothesis">
-      <div style="font-weight:800;color:#16a34a;margin-bottom:2px;display:flex;align-items:center;gap:6px;">
+      <div class="insight-title hypothesis-title" style="font-weight:800;color:#16a34a;margin-bottom:2px;display:flex;align-items:center;gap:6px;">
         <span>💡</span> Hipótese para o Próximo Ciclo
       </div>
       <div>${insights.hypothesisText}</div>
@@ -4395,10 +4624,10 @@ function renderCommercialHealth(targetMonth) {
     const pct = insights.totalSrc > 0 ? ((src.count / insights.totalSrc) * 100).toFixed(1) : '0';
     return `
       <div class="source-pill-card">
-        <span style="font-size:11px;color:#64748b;font-weight:700;">${esc(src.label)}</span>
+        <span class="source-pill-label" style="font-size:11px;color:#64748b;font-weight:700;">${esc(src.label)}</span>
         <div style="display:flex;justify-content:space-between;align-items:baseline;">
-          <strong style="font-size:16px;color:var(--brand-navy,#010E38);">${src.count}</strong>
-          <span style="font-size:11px;font-weight:700;color:#0284c7;">${pct}%</span>
+          <strong class="source-pill-count" style="font-size:16px;color:var(--brand-navy,#010E38);">${src.count}</strong>
+          <span class="source-pill-pct" style="font-size:11px;font-weight:700;color:#0284c7;">${pct}%</span>
         </div>
       </div>
     `;
@@ -4406,9 +4635,10 @@ function renderCommercialHealth(targetMonth) {
 }
 
 function openCommercialHealthModal() {
+  if(mobile() || !canWrite()) return;
   const modal = $('#commercial-metrics-modal');
   if (!modal) return;
-  const currentMonth = $('#health-month-select')?.value || new Date().toISOString().slice(0, 7);
+  const currentMonth = $('#health-month-select')?.value || localIsoMonth();
   const data = getCommercialHealthForMonth(currentMonth);
 
   $('#cm-input-month').value = currentMonth;
@@ -4434,7 +4664,7 @@ function openCommercialHealthModal() {
 }
 
 function syncContractsCountForMonth(targetMonth) {
-  const m = targetMonth || $('#health-month-select')?.value || new Date().toISOString().slice(0, 7);
+  const m = targetMonth || $('#health-month-select')?.value || localIsoMonth();
   const matched = (contracts || []).filter(c => c.signed_date && c.signed_date.startsWith(m));
   return matched.length;
 }
@@ -4442,7 +4672,7 @@ function syncContractsCountForMonth(targetMonth) {
 function initCommercialHealth() {
   const mSelect = $('#health-month-select');
   if (mSelect && !mSelect.value) {
-    mSelect.value = new Date().toISOString().slice(0, 7);
+    mSelect.value = localIsoMonth();
   }
 
   mSelect?.addEventListener('change', () => {
@@ -4455,7 +4685,7 @@ function initCommercialHealth() {
 
   // Sincronizar contratos com a base do DRE
   $('#btn-sync-health-contracts')?.addEventListener('click', () => {
-    const curMonth = $('#health-month-select')?.value || new Date().toISOString().slice(0, 7);
+    const curMonth = $('#health-month-select')?.value || localIsoMonth();
     const count = syncContractsCountForMonth(curMonth);
     const store = loadCommercialHealthStore();
     const cur = store[curMonth] || getDefaultHealthData(curMonth);
@@ -4467,7 +4697,7 @@ function initCommercialHealth() {
   });
 
   $('#cm-sync-btn-modal')?.addEventListener('click', () => {
-    const m = $('#cm-input-month')?.value || new Date().toISOString().slice(0, 7);
+    const m = $('#cm-input-month')?.value || localIsoMonth();
     const count = syncContractsCountForMonth(m);
     $('#cm-input-contracts').value = count;
   });
@@ -4525,12 +4755,12 @@ let currentStageBenchmarks = null;
 function initStageIntelligence() {
   const mInput = $('#stg-month');
   if (mInput && !mInput.value) {
-    mInput.value = new Date().toISOString().slice(0, 7);
+    mInput.value = localIsoMonth();
   }
 
   mInput?.addEventListener('change', () => refreshStageIntelligence());
   $('#btn-stg-cur-month')?.addEventListener('click', () => {
-    if (mInput) { mInput.value = new Date().toISOString().slice(0, 7); refreshStageIntelligence(); }
+    if (mInput) { mInput.value = localIsoMonth(); refreshStageIntelligence(); }
   });
   $('#btn-stg-all-months')?.addEventListener('click', () => {
     if (mInput) { mInput.value = ''; refreshStageIntelligence(); }
@@ -5091,7 +5321,7 @@ async function refreshStageBenchmarks() {
           }).join('');
 
           return `
-            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px 18px;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+            <div class="card" style="border:1px solid #e2e8f0;border-radius:12px;padding:16px 18px;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
               <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;border-bottom:1px solid #f1f5f9;padding-bottom:10px;">
                 <div>
                   <div style="display:inline-flex;align-items:center;gap:6px;">
@@ -5140,3 +5370,228 @@ async function refreshStageBenchmarks() {
 
 
 
+
+
+// === SINCRONIZAÇÃO UX/UI: PILLS DO TIPO DE OPERAÇÃO (NATUREZAS) ===
+function syncNatureTypePills(selectedType) {
+  const pills = document.querySelectorAll('#nat-type-pills .type-pill-btn');
+  pills.forEach(btn => {
+    const isAct = btn.dataset.type === selectedType;
+    btn.classList.toggle('active', isAct);
+    btn.setAttribute('aria-checked', isAct ? 'true' : 'false');
+  });
+}
+
+document.addEventListener('click', ev => {
+  const pillBtn = ev.target.closest('#nat-type-pills .type-pill-btn');
+  if (pillBtn && pillBtn.dataset.type) {
+    const val = pillBtn.dataset.type;
+    const sel = document.getElementById('nat-type');
+    if (sel) {
+      sel.value = val;
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    syncNatureTypePills(val);
+  }
+});
+
+// Sincronizar automaticamente quando o Grupo DRE mudar
+$('#nat-group')?.addEventListener('change', () => {
+  const g = $('#nat-group')?.value || '';
+  let autoType = 'despesa';
+  if (g === 'G01') autoType = 'receita';
+  else if (g === 'G03') autoType = 'custo';
+  else if (g === 'G99') autoType = 'patrimonial';
+  else autoType = 'despesa';
+
+  const sel = document.getElementById('nat-type');
+  if (sel) {
+    sel.value = autoType;
+    sel.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+  syncNatureTypePills(autoType);
+});
+
+// Modal e cadastro rápido de Natureza pelo formulário
+let activeQuickNatureTargetSelect = null;
+
+function updateQuickNatureCodeSuggestion(groupId) {
+  const codeInput = $('#quick-nat-code');
+  if (codeInput && typeof getNextNatureCode === 'function') {
+    codeInput.value = getNextNatureCode(groupId);
+  }
+}
+
+function openQuickNatureModal(targetSelectId = '#f-nature') {
+  if (!canWrite()) {
+    alert('Seu usuário está em modo somente leitura.');
+    return;
+  }
+  activeQuickNatureTargetSelect = targetSelectId;
+  
+  let baseType = 'receita';
+  if (targetSelectId === '#f-nature' && $('#f-tipo')) {
+    baseType = $('#f-tipo').value || 'receita';
+  } else if (targetSelectId === '#edit-entry-nature' && $('#edit-entry-tipo')) {
+    baseType = $('#edit-entry-tipo').value || 'receita';
+  }
+
+  const typeSelect = $('#quick-nat-type');
+  const groupSelect = $('#quick-nat-group');
+  if (typeSelect) typeSelect.value = baseType;
+  
+  const defGroup = (typeof TYPE_DEFAULT_GROUPS !== 'undefined' && TYPE_DEFAULT_GROUPS[baseType]) ? TYPE_DEFAULT_GROUPS[baseType] : 'G01';
+  if (groupSelect) groupSelect.value = defGroup;
+  
+  updateQuickNatureCodeSuggestion(defGroup);
+
+  const nameInput = $('#quick-nat-name');
+  if (nameInput) nameInput.value = '';
+  
+  const descInput = $('#quick-nat-desc');
+  if (descInput) descInput.value = '';
+
+  const msgEl = $('#quick-nature-msg');
+  if (msgEl) msgEl.textContent = '';
+
+  const infoEl = $('#quick-nature-context-info');
+  if (infoEl) {
+    const typeNames = { receita: 'Receita', custo: 'Custo', despesa: 'Despesa', patrimonial: 'Patrimonial' };
+    infoEl.textContent = `Cadastre uma nova natureza do tipo "${typeNames[baseType] || baseType}" para seu escritório.`;
+  }
+
+  const modal = $('#quick-nature-modal');
+  if (modal && typeof modal.showModal === 'function') {
+    modal.showModal();
+    nameInput?.focus();
+  } else {
+    goto('nova-natureza');
+  }
+}
+
+async function saveQuickNature(group_id, operation_type, code, name, description, targetSelectId) {
+  const msgEl = $('#quick-nature-msg');
+  if (msgEl) msgEl.textContent = '';
+  try {
+    const payload = {
+      group_id,
+      operation_type,
+      code: (code || '').trim(),
+      name: (name || '').trim(),
+      description: (description || '').trim()
+    };
+    if (!payload.code) throw new Error('Código gerencial é obrigatório.');
+    if (!payload.name) throw new Error('Nome da natureza é obrigatório.');
+
+    const res = await api('/operation-natures', { method: 'POST', body: JSON.stringify(payload) });
+    await refreshNatures();
+
+    // Selecionar a nova natureza no select de destino
+    const targetSel = $(targetSelectId || '#f-nature');
+    if (targetSel && res && res.id) {
+      targetSel.value = res.id;
+      targetSel.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    const modal = $('#quick-nature-modal');
+    if (modal && typeof modal.close === 'function') {
+      modal.close();
+    }
+  } catch (err) {
+    if (msgEl) msgEl.textContent = err.message;
+    else alert('Erro ao cadastrar natureza: ' + err.message);
+  }
+}
+
+$('#btn-quick-nature-entry')?.addEventListener('click', () => {
+  openQuickNatureModal('#f-nature');
+});
+
+$('#btn-quick-nature-bill')?.addEventListener('click', () => {
+  openQuickNatureModal('#bill-nature');
+});
+
+$('#quick-nature-close')?.addEventListener('click', () => $('#quick-nature-modal')?.close());
+$('#quick-nature-cancel')?.addEventListener('click', () => $('#quick-nature-modal')?.close());
+
+$('#quick-nature-goto-page')?.addEventListener('click', () => {
+  $('#quick-nature-modal')?.close();
+  goto('naturezas');
+});
+
+$('#quick-nat-type')?.addEventListener('change', (e) => {
+  const t = e.target.value;
+  const defGroup = (typeof TYPE_DEFAULT_GROUPS !== 'undefined' && TYPE_DEFAULT_GROUPS[t]) ? TYPE_DEFAULT_GROUPS[t] : 'G01';
+  const grpSelect = $('#quick-nat-group');
+  if (grpSelect) {
+    grpSelect.value = defGroup;
+    updateQuickNatureCodeSuggestion(defGroup);
+  }
+});
+
+$('#quick-nat-group')?.addEventListener('change', (e) => {
+  const g = e.target.value;
+  if (typeof GROUP_COMPATIBLE_TYPES !== 'undefined') {
+    const compTypes = GROUP_COMPATIBLE_TYPES[g] || [];
+    const typeSelect = $('#quick-nat-type');
+    if (typeSelect && compTypes.length && !compTypes.includes(typeSelect.value)) {
+      typeSelect.value = compTypes[0];
+    }
+  }
+  updateQuickNatureCodeSuggestion(g);
+});
+
+$('#quick-nature-form')?.addEventListener('submit', async ev => {
+  ev.preventDefault();
+  if (!canWrite()) return;
+  const group_id = $('#quick-nat-group')?.value;
+  const operation_type = $('#quick-nat-type')?.value;
+  const code = $('#quick-nat-code')?.value;
+  const name = $('#quick-nat-name')?.value;
+  const desc = $('#quick-nat-desc')?.value;
+  await saveQuickNature(group_id, operation_type, code, name, desc, activeQuickNatureTargetSelect || '#f-nature');
+});
+
+// =========================================================================
+// Responsividade Mobile Interativa: Acordeão Retrátil dos Indicadores de CAC
+// =========================================================================
+document.addEventListener('click', (ev) => {
+  const header = ev.target.closest('.cac-accordion-header');
+  if (!header) return;
+  // Apenas opera com comportamento retrátil em visualização mobile (<= 768px)
+  if (window.innerWidth > 768) return;
+
+  const pane = header.closest('.cac-accordion-pane');
+  if (!pane) return;
+
+  const willOpen = pane.classList.contains('collapsed');
+  if (willOpen) {
+    pane.classList.remove('collapsed');
+    pane.classList.add('open');
+    header.setAttribute('aria-expanded', 'true');
+  } else {
+    pane.classList.remove('open');
+    pane.classList.add('collapsed');
+    header.setAttribute('aria-expanded', 'false');
+  }
+});
+
+document.addEventListener('keydown', (ev) => {
+  if (ev.key !== 'Enter' && ev.key !== ' ') return;
+  const header = ev.target.closest('.cac-accordion-header');
+  if (!header || window.innerWidth > 768) return;
+  ev.preventDefault();
+  header.click();
+});
+
+
+window.openTimeStudioPWA = function(ev) {
+  if (ev && typeof ev.preventDefault === 'function') ev.preventDefault();
+  var t = (typeof token !== 'undefined' && token) ? token : (sessionStorage.getItem('dre_token') || localStorage.getItem('dre_token') || '');
+  if (t) {
+    try { localStorage.setItem('dre_token', t); } catch(e){}
+    window.open('/timestudio/?auth=' + encodeURIComponent(t), '_blank');
+  } else {
+    window.open('/timestudio/', '_blank');
+  }
+};
