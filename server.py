@@ -378,19 +378,53 @@ setup_stages(app,db,auth,editor,utc)
 
 def ensure_seed():
     with db() as c:
-        has_user = c.execute(text("SELECT id, office_id FROM users WHERE email='admin@vendamaistech.com.br'")).first()
-        if not has_user:
-            office_id = secrets.token_hex(12)
-            c.execute(text('INSERT INTO offices VALUES (:id,:name)'), {'id': office_id, 'name': 'Venda+ Tech Advocacia'})
+        # Busca ou cria o escritório oficial da banca
+        office = c.execute(text("SELECT id FROM offices WHERE name='Almeida Braatz Advocacia' LIMIT 1")).first()
+        if not office:
+            existing_office = c.execute(text("SELECT id FROM offices LIMIT 1")).first()
+            if existing_office:
+                office_id = existing_office[0]
+                c.execute(text("UPDATE offices SET name='Almeida Braatz Advocacia' WHERE id=:id"), {'id': office_id})
+            else:
+                office_id = secrets.token_hex(12)
+                c.execute(text('INSERT INTO offices VALUES (:id,:name)'), {'id': office_id, 'name': 'Almeida Braatz Advocacia'})
+        else:
+            office_id = office[0]
+
+        # 1. Garante danielle.braatz@hotmail.com com senha Almeidabraatzadvocacia
+        d_user = c.execute(text("SELECT id FROM users WHERE LOWER(email)='danielle.braatz@hotmail.com'")).first()
+        if not d_user:
+            c.execute(text('INSERT INTO users VALUES (:id,:office,:email,:pw,:role)'), {
+                'id': secrets.token_hex(12),
+                'office': office_id,
+                'email': 'danielle.braatz@hotmail.com',
+                'pw': hash_password('Almeidabraatzadvocacia'),
+                'role': 'admin'
+            })
+        else:
+            c.execute(text('UPDATE users SET password_hash=:pw, office_id=:office WHERE id=:id'), {
+                'pw': hash_password('Almeidabraatzadvocacia'),
+                'office': office_id,
+                'id': d_user[0]
+            })
+
+        # 2. Garante admin@vendamaistech.com.br com a mesma senha para contingência
+        v_user = c.execute(text("SELECT id FROM users WHERE email='admin@vendamaistech.com.br'")).first()
+        if not v_user:
             c.execute(text('INSERT INTO users VALUES (:id,:office,:email,:pw,:role)'), {
                 'id': secrets.token_hex(12),
                 'office': office_id,
                 'email': 'admin@vendamaistech.com.br',
-                'pw': hash_password('admin12345678'),
+                'pw': hash_password('Almeidabraatzadvocacia'),
                 'role': 'admin'
             })
-            return True
-        return False
+        else:
+            c.execute(text('UPDATE users SET password_hash=:pw, office_id=:office WHERE id=:id'), {
+                'pw': hash_password('Almeidabraatzadvocacia'),
+                'office': office_id,
+                'id': v_user[0]
+            })
+        return True
 
 try:
     ensure_seed()
