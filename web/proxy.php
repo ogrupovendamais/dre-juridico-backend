@@ -237,23 +237,17 @@ if ($ep_clean === 'timestudio/me' && $http_code === 401 && !empty($auth_bearer_t
             if (!empty($chosen['name'])) $prof_name = $chosen['name'];
         }
 
-        // Monta lista de contratos ativos
+        // Monta lista de contratos ativos buscando diretamente do backend
         $contracts = [];
-        $contracts[] = [
-            'id' => 'acao_trabalhista',
-            'label' => 'ação trabalhista',
-            'fee_type' => 'mensal',
-            'legal_area' => 'trabalhista',
-            'stages' => [
-                ['id' => '1', 'name' => 'Consulta Prévia e Análise de Risco', 'order' => 1],
-                ['id' => '2', 'name' => 'Coleta de Provas e Documentos', 'order' => 2],
-                ['id' => '3', 'name' => 'Petição Inicial / Contestação', 'order' => 3],
-                ['id' => '4', 'name' => 'Saneamento e Instrução Probatória', 'order' => 4],
-                ['id' => '5', 'name' => 'Recursos e Incidentes Processuais', 'order' => 5],
-                ['id' => '6', 'name' => 'Cumprimento de Sentença / Liquidação', 'order' => 6],
-                ['id' => '7', 'name' => 'Finalização e Baixa Definitiva', 'order' => 7]
-            ]
-        ];
+        $backend_contracts = backend_curl(rtrim($BACKEND_BASE, '/') . '/api/stages/contracts-with-stages', 'GET', null, $auth_bearer_token);
+        if ($backend_contracts['code'] === 200 && is_array($backend_contracts['json'])) {
+            $contracts = $backend_contracts['json'];
+        } else {
+            $alt_contracts = backend_curl(rtrim($BACKEND_BASE, '/') . '/api/productivity/contracts', 'GET', null, $auth_bearer_token);
+            if ($alt_contracts['code'] === 200 && is_array($alt_contracts['json'])) {
+                $contracts = $alt_contracts['json'];
+            }
+        }
 
         http_response_code(200);
         header('Content-Type: application/json; charset=utf-8');
@@ -280,8 +274,8 @@ if ($ep_clean === 'timestudio/entries' && $http_code === 401 && !empty($auth_bea
         foreach ($apps['json'] as $app) {
             $entries_out[] = [
                 'id' => !empty($app['id']) ? $app['id'] : '',
-                'contract_id' => !empty($app['contract_id']) ? $app['contract_id'] : 'acao_trabalhista',
-                'contract_label' => !empty($app['contract_label']) ? $app['contract_label'] : 'ação trabalhista',
+                'contract_id' => !empty($app['contract_id']) ? $app['contract_id'] : '',
+                'contract_label' => !empty($app['contract_label']) ? $app['contract_label'] : '',
                 'stage_name' => !empty($app['stage_name']) ? $app['stage_name'] : '',
                 'activity_type' => !empty($app['activity_type']) ? $app['activity_type'] : 'Petição / Manifestação',
                 'work_date' => !empty($app['work_date']) ? $app['work_date'] : date('Y-m-d'),
@@ -312,7 +306,7 @@ if ($ep_clean === 'timestudio/entries/sync' && $http_code === 401 && !empty($aut
             }
             $post_work = [
                 'professional_id' => $pro_id,
-                'contract_id' => !empty($entry['contract_id']) ? $entry['contract_id'] : 'acao_trabalhista',
+                'contract_id' => !empty($entry['contract_id']) ? $entry['contract_id'] : '',
                 'date' => !empty($entry['work_date']) ? $entry['work_date'] : date('Y-m-d'),
                 'minutes' => !empty($entry['minutes']) ? intval($entry['minutes']) : 60
             ];

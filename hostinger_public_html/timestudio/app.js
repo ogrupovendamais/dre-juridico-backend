@@ -846,97 +846,19 @@
   }
 
   // --- Funções de Teste Rápido (UX/UI Executive Pre-fill) ---
-  function fillSampleManualData(notifyUser = false) {
-    if (!contracts || contracts.length === 0) {
-      contracts = [
-        {
-          id: 'acao_trabalhista',
-          label: 'ação trabalhista (Contrato Padrão)',
-          fee_type: 'mensal',
-          stages: [
-            { id: '1', stage_name: 'Consulta Prévia e Análise de Risco', stage_order: 1 },
-            { id: '2', stage_name: 'Coleta de Provas e Documentos', stage_order: 2 },
-            { id: '3', stage_name: 'Petição Inicial / Contestação', stage_order: 3 },
-            { id: '4', stage_name: 'Saneamento e Instrução Probatória', stage_order: 4 },
-            { id: '5', stage_name: 'Recursos e Incidentes Processuais', stage_order: 5 },
-            { id: '6', stage_name: 'Cumprimento de Sentença / Liquidação', stage_order: 6 }
-          ]
-        }
-      ];
-      renderContractsSelects();
-    }
-
-    const contractEl = $('#manual-contract');
-    if (contractEl && contracts.length > 0) {
-      contractEl.value = contracts[0].id;
-      populateStagesForContract(contracts[0].id, $('#manual-stage'));
-    }
-
-    const stageEl = $('#manual-stage');
-    if (stageEl && stageEl.options.length > 1) {
-      stageEl.selectedIndex = Math.min(3, stageEl.options.length - 1);
-    }
-
-    const actEl = $('#manual-activity');
-    if (actEl) actEl.value = 'Petição / Manifestação';
-
-    const startEl = $('#manual-start');
-    const endEl = $('#manual-end');
-    const pauseEl = $('#manual-pause');
-    const minutesEl = $('#manual-minutes');
-    const dateEl = $('#manual-date');
-    const descEl = $('#manual-desc');
-
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    if (dateEl) dateEl.value = `${yyyy}-${mm}-${dd}`;
-
-    if (startEl) startEl.value = '09:00';
-    if (endEl) endEl.value = '11:00';
-    if (pauseEl) pauseEl.value = '0';
-    if (minutesEl) {
-      minutesEl.value = '120';
-      updateManualMinutesBadge(120);
-    }
-    if (descEl) {
-      descEl.value = 'Elaboração de petição intermediária e conferência de documentos para instrução probatória (Teste de Sincronização Time Studio).';
-    }
-
-    const hint = $('#manual-calc-hint');
-    if (hint) {
-      hint.innerHTML = '⚡ Calculado automaticamente: <strong>2h 00min</strong> (120 min). Você pode editar livremente.';
-      hint.style.color = '#FDE047';
-    }
-
-    if (notifyUser) {
-      const fb = $('#manual-feedback');
-      if (fb) {
-        fb.innerHTML = '<strong>⚡ Dados de Teste Preenchidos com Sucesso!</strong> Todos os campos estão preenchidos. Clique em <em>Salvar Apontamento</em> para sincronizar.';
-        fb.className = 'alert-box alert-success';
-        fb.style.display = 'block';
-        setTimeout(() => { fb.style.display = 'none'; }, 4000);
-      }
-    }
-  }
-
+  function fillSampleManualData(notifyUser = false) { return; }
   function fillSampleTimerData(notifyUser = false) {
-    if (!contracts || contracts.length === 0) {
-      contracts = [
-        {
-          id: 'acao_trabalhista',
-          label: 'ação trabalhista (Contrato Padrão)',
-          fee_type: 'mensal',
-          stages: [
-            { id: '1', stage_name: 'Consulta Prévia e Análise de Risco', stage_order: 1 },
-            { id: '2', stage_name: 'Coleta de Provas e Documentos', stage_order: 2 },
-            { id: '3', stage_name: 'Petição Inicial / Contestação', stage_order: 3 }
-          ]
-        }
-      ];
-      renderContractsSelects();
-    }
+    // Nenhum contrato fictício inserido
+
+    // Purga cache legado de acao_trabalhista para garantir base comercial 100% limpa
+    try {
+      const cached = localStorage.getItem('timestudio_contracts');
+      if (cached && cached.includes('acao_trabalhista')) {
+        localStorage.removeItem('timestudio_contracts');
+        contracts = [];
+      }
+    } catch(e) {}
+
     const cEl = $('#timer-contract');
     if (cEl && contracts.length > 0) {
       cEl.value = contracts[0].id;
@@ -1088,20 +1010,49 @@
   }
 
   function renderContractsSelects() {
+    if (!contracts || contracts.length === 0) {
+      const emptyOpt = '<option value="" selected disabled>Nenhum contrato ativo cadastrado na banca</option>';
+      if ($('#timer-contract')) {
+        $('#timer-contract').innerHTML = emptyOpt;
+        $('#timer-contract').disabled = true;
+      }
+      if ($('#timer-stage')) {
+        $('#timer-stage').innerHTML = '<option value="" selected disabled>Cadastre um contrato no painel primeiro</option>';
+        $('#timer-stage').disabled = true;
+      }
+      if ($('#manual-contract')) {
+        $('#manual-contract').innerHTML = emptyOpt;
+        $('#manual-contract').disabled = true;
+      }
+      if ($('#manual-stage')) {
+        $('#manual-stage').innerHTML = '<option value="" selected disabled>Cadastre um contrato no painel primeiro</option>';
+        $('#manual-stage').disabled = true;
+      }
+      return;
+    }
+
     const opts = ['<option value="">Selecione o Contrato / Processo...</option>']
       .concat(contracts.map(c => `<option value="${esc(c.id)}">${esc(c.label)}</option>`))
       .join('');
     if ($('#timer-contract')) {
+      $('#timer-contract').disabled = false;
       $('#timer-contract').innerHTML = opts;
       $('#timer-contract').onchange = e => {
         populateStagesForContract(e.target.value, $('#timer-stage'));
       };
     }
+    if ($('#timer-stage')) {
+      $('#timer-stage').disabled = false;
+    }
     if ($('#manual-contract')) {
+      $('#manual-contract').disabled = false;
       $('#manual-contract').innerHTML = opts;
       $('#manual-contract').onchange = e => {
         populateStagesForContract(e.target.value, $('#manual-stage'));
       };
+    }
+    if ($('#manual-stage')) {
+      $('#manual-stage').disabled = false;
     }
   }
 
@@ -1469,25 +1420,17 @@
     try { loadHistory(); } catch(e){}
     updateQueueBadge();
 
-    if (!contracts || contracts.length === 0) {
-      contracts = [
-        {
-          id: 'acao_trabalhista',
-          label: 'ação trabalhista (Contrato Padrão)',
-          fee_type: 'mensal',
-          stages: [
-            { id: '1', stage_name: 'Consulta Prévia e Análise de Risco', stage_order: 1 },
-            { id: '2', stage_name: 'Coleta de Provas e Documentos', stage_order: 2 },
-            { id: '3', stage_name: 'Petição Inicial / Contestação', stage_order: 3 },
-            { id: '4', stage_name: 'Saneamento e Instrução Probatória', stage_order: 4 },
-            { id: '5', stage_name: 'Recursos e Incidentes Processuais', stage_order: 5 },
-            { id: '6', stage_name: 'Cumprimento de Sentença / Liquidação', stage_order: 6 },
-            { id: '7', stage_name: 'Finalização e Baixa Definitiva', stage_order: 7 }
-          ]
-        }
-      ];
-      renderContractsSelects();
-    }
+    // Nenhum contrato fictício inserido
+
+    // Purga cache legado de acao_trabalhista para garantir base comercial 100% limpa
+    try {
+      const cached = localStorage.getItem('timestudio_contracts');
+      if (cached && cached.includes('acao_trabalhista')) {
+        localStorage.removeItem('timestudio_contracts');
+        contracts = [];
+      }
+    } catch(e) {}
+
 
     // Set manual date default and pre-fill test data
     initManualTimeDefaults(false);
