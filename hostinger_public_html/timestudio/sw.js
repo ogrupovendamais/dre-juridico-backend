@@ -1,5 +1,5 @@
 // Time Studio PWA Service Worker — v20261030-final3
-const CACHE_NAME = 'timestudio-static-v20261030_v20';
+const CACHE_NAME = 'timestudio-static-v20261030_v21';
 const STATIC_ASSETS = [
   './index.html',
   './app.js',

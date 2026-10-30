@@ -100,7 +100,7 @@
       if (targetId === 'tab-manual') {
         initManualTimeDefaults(false);
         if (!$('#manual-contract')?.value && contracts.length > 0) {
-          fillSampleManualData(false);
+          
         }
       }
     });
@@ -845,39 +845,14 @@
     }
   }
 
-  // --- Funções de Teste Rápido (UX/UI Executive Pre-fill) ---
-  function fillSampleManualData(notifyUser = false) { return; }
-  function fillSampleTimerData(notifyUser = false) {
-    // Nenhum contrato fictício inserido
-
-    // Purga cache legado de acao_trabalhista para garantir base comercial 100% limpa
-    try {
-      const cached = localStorage.getItem('timestudio_contracts');
-      if (cached && cached.includes('acao_trabalhista')) {
-        localStorage.removeItem('timestudio_contracts');
-        contracts = [];
-      }
-    } catch(e) {}
-
-    const cEl = $('#timer-contract');
-    if (cEl && contracts.length > 0) {
-      cEl.value = contracts[0].id;
-      populateStagesForContract(contracts[0].id, $('#timer-stage'));
+  // Purga cache legado de acao_trabalhista para garantir base comercial 100% limpa
+  try {
+    const cached = localStorage.getItem('timestudio_contracts');
+    if (cached && (cached.includes('acao_trabalhista') || cached.includes('Trabalhista'))) {
+      localStorage.removeItem('timestudio_contracts');
+      contracts = [];
     }
-    const sEl = $('#timer-stage');
-    if (sEl && sEl.options.length > 1) {
-      sEl.selectedIndex = Math.min(3, sEl.options.length - 1);
-    }
-    const aEl = $('#timer-activity');
-    if (aEl) aEl.value = 'Petição / Manifestação';
-    const dEl = $('#timer-desc');
-    if (dEl) dEl.value = 'Acompanhamento processual e análise jurídica (Teste Cronômetro Time Studio).';
-  }
-
-  window.fillSampleManualData = fillSampleManualData;
-  window.fillSampleTimerData = fillSampleTimerData;
-  $('#btn-sample-fill')?.addEventListener('click', () => fillSampleManualData(true));
-  $('#btn-timer-test-fill')?.addEventListener('click', () => fillSampleTimerData(true));
+  } catch(e) {}
 
   // --- Manual Entry Form ---
   $('#form-manual')?.addEventListener('submit', async e => {
@@ -1434,8 +1409,7 @@
 
     // Set manual date default and pre-fill test data
     initManualTimeDefaults(false);
-    fillSampleManualData(false);
-    fillSampleTimerData(false);
+    // Pronto para uso comercial sem dados ficticios preenchidos
 
     showScreen('screen-app');
     flushQueue();
