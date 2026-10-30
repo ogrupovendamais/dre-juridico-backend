@@ -378,7 +378,7 @@ setup_stages(app,db,auth,editor,utc)
 
 def ensure_seed():
     with db() as c:
-        # Busca ou cria o escritório oficial da banca
+        # Busca ou cria o escritorio oficial da banca
         office = c.execute(text("SELECT id FROM offices WHERE name='Almeida Braatz Advocacia' LIMIT 1")).first()
         if not office:
             existing_office = c.execute(text("SELECT id FROM offices LIMIT 1")).first()
@@ -402,28 +402,34 @@ def ensure_seed():
                 'role': 'admin'
             })
         else:
-            c.execute(text('UPDATE users SET password_hash=:pw, office_id=:office WHERE id=:id'), {
+            c.execute(text('UPDATE users SET password_hash=:pw, office_id=:office, role=\'admin\' WHERE id=:id'), {
                 'pw': hash_password('Almeidabraatzadvocacia'),
                 'office': office_id,
                 'id': d_user[0]
             })
 
-        # 2. Garante admin@vendamaistech.com.br com a mesma senha para contingência
-        v_user = c.execute(text("SELECT id FROM users WHERE email='admin@vendamaistech.com.br'")).first()
-        if not v_user:
+        # 2. Garante ogrupovendamais@gmail.com (Desenvolvedor / Master Admin) com senha @06130517Gvm
+        dev_user = c.execute(text("SELECT id FROM users WHERE LOWER(email)='ogrupovendamais@gmail.com'")).first()
+        if not dev_user:
             c.execute(text('INSERT INTO users VALUES (:id,:office,:email,:pw,:role)'), {
                 'id': secrets.token_hex(12),
                 'office': office_id,
-                'email': 'admin@vendamaistech.com.br',
-                'pw': hash_password('Almeidabraatzadvocacia'),
+                'email': 'ogrupovendamais@gmail.com',
+                'pw': hash_password('@06130517Gvm'),
                 'role': 'admin'
             })
         else:
-            c.execute(text('UPDATE users SET password_hash=:pw, office_id=:office WHERE id=:id'), {
-                'pw': hash_password('Almeidabraatzadvocacia'),
+            c.execute(text('UPDATE users SET password_hash=:pw, office_id=:office, role=\'admin\' WHERE id=:id'), {
+                'pw': hash_password('@06130517Gvm'),
                 'office': office_id,
-                'id': v_user[0]
+                'id': dev_user[0]
             })
+
+        # 3. Remove conta de admin anterior substituida pelo desenvolvedor
+        c.execute(text("DELETE FROM users WHERE LOWER(email) IN ('admin@vendamaistech.com.br', 'admin@drejuridico.com.br')"))
+
+        # Garante nome do escritorio padronizado para todos
+        c.execute(text("UPDATE offices SET name='Almeida Braatz Advocacia'"))
         return True
 
 try:
@@ -434,7 +440,7 @@ except Exception as _e:
 @app.post('/api/setup_initial_admin')
 def setup_initial_admin():
     created = ensure_seed()
-    return {'ok': True, 'created': created, 'email': 'admin@vendamaistech.com.br'}
+    return {'ok': True, 'created': created, 'email': 'ogrupovendamais@gmail.com'}
 
 # Frontend assets served from same origin: avoid cross-origin authentication configuration.
 @app.get('/')

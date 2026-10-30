@@ -138,7 +138,7 @@ if ($ep_clean === 'timestudio/auth/login' && $method === 'POST' && ($http_code =
         $prof_name = !empty($me_data['name']) ? $me_data['name'] : 'Alex Franco Françoso Gargalho';
         $prof_id = !empty($me_data['user']) ? $me_data['user'] : 'admin';
         $req_json = json_decode($body, true);
-        $user_email = !empty($req_json['email']) ? $req_json['email'] : 'admin@vendamaistech.com.br';
+        $user_email = !empty($req_json['email']) ? $req_json['email'] : 'ogrupovendamais@gmail.com';
 
         // Busca profissional ativo na banca
         $profs = backend_curl(rtrim($BACKEND_BASE, '/') . '/api/productivity/professionals', 'GET', null, $dre_token);
@@ -180,7 +180,7 @@ if ($ep_clean === 'timestudio/auth/sso' && $method === 'POST' && ($http_code ===
         $office_name = !empty($me_data['office_name']) ? $me_data['office_name'] : 'Almeida Braatz Advocacia';
         $prof_name = !empty($me_data['name']) ? $me_data['name'] : 'Alex Franco Françoso Gargalho';
         $prof_id = !empty($me_data['user']) ? $me_data['user'] : 'admin';
-        $user_email = !empty($me_data['email']) ? $me_data['email'] : 'admin@vendamaistech.com.br';
+        $user_email = !empty($me_data['email']) ? $me_data['email'] : 'ogrupovendamais@gmail.com';
 
         $profs = backend_curl(rtrim($BACKEND_BASE, '/') . '/api/productivity/professionals', 'GET', null, $auth_bearer_token);
         if (is_array($profs['json']) && count($profs['json']) > 0) {
@@ -221,7 +221,7 @@ if ($ep_clean === 'timestudio/me' && $http_code === 401 && !empty($auth_bearer_t
         $office_name = !empty($me_data['office_name']) ? $me_data['office_name'] : 'Almeida Braatz Advocacia';
         $prof_name = !empty($me_data['name']) ? $me_data['name'] : 'Alex Franco Françoso Gargalho';
         $prof_id = !empty($me_data['user']) ? $me_data['user'] : 'admin';
-        $user_email = !empty($me_data['email']) ? $me_data['email'] : 'admin@vendamaistech.com.br';
+        $user_email = !empty($me_data['email']) ? $me_data['email'] : 'ogrupovendamais@gmail.com';
 
         $profs = backend_curl(rtrim($BACKEND_BASE, '/') . '/api/productivity/professionals', 'GET', null, $auth_bearer_token);
         if (is_array($profs['json']) && count($profs['json']) > 0) {
