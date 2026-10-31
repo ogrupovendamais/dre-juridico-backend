@@ -450,6 +450,10 @@ def home():return FileResponse(BASE/'web'/'index.html')
 @app.get('/timestudio/')
 def timestudio_home():return FileResponse(BASE/'web'/'timestudio'/'index.html')
 
+@app.get('/manual')
+@app.get('/manual/')
+def manual_home():return FileResponse(BASE/'web'/'manual'/'index.html')
+
 app.mount('/',StaticFiles(directory=BASE/'web',html=True),name='web')
 
 def bootstrap(office,email,password,role='admin'):

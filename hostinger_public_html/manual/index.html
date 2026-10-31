@@ -1,0 +1,4153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DRE Jurídico — Manual Operacional Interativo | Venda+ Tech</title>
+  <meta name="description" content="Manual Operacional Interativo do Sistema DRE Jurídico. Controladoria contábil, gestão de honorários em 10 grupos CPC e acompanhamento de produtividade para escritórios de advocacia.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="assets/images/Amarelo LOGO.png">
+  <style>
+    :root {
+      --navy-950: #01081f;
+      --navy-900: #010E38;
+      --navy-850: #041448;
+      --navy-800: #071c5e;
+      --navy-700: #0f2c85;
+      --navy-card: #061543;
+      --navy-card-border: #14327d;
+      
+      --gold-500: #EBB52C;
+      --gold-400: #f6ca4e;
+      --gold-600: #c99317;
+      --gold-glow: rgba(235, 181, 44, 0.25);
+      
+      --white: #ffffff;
+      --ice-100: #F1F4F9;
+      --ice-200: #dce3ee;
+      --text-muted: #8fa2c4;
+      
+      --green-500: #22c55e;
+      --red-500: #ef4444;
+      --cyan-500: #38bdf8;
+      
+      --sidebar-w: 320px;
+      --header-h: 70px;
+      --radius-sm: 6px;
+      --radius-md: 12px;
+      --radius-lg: 18px;
+      --radius-xl: 24px;
+      --transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    body.light-mode {
+      --navy-950: #f4f6fa;
+      --navy-900: #ffffff;
+      --navy-850: #eaeff7;
+      --navy-800: #dfe6f2;
+      --navy-700: #cbd6e8;
+      --navy-card: #ffffff;
+      --navy-card-border: #ccd7e8;
+      
+      --white: #010E38;
+      --ice-100: #1b2850;
+      --ice-200: #2a3a68;
+      --text-muted: #5b6e8e;
+      --gold-glow: rgba(235, 181, 44, 0.15);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      font-size: 16px;
+    }
+
+    body {
+      background: var(--navy-950);
+      color: var(--ice-100);
+      font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.65;
+      overflow-x: hidden;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--navy-900);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--gold-600);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--gold-500);
+    }
+
+    /* Header */
+    header.top-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--header-h);
+      background: rgba(1, 14, 56, 0.94);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--navy-card-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2rem;
+      z-index: 1000;
+    }
+
+    body.light-mode header.top-bar {
+      background: rgba(255, 255, 255, 0.96);
+    }
+
+    .brand-lockup {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .brand-logo-img {
+      height: 40px;
+      width: auto;
+      object-fit: contain;
+    }
+
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand-name {
+      font-size: 1.15rem;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+      color: var(--gold-500);
+      line-height: 1.1;
+    }
+
+    .brand-tag {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .search-box {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-box input {
+      background: var(--navy-850);
+      border: 1px solid var(--navy-card-border);
+      border-radius: 20px;
+      padding: 6px 14px 6px 34px;
+      font-size: 0.85rem;
+      color: var(--white);
+      outline: none;
+      width: 200px;
+      transition: var(--transition);
+      font-family: inherit;
+    }
+
+    .search-box input:focus {
+      width: 280px;
+      border-color: var(--gold-500);
+      box-shadow: 0 0 10px var(--gold-glow);
+    }
+
+    .search-box svg {
+      position: absolute;
+      left: 10px;
+      fill: var(--text-muted);
+      width: 16px;
+      height: 16px;
+      pointer-events: none;
+    }
+
+    .btn-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 18px;
+      border-radius: 20px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: var(--transition);
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-gold {
+      background: var(--gold-500);
+      color: #010E38;
+    }
+    .btn-gold:hover {
+      background: var(--gold-400);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px var(--gold-glow);
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--navy-card-border);
+      color: var(--ice-100);
+    }
+    .btn-outline:hover {
+      border-color: var(--gold-500);
+      color: var(--gold-500);
+    }
+
+    /* Progress bar */
+    .reading-progress-bar {
+      position: fixed;
+      top: var(--header-h);
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--gold-500), #f39c12);
+      width: 0%;
+      z-index: 1001;
+      transition: width 0.1s linear;
+    }
+
+    /* Layout */
+    .app-layout {
+      display: flex;
+      margin-top: var(--header-h);
+      min-height: calc(100vh - var(--header-h));
+    }
+
+    /* Sidebar */
+    aside.sidebar {
+      width: var(--sidebar-w);
+      background: var(--navy-900);
+      border-right: 1px solid var(--navy-card-border);
+      position: fixed;
+      top: var(--header-h);
+      bottom: 0;
+      left: 0;
+      overflow-y: auto;
+      padding: 1.5rem 1rem 3rem 1rem;
+      z-index: 900;
+    }
+
+    .sidebar-heading {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      color: var(--gold-500);
+      letter-spacing: 1.5px;
+      margin: 1.2rem 0 0.6rem 0.8rem;
+      font-weight: 700;
+    }
+
+    .nav-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .nav-item a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: var(--radius-sm);
+      text-decoration: none;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: var(--transition);
+      border-left: 2px solid transparent;
+    }
+
+    .nav-item a:hover {
+      color: var(--white);
+      background: rgba(235, 181, 44, 0.08);
+    }
+
+    .nav-item a.active {
+      color: var(--gold-500);
+      background: rgba(235, 181, 44, 0.12);
+      border-left-color: var(--gold-500);
+    }
+
+    .nav-badge {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.65rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: var(--navy-800);
+      color: var(--gold-500);
+      border: 1px solid rgba(235, 181, 44, 0.25);
+    }
+
+    /* Main Content */
+    main.content-area {
+      margin-left: var(--sidebar-w);
+      flex: 1;
+      min-width: 0;
+      padding: 2.5rem 4rem 6rem 4rem;
+      max-width: 1400px;
+    }
+
+    @media (max-width: 1200px) {
+      main.content-area {
+        padding: 2rem 2rem 5rem 2rem;
+      }
+    }
+
+    /* Section styling */
+    section.module-section {
+      margin-bottom: 5rem;
+      scroll-margin-top: calc(var(--header-h) + 2rem);
+    }
+
+    .module-header {
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--navy-card-border);
+      padding-bottom: 1.5rem;
+    }
+
+    .module-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 12px;
+      background: rgba(235, 181, 44, 0.12);
+      border: 1px solid var(--gold-500);
+      border-radius: 20px;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--gold-500);
+      font-weight: 700;
+      margin-bottom: 0.8rem;
+    }
+
+    .module-title {
+      font-size: 2.2rem;
+      font-weight: 900;
+      color: var(--white);
+      line-height: 1.2;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.5px;
+    }
+
+    .module-subtitle {
+      font-size: 1.05rem;
+      color: var(--gold-400);
+      font-weight: 600;
+    }
+
+    .module-objective {
+      margin-top: 1rem;
+      padding: 1rem 1.25rem;
+      background: var(--navy-850);
+      border-left: 4px solid var(--gold-500);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      font-size: 0.95rem;
+      color: var(--ice-100);
+    }
+
+    /* Cards */
+    .card {
+      background: var(--navy-card);
+      border: 1px solid var(--navy-card-border);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--gold-500), transparent);
+      opacity: 0.6;
+    }
+
+    .card-title {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--white);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-title svg {
+      fill: var(--gold-500);
+      width: 22px;
+      height: 22px;
+    }
+
+    /* Screenshot Component */
+    .screenshot-card {
+      background: #030a21;
+      border: 1px solid var(--navy-card-border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      margin: 1.5rem 0;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+      transition: var(--transition);
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .screenshot-bar {
+      background: #06123a;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--navy-card-border);
+    }
+
+    .mac-dots {
+      display: flex;
+      gap: 6px;
+    }
+    .mac-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+    .dot-red { background: #ef4444; }
+    .dot-yellow { background: #f59e0b; }
+    .dot-green { background: #10b981; }
+
+    .screen-url {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .screen-img-container {
+      position: relative;
+      cursor: zoom-in;
+      overflow: hidden;
+      background: #020617;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+    }
+
+    .screen-img {
+      width: 100%;
+      height: auto;
+      display: block;
+      transition: transform 0.4s ease;
+    }
+
+    .screen-img-container:hover .screen-img {
+      transform: scale(1.02);
+    }
+
+    .zoom-hint {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      background: rgba(1, 14, 56, 0.88);
+      border: 1px solid var(--gold-500);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--gold-500);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      backdrop-filter: blur(8px);
+      pointer-events: none;
+      transition: var(--transition);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+
+    .screenshot-caption {
+      padding: 14px 18px;
+      font-size: 0.88rem;
+      line-height: 1.6;
+      color: var(--text-muted);
+      background: var(--navy-900);
+      border-top: 1px solid var(--navy-card-border);
+      display: block;
+      text-align: left;
+      margin-top: auto;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+    .screenshot-caption strong {
+      color: #f1f5f9;
+      font-weight: 700;
+      display: inline;
+    }
+
+    /* Lightbox Modal */
+    .lightbox-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(1, 8, 31, 0.96);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      z-index: 9999;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .lightbox-modal.active {
+      display: flex;
+      animation: fadeIn 0.25s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.97); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .lightbox-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 95vw;
+      margin-bottom: 10px;
+      padding: 0 10px;
+    }
+
+    .lightbox-title-text {
+      color: var(--gold-500);
+      font-weight: 700;
+      font-size: 1rem;
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    .lightbox-btns {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .lightbox-btn {
+      background: var(--navy-850);
+      border: 1px solid var(--navy-card-border);
+      color: var(--white);
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .lightbox-btn:hover {
+      background: var(--gold-500);
+      color: #010E38;
+      border-color: var(--gold-500);
+    }
+
+    .lightbox-content-box {
+      max-width: 95vw;
+      max-height: 85vh;
+      position: relative;
+      border-radius: var(--radius-lg);
+      overflow: auto;
+      border: 2px solid var(--gold-500);
+      box-shadow: 0 0 50px rgba(235, 181, 44, 0.35);
+      background: #02071a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .lightbox-img {
+      max-width: 100%;
+      max-height: 82vh;
+      object-fit: contain;
+      display: block;
+      transition: transform 0.2s ease;
+      transform-origin: center center;
+    }
+
+    /* Grid Layouts */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
+      margin: 1.5rem 0;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+      margin: 1.5rem 0;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+      margin: 1.5rem 0;
+    }
+
+    @media (max-width: 1100px) {
+      .grid-3 {
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.25rem;
+      }
+    }
+
+    @media (max-width: 960px) {
+      .grid-2, .grid-3 {
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+      }
+    }
+
+    /* Metric cards */
+    .metric-card {
+      background: var(--navy-850);
+      border: 1px solid var(--navy-card-border);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .metric-card:hover {
+      border-color: var(--gold-500);
+      transform: translateY(-2px);
+    }
+
+    .metric-card::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--gold-500);
+    }
+
+    .metric-tag {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--gold-500);
+      font-weight: 700;
+    }
+
+    .metric-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--white);
+      margin: 4px 0 8px 0;
+    }
+
+    .metric-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+
+    /* Tables */
+    .table-container {
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--navy-card-border);
+      background: var(--navy-900);
+    }
+
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      text-align: left;
+    }
+
+    table.data-table th {
+      background: var(--navy-800);
+      color: var(--gold-500);
+      font-family: 'Space Mono', monospace;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      padding: 12px 18px;
+      border-bottom: 2px solid var(--navy-card-border);
+    }
+
+    table.data-table td {
+      padding: 12px 18px;
+      border-bottom: 1px solid rgba(20, 50, 125, 0.4);
+      color: var(--ice-100);
+    }
+
+    table.data-table tr:hover td {
+      background: rgba(235, 181, 44, 0.04);
+    }
+
+    /* Alerts */
+    .alert-box {
+      padding: 1.25rem 1.5rem;
+      border-radius: var(--radius-md);
+      margin: 1.5rem 0;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      border-left: 4px solid;
+    }
+
+    .alert-box.info {
+      background: rgba(56, 189, 248, 0.1);
+      border-color: var(--cyan-500);
+      color: #bae6fd;
+    }
+
+    .alert-box.warning {
+      background: rgba(235, 181, 44, 0.12);
+      border-color: var(--gold-500);
+      color: #fef08a;
+    }
+
+    .alert-box.danger {
+      background: rgba(239, 68, 68, 0.12);
+      border-color: var(--red-500);
+      color: #fecaca;
+    }
+
+    .alert-box.success {
+      background: rgba(34, 197, 94, 0.12);
+      border-color: var(--green-500);
+      color: #bbf7d0;
+    }
+
+    .alert-icon {
+      font-size: 1.4rem;
+      line-height: 1;
+    }
+
+    .alert-title {
+      font-weight: 800;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      font-size: 0.8rem;
+      letter-spacing: 0.5px;
+    }
+
+    /* Interactive Calculators */
+    .calc-card {
+      background: linear-gradient(145deg, #07194f, #041036);
+      border: 1px solid var(--gold-500);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      margin: 2rem 0;
+      box-shadow: 0 10px 30px var(--gold-glow);
+    }
+
+    .calc-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+      border-bottom: 1px solid var(--navy-card-border);
+      padding-bottom: 1rem;
+    }
+
+    .calc-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--gold-500);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .calc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .calc-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .calc-field label {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .calc-field input {
+      background: var(--navy-900);
+      border: 1px solid var(--navy-card-border);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      color: var(--white);
+      font-family: 'Space Mono', monospace;
+      font-size: 1rem;
+      font-weight: 700;
+      outline: none;
+      transition: var(--transition);
+    }
+
+    .calc-field input:focus {
+      border-color: var(--gold-500);
+      box-shadow: 0 0 10px var(--gold-glow);
+    }
+
+    .calc-result-box {
+      background: #020a24;
+      border: 1px solid var(--navy-card-border);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1.5rem;
+      align-items: center;
+    }
+
+    .result-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .result-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .result-value {
+      font-family: 'Space Mono', monospace;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--gold-500);
+    }
+
+    .result-value.success { color: var(--green-500); }
+    .result-value.danger { color: var(--red-500); }
+
+    /* Checklist */
+    .checklist-container {
+      background: var(--navy-900);
+      border: 1px solid var(--navy-card-border);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+    }
+
+    .check-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(20, 50, 125, 0.25);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .check-item:last-child {
+      border-bottom: none;
+    }
+
+    .check-item input[type="checkbox"] {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      border: 2px solid var(--gold-500);
+      border-radius: 4px;
+      background: transparent;
+      outline: none;
+      cursor: pointer;
+      display: grid;
+      place-content: center;
+      margin-top: 2px;
+      flex-shrink: 0;
+      transition: var(--transition);
+    }
+
+    .check-item input[type="checkbox"]:checked {
+      background: var(--gold-500);
+    }
+
+    .check-item input[type="checkbox"]:checked::before {
+      content: '✓';
+      color: #010E38;
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    .check-label {
+      font-size: 0.92rem;
+      color: var(--ice-100);
+      line-height: 1.45;
+      transition: var(--transition);
+    }
+
+    .check-item.checked .check-label {
+      text-decoration: line-through;
+      color: var(--text-muted);
+    }
+
+    /* Hero Cover Presentation */
+    .hero-presentation {
+      background: linear-gradient(135deg, #010E38 0%, #061958 50%, #01081f 100%);
+      border: 2px solid var(--gold-500);
+      border-radius: var(--radius-xl);
+      padding: 3.5rem 3rem;
+      margin-bottom: 4rem;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 40px var(--gold-glow);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-content {
+      max-width: 920px;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 3rem;
+      align-items: center;
+    }
+
+    @media (max-width: 1000px) {
+      .hero-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .hero-title-main {
+      font-size: 3.2rem;
+      font-weight: 900;
+      color: var(--gold-500);
+      letter-spacing: -1px;
+      line-height: 1.05;
+      margin-bottom: 1rem;
+      text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    .hero-sub-text {
+      font-size: 1.15rem;
+      color: var(--ice-100);
+      line-height: 1.6;
+      margin-bottom: 2rem;
+    }
+
+    .hero-mockup-wrapper {
+      position: relative;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+      border: 2px solid rgba(235, 181, 44, 0.4);
+      transition: var(--transition);
+      cursor: zoom-in;
+    }
+
+    .hero-mockup-wrapper:hover {
+      transform: translateY(-4px) scale(1.02);
+      border-color: var(--gold-500);
+    }
+
+    .hero-mockup-img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    /* Footer */
+    footer.app-footer {
+      background: var(--navy-900);
+      border-top: 1px solid var(--navy-card-border);
+      padding: 3.5rem 1.5rem 2.5rem 1.5rem;
+      margin-top: 5rem;
+      text-align: center;
+      position: relative;
+      width: 100%;
+      box-sizing: border-box;
+      border-radius: var(--radius-lg);
+    }
+    .footer-logo {
+      height: 48px;
+      width: auto;
+      margin: 0 auto 1.25rem auto;
+      display: block;
+    }
+    .footer-tagline {
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--gold-500);
+      letter-spacing: 0.08em;
+      margin-bottom: 0.75rem;
+      text-align: center;
+    }
+    .footer-creds {
+      font-size: 0.88rem;
+      color: var(--ice-100);
+      margin-bottom: 1rem;
+      line-height: 1.6;
+      text-align: center;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .footer-copy {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      text-align: center;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .footer-logo {
+      height: 48px;
+      margin-bottom: 1rem;
+    }
+
+    .footer-tagline {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--gold-500);
+      margin-bottom: 0.5rem;
+    }
+
+    .footer-creds {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+    }
+
+    /* ============================================================
+       RESPONSIVE & MOBILE STYLES (Zero impact on Desktop)
+       ============================================================ */
+
+    /* Desktop defaults for mobile-only elements */
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .mobile-nav-toggle {
+      display: none;
+    }
+
+    .sidebar-backdrop {
+      display: none;
+    }
+
+    .sidebar-mobile-header,
+    .sidebar-mobile-search {
+      display: none;
+    }
+
+    .btn-label-mobile {
+      display: none;
+    }
+
+    .hero-actions-group {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    /* --- Tablet & Small Desktop (max-width: 1024px) --- */
+    @media (max-width: 1024px) {
+      .hero-grid {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+      }
+      .hero-mockup-wrapper {
+        max-width: 600px;
+        margin: 0 auto;
+      }
+    }
+
+    /* --- Tablet & Mobile Navigation Breakpoint (max-width: 900px) --- */
+    @media (max-width: 900px) {
+      :root {
+        --header-h: 60px;
+      }
+
+      header.top-bar {
+        height: 60px;
+        padding: 0 1rem;
+      }
+
+      .mobile-nav-toggle {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 4px;
+        width: 38px;
+        height: 38px;
+        border-radius: 8px;
+        background: var(--navy-850);
+        border: 1px solid var(--navy-card-border);
+        cursor: pointer;
+        padding: 0;
+        margin-right: 6px;
+        flex-shrink: 0;
+        transition: var(--transition);
+      }
+
+      .mobile-nav-toggle:hover,
+      .mobile-nav-toggle:active {
+        border-color: var(--gold-500);
+        background: rgba(235, 181, 44, 0.12);
+      }
+
+      .hamburger-bar {
+        width: 18px;
+        height: 2px;
+        background: var(--gold-500);
+        border-radius: 2px;
+        transition: var(--transition);
+      }
+
+      .brand-logo-img {
+        height: 32px;
+      }
+
+      .brand-name {
+        font-size: 1rem;
+      }
+
+      .brand-tag {
+        display: none;
+      }
+
+      .header-actions {
+        gap: 8px;
+      }
+
+      .search-box {
+        display: none; /* Accessible inside mobile drawer */
+      }
+
+      .btn-print-header {
+        display: none; /* Printed view oriented for desktop */
+      }
+
+      .btn-label-desktop {
+        display: none;
+      }
+
+      .btn-label-mobile {
+        display: inline;
+      }
+
+      .btn-theme {
+        padding: 7px 11px;
+        font-size: 0.9rem;
+        border-radius: 8px;
+      }
+
+      .btn-live-header {
+        padding: 7px 13px;
+        font-size: 0.8rem;
+        border-radius: 16px;
+        white-space: nowrap;
+      }
+
+      /* Mobile Drawer Sidebar */
+      .sidebar-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(1, 8, 31, 0.78);
+        backdrop-filter: blur(5px);
+        -webkit-backdrop-filter: blur(5px);
+        z-index: 2000;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      .sidebar-backdrop.active {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      aside.sidebar {
+        display: block !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        bottom: 0 !important;
+        width: min(320px, 86vw) !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        background: var(--navy-900) !important;
+        border-right: 1px solid var(--navy-card-border) !important;
+        z-index: 2100 !important;
+        transform: translateX(-100%);
+        transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        box-shadow: none;
+        padding: 1rem 1rem 3rem 1rem !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      aside.sidebar.active {
+        transform: translateX(0);
+        box-shadow: 15px 0 50px rgba(0, 0, 0, 0.85);
+      }
+
+      .sidebar-mobile-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-bottom: 0.8rem;
+        margin-bottom: 0.8rem;
+        border-bottom: 1px solid var(--navy-card-border);
+      }
+
+      .drawer-brand {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 800;
+        font-size: 0.95rem;
+        color: var(--gold-500);
+      }
+
+      .drawer-logo {
+        height: 24px;
+        width: auto;
+      }
+
+      .drawer-close-btn {
+        background: var(--navy-850);
+        border: 1px solid var(--navy-card-border);
+        color: var(--white);
+        border-radius: 8px;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 1.1rem;
+        transition: var(--transition);
+      }
+
+      .drawer-close-btn:hover {
+        background: var(--gold-500);
+        color: #010E38;
+      }
+
+      .sidebar-mobile-search {
+        display: flex;
+        position: relative;
+        margin-bottom: 1rem;
+      }
+
+      .sidebar-mobile-search svg {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 16px;
+        height: 16px;
+        fill: var(--text-muted);
+        pointer-events: none;
+      }
+
+      .sidebar-mobile-search input {
+        width: 100%;
+        background: var(--navy-850);
+        border: 1px solid var(--navy-card-border);
+        border-radius: 8px;
+        padding: 8px 12px 8px 34px;
+        color: var(--white);
+        font-size: 0.85rem;
+        font-family: inherit;
+        outline: none;
+        transition: var(--transition);
+      }
+
+      .sidebar-mobile-search input:focus {
+        border-color: var(--gold-500);
+        box-shadow: 0 0 10px var(--gold-glow);
+      }
+
+      /* Content Area */
+      main.content-area {
+        margin-left: 0 !important;
+        padding: 1.25rem 1rem 4rem 1rem !important;
+        max-width: 100vw;
+        overflow-x: hidden;
+      }
+
+      .reading-progress-bar {
+        top: 60px;
+      }
+    }
+
+    /* --- Mobile Handheld Phones (max-width: 600px) --- */
+    @media (max-width: 600px) {
+      body {
+        font-size: 15px;
+      }
+
+      /* Hero Section */
+      .hero-presentation {
+        padding: 1.75rem 1.15rem;
+        border-radius: 16px;
+        margin-bottom: 2rem;
+      }
+
+      .hero-title-main {
+        font-size: clamp(2rem, 8.5vw, 2.5rem);
+        line-height: 1.1;
+        margin-bottom: 0.6rem;
+      }
+
+      .hero-presentation h2 {
+        font-size: 1.05rem !important;
+        margin-bottom: 0.85rem !important;
+        line-height: 1.35;
+      }
+
+      .hero-sub-text {
+        font-size: 0.9rem;
+        line-height: 1.55;
+        margin-bottom: 1.5rem;
+      }
+
+      .hero-actions-group {
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+      }
+
+      .hero-actions-group .btn-pill {
+        width: 100%;
+        justify-content: center;
+        text-align: center;
+        padding: 11px 14px;
+        font-size: 0.85rem;
+        box-sizing: border-box;
+      }
+
+      /* Module Section */
+      section.module-section {
+        margin-bottom: 2.75rem;
+        scroll-margin-top: 72px;
+      }
+
+      .module-header {
+        margin-bottom: 1.25rem;
+        padding-bottom: 1rem;
+      }
+
+      .module-badge {
+        font-size: 0.65rem;
+        padding: 3px 8px;
+        white-space: normal;
+        line-height: 1.3;
+        margin-bottom: 0.6rem;
+      }
+
+      .module-title {
+        font-size: clamp(1.4rem, 6vw, 1.8rem);
+        line-height: 1.25;
+        margin-bottom: 0.4rem;
+        word-break: break-word;
+      }
+
+      .module-subtitle {
+        font-size: 0.92rem;
+        line-height: 1.4;
+      }
+
+      .module-objective {
+        padding: 0.85rem 1rem;
+        font-size: 0.88rem;
+        line-height: 1.5;
+        margin-top: 0.8rem;
+      }
+
+      /* Cards */
+      .card {
+        padding: 1.25rem 1rem;
+        border-radius: 14px;
+        margin-bottom: 1.5rem;
+      }
+
+      .card-title {
+        font-size: 1.15rem;
+        line-height: 1.35;
+        margin-bottom: 0.75rem;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .card-title svg {
+        width: 20px;
+        height: 20px;
+      }
+
+      /* Grids */
+      .grid-2, .grid-3 {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        margin: 1rem 0;
+      }
+
+      .metric-card {
+        padding: 1rem;
+      }
+
+      .metric-title {
+        font-size: 0.95rem;
+      }
+
+      .metric-desc {
+        font-size: 0.82rem;
+      }
+
+      /* Screenshots */
+      .screenshot-card {
+        margin: 1.25rem 0;
+        border-radius: 12px;
+      }
+
+      .screenshot-bar {
+        padding: 8px 12px;
+      }
+
+      .screen-url {
+        font-size: 0.65rem;
+        max-width: 170px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .zoom-hint {
+        bottom: 8px;
+        right: 8px;
+        padding: 4px 9px;
+        font-size: 0.68rem;
+        gap: 4px;
+      }
+
+      .screenshot-caption {
+        padding: 12px 14px;
+        font-size: 0.85rem;
+        line-height: 1.55;
+        display: block !important;
+        text-align: left !important;
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+      }
+      .screenshot-caption strong {
+        display: inline !important;
+      }
+
+      /* Tables */
+      .table-container {
+        margin: 1rem 0;
+        border-radius: 10px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      table.data-table {
+        min-width: 540px;
+      }
+
+      table.data-table th,
+      table.data-table td {
+        padding: 9px 12px;
+        font-size: 0.82rem;
+      }
+
+      /* Calculators */
+      .calc-card {
+        padding: 1.25rem 1rem;
+        border-radius: 14px;
+        margin: 1.5rem 0;
+      }
+
+      .calc-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+        margin-bottom: 1rem;
+      }
+
+      .calc-title {
+        font-size: 1.1rem;
+      }
+
+      .calc-grid {
+        grid-template-columns: 1fr;
+        gap: 0.85rem;
+        margin-bottom: 1.2rem;
+      }
+
+      .calc-field input {
+        padding: 9px 12px;
+        font-size: 0.95rem;
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      .calc-result-box {
+        grid-template-columns: 1fr 1fr;
+        padding: 1rem;
+        gap: 1rem;
+      }
+
+      .result-value {
+        font-size: 1.15rem;
+        word-break: break-word;
+      }
+
+      /* Lightbox Modal */
+      .lightbox-modal {
+        padding: 0.5rem;
+      }
+
+      .lightbox-toolbar {
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 8px;
+        width: 100%;
+      }
+
+      .lightbox-title-text {
+        font-size: 0.82rem;
+        text-align: center;
+        max-width: 95vw;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .lightbox-btns {
+        width: 100%;
+        justify-content: center;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+
+      .lightbox-btn {
+        padding: 6px 10px;
+        font-size: 0.78rem;
+        min-height: 36px;
+      }
+
+      .lightbox-content-box {
+        max-width: 98vw;
+        max-height: 75vh;
+        border-radius: 12px;
+      }
+
+      .lightbox-img {
+        max-height: 72vh;
+      }
+
+      /* Checklist */
+      .checklist-container {
+        padding: 1rem;
+      }
+
+      .check-item {
+        gap: 10px;
+        padding: 8px 0;
+      }
+
+      .check-label {
+        font-size: 0.86rem;
+      }
+
+      /* Footer */
+      footer.app-footer {
+        padding: 2.5rem 1rem 2rem 1rem;
+        margin-top: 3.5rem;
+      }
+
+      .footer-logo {
+        height: 38px;
+      }
+
+      .footer-tagline {
+        font-size: 0.95rem;
+      }
+
+      .footer-creds {
+        font-size: 0.8rem;
+      }
+    }
+
+    /* Extra Small Screen (max-width: 380px) */
+    @media (max-width: 380px) {
+      .calc-result-box {
+        grid-template-columns: 1fr;
+      }
+      .brand-name {
+        font-size: 0.9rem;
+      }
+      .hero-title-main {
+        font-size: 1.85rem;
+      }
+    }
+
+    /* Print styles */
+    @media print {
+      header.top-bar, aside.sidebar, .btn-pill, .search-box, .zoom-hint, .lightbox-modal {
+        display: none !important;
+      }
+      main.content-area {
+        margin: 0 !important;
+        padding: 0 !important;
+        max-width: 100% !important;
+      }
+      body {
+        background: #ffffff !important;
+        color: #000000 !important;
+      }
+      .card, .screenshot-card, .metric-card {
+        border: 1px solid #ccc !important;
+        background: #fff !important;
+        box-shadow: none !important;
+        page-break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Progress Bar -->
+  <div class="reading-progress-bar" id="progressBar"></div>
+
+  <!-- Header -->
+  <header class="top-bar">
+    <div class="header-left">
+      <button class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Abrir Menu de Navegação">
+        <span class="hamburger-bar"></span>
+        <span class="hamburger-bar"></span>
+        <span class="hamburger-bar"></span>
+      </button>
+      <a href="#apresentacao" class="brand-lockup">
+        <img src="assets/images/Amarelo LOGO.png" alt="Venda+ Tech" class="brand-logo-img">
+        <div class="brand-text">
+          <span class="brand-name">VENDA+ TECH</span>
+          <span class="brand-tag">DRE JURÍDICO · MANUAL OPERACIONAL</span>
+        </div>
+      </a>
+          <a href="../" class="btn-back-system" style="margin-left:auto;display:inline-flex;align-items:center;gap:7px;padding:7px 14px;background:rgba(235,181,44,0.12);border:1px solid rgba(235,181,44,0.5);border-radius:8px;color:#EBB52C;font-size:12px;font-weight:700;text-decoration:none;transition:all .2s ease;box-shadow:0 2px 6px rgba(0,0,0,0.2);">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+        <span>Voltar ao DRE Jurídico</span>
+      </a>
+    </div>
+  </header>
+
+  <div class="app-layout">
+    <!-- Mobile Drawer Backdrop -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebarNav">
+      <!-- Mobile Drawer Header -->
+      <div class="sidebar-mobile-header">
+        <div class="drawer-brand">
+          <img src="assets/images/Amarelo LOGO.png" alt="Logo" class="drawer-logo">
+          <span>Manual de Navegação</span>
+        </div>
+        <button class="drawer-close-btn" id="drawerCloseBtn" aria-label="Fechar menu">✕</button>
+      </div>
+
+      <!-- Mobile Drawer Search -->
+      <div class="sidebar-mobile-search">
+        <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+        <input type="text" id="mobileDrawerSearch" placeholder="Buscar módulo ou termo...">
+      </div>
+
+      <div class="sidebar-heading">Estrutura do Manual</div>
+      <ul class="nav-list">
+        <li class="nav-item"><a href="#apresentacao" class="active"><span class="nav-badge">00</span> Apresentação Executiva</a></li>
+        <li class="nav-item"><a href="#modulo-01"><span class="nav-badge">01</span> Visão Geral & Cockpit</a></li>
+        <li class="nav-item"><a href="#modulo-02"><span class="nav-badge">02</span> Novo Lançamento</a></li>
+        <li class="nav-item"><a href="#modulo-03"><span class="nav-badge">03</span> DRE (10 Grupos CPC)</a></li>
+        <li class="nav-item"><a href="#modulo-04"><span class="nav-badge">04</span> Catálogo de Naturezas</a></li>
+        <li class="nav-item"><a href="#modulo-05"><span class="nav-badge">05</span> Clientes & Contratos</a></li>
+        <li class="nav-item"><a href="#modulo-06"><span class="nav-badge">06</span> Diagnóstico & Funil</a></li>
+        <li class="nav-item"><a href="#modulo-06-1"><span class="nav-badge">6/1</span> Horas & Time Studio</a></li>
+        <li class="nav-item"><a href="#modulo-06-2"><span class="nav-badge">6/2</span> Etapas Processuais</a></li>
+        <li class="nav-item"><a href="#modulo-06-3"><span class="nav-badge">6/3</span> Metas & Planejamento</a></li>
+        <li class="nav-item"><a href="#modulo-07"><span class="nav-badge">07</span> Gestão de Acessos</a></li>
+        <li class="nav-item"><a href="#modulo-07-1"><span class="nav-badge">7/1</span> Trilha de Auditoria</a></li>
+        <li class="nav-item"><a href="#modulo-07-2"><span class="nav-badge">7/2</span> Segurança & MFA</a></li>
+        <li class="nav-item"><a href="#contracapa"><span class="nav-badge">★</span> Contra-Capa & Entrega</a></li>
+      </ul>
+
+      <div class="sidebar-heading">Simuladores Interativos</div>
+      <ul class="nav-list">
+        <li class="nav-item"><a href="#simulador-dre">⚡ Simulador 10 Grupos CPC</a></li>
+        <li class="nav-item"><a href="#simulador-runway">📊 Calculadora Burn Rate</a></li>
+        <li class="nav-item"><a href="#simulador-funil">🎯 Simulador Funil Jurídico</a></li>
+      </ul>
+
+      <div class="sidebar-heading">Identidade & Conformidade</div>
+      <div style="padding: 0 0.8rem; font-size: 0.75rem; color: var(--text-muted); line-height: 1.5;">
+        <p>• <strong>CPC 00 (R2)</strong> Contábil</p>
+        <p>• <strong>Provimento CFOAB nº 205/2021</strong></p>
+        <p>• <strong>Brand Kit Venda+ Tech</strong> v1.0</p>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="content-area">
+
+      <!-- HERO / APRESENTAÇÃO -->
+      <section id="apresentacao" class="module-section">
+        <div class="hero-presentation">
+          <div class="hero-content">
+            <div class="module-badge">DOCUMENTO DE HOMOLOGAÇÃO & IMPLANTAÇÃO EXECUTIVA</div>
+            <h1 class="hero-title-main">DRE JURÍDICO</h1>
+            <h2 style="font-size: 1.35rem; color: var(--gold-400); margin-bottom: 1.2rem; font-weight: 700;">Manual Operacional do Sistema & Guia de Controladoria</h2>
+            <p class="hero-sub-text">
+              Plataforma de inteligência financeira, gestão contábil de honorários, apuração estruturada de resultados em 10 grupos CPC e acompanhamento de produtividade para escritórios de advocacia de alta performance.
+            </p>
+            
+            <div class="hero-actions-group">
+              <span class="btn-pill btn-gold" onclick="document.getElementById('modulo-01').scrollIntoView({behavior:'smooth'})">
+                📖 Iniciar Navegação
+              </span>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- MÓDULO 01 -->
+      <section id="modulo-01" class="module-section">
+        <div class="module-header">
+          <span class="module-badge">MÓDULO 01</span>
+          <h2 class="module-title">Visão Geral e Painel Executivo (Cockpit)</h2>
+          <div class="module-subtitle">DRE Jurídico | Controladoria e Inteligência Financeira</div>
+          <div class="module-objective">
+            <strong>Objetivo:</strong> Orientar o gestor a navegar na tela inicial, filtrar períodos de fechamento, compreender os 5 indicadores principais, avaliar o Burn Rate e realizar a conferência financeira com total segurança.
+          </div>
+        </div>
+
+        <div class="screenshot-card">
+          <div class="screenshot-bar">
+            <div class="mac-dots">
+              <div class="mac-dot dot-red"></div>
+              <div class="mac-dot dot-yellow"></div>
+              <div class="mac-dot dot-green"></div>
+            </div>
+            <div class="screen-url">https://dre.almeidabraatzadvocacia.com.br/inicio (Visão Geral)</div>
+            <div style="font-family:'Space Mono'; font-size:0.75rem; color:var(--gold-500);">CAPTURA DO SISTEMA REAL</div>
+          </div>
+          <div class="screen-img-container">
+            <img src="assets/images/01_visao_geral.webp" alt="Visão Geral do Painel Executivo" class="screen-img">
+            <div class="zoom-hint">🔍 Clique para Ampliar Tela</div>
+          </div>
+          <div class="screenshot-caption">
+            <strong>Figura 1.</strong> Captura real do sistema: menu superior, filtros temporais, 5 cartões de KPI, Burn Rate, Runway de Sobrevivência e Resultado por Área Jurídica.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">01. Para que Serve a Visão Geral</div>
+          <p>
+            A <strong>Visão Geral</strong> é a porta de entrada operacional do sistema. Ela consolida todos os lançamentos do período selecionado em receitas de honorários, custos diretos de prestação de serviços, despesas administrativas e operacionais, apuração simplificada de resultado e operações patrimoniais.
+          </p>
+          <div class="alert-box warning">
+            <div class="alert-icon">⚠️</div>
+            <div class="alert-text">
+              <div class="alert-title">Atenção Contábil Fundamental</div>
+              O painel espelha estritamente os lançamentos cadastrados no sistema e seus filtros ativos. Um valor zerado não comprova inexistência de operações bancárias externas ainda não registradas. O painel gerencial complementa, mas não substitui a conciliação bancária nem a escrituração contábil formal.
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">02. Leitura dos Cinco Indicadores Chave</div>
+          <div class="grid-3">
+            <div class="metric-card">
+              <span class="metric-tag">01 · RECEITAS</span>
+              <div class="metric-title">Honorários Próprios</div>
+              <div class="metric-desc">Entradas classificadas como receitas da atividade jurídica no escopo do filtro (honorários contratuais, êxito, consultoria).</div>
+            </div>
+            <div class="metric-card">
+              <span class="metric-tag">02 · CUSTOS DIRETOS</span>
+              <div class="metric-title">Gastos da Lide</div>
+              <div class="metric-desc">Valores diretamente atribuídos à prestação jurídica (perícias técnicas, custas iniciais não reembolsáveis, advogados correspondentes).</div>
+            </div>
+            <div class="metric-card">
+              <span class="metric-tag">03 · DESPESAS</span>
+              <div class="metric-title">Operação & Estrutura</div>
+              <div class="metric-desc">Gastos de manutenção da banca: equipe de apoio, aluguel, softwares jurídicos, marketing de captação e serviços administrativos.</div>
+            </div>
+            <div class="metric-card">
+              <span class="metric-tag">04 · RESULTADO LÍQUIDO</span>
+              <div class="metric-title">Resultado Gerencial</div>
+              <div class="metric-desc"><strong>Fórmula:</strong> Receitas − Custos Diretos − Despesas Operacionais. Apuração simplificada da margem da banca.</div>
+            </div>
+            <div class="metric-card">
+              <span class="metric-tag">05 · PATRIMÔNIO</span>
+              <div class="metric-title">Segregação Não-DRE</div>
+              <div class="metric-desc">Movimentações classificadas fora da DRE: aportes dos sócios, amortizações de empréstimos e transferências que não afetam o resultado do exercício.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SIMULADOR INTERATIVO RUNWAY -->
+        <div id="simulador-runway" class="calc-card">
+          <div class="calc-header">
+            <div class="calc-title">⚡ Simulador Interativo: Burn Rate & Runway de Sobrevivência</div>
+            <span class="module-badge">MÉTRICA DO COCKPIT</span>
+          </div>
+          <p style="color: var(--ice-200); font-size: 0.9rem; margin-bottom: 1.5rem;">
+            O <strong>Burn Rate</strong> representa a taxa de queima líquida mensal de caixa. O <strong>Runway</strong> indica quantos meses o escritório sobrevive com o saldo atual antes de zerar suas reservas:
+          </p>
+          <div class="calc-grid">
+            <div class="calc-field">
+              <label>Saldo Disponível em Caixa (R$)</label>
+              <input type="number" id="burnSaldo" value="50000" step="1000">
+            </div>
+            <div class="calc-field">
+              <label>Burn Rate Mensal (Média de Saídas R$)</label>
+              <input type="number" id="burnRate" value="12500" step="500">
+            </div>
+            <div class="calc-field">
+              <label>Entradas Previstas / Mês (R$)</label>
+              <input type="number" id="burnReceita" value="4000" step="500">
+            </div>
+          </div>
+          <div class="calc-result-box">
+            <div class="result-item">
+              <span class="result-label">Queima Líquida Mensal</span>
+              <span class="result-value danger" id="resQueimaLiquida">R$ 8.500,00</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Autonomia Estimada (Runway)</span>
+              <span class="result-value" id="resAutonomia">5,9 Meses</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Diagnóstico da Banca</span>
+              <span class="result-value success" id="resStatusRunway">Equilíbrio Estável</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">03. Checklist de Conferência Mensal da Visão Geral</div>
+          <div class="checklist-container">
+            <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><span class="check-label">01. Acessei Início > Visão Geral com perfil autorizado.</span></div>
+            <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><span class="check-label">02. Selecionei a competência correta (Mês Atual ou Mês de Fechamento) em vez de acumular Todos os Meses por engano.</span></div>
+            <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><span class="check-label">03. Verifiquei o contador de lançamentos e bati com o extrato bancário do escritório.</span></div>
+            <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><span class="check-label">04. Conferi se todas as receitas foram cadastradas como receitas e não aportes patrimoniais.</span></div>
+            <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><span class="check-label">05. Revisei custos diretos e despesas, evitando omissões ou duplicidades.</span></div>
+            <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><span class="check-label">06. Validei se o indicador de Burn Rate reflete despesas recorrentes representativas.</span></div>
+          </div>
+        </div>
+      
+        <!-- FORMULA E CONFERENCIA DO RESULTADO SIMPLIFICADO -->
+        <div class="card" style="margin-top: 20px;">
+          <div class="card-title">🧮 Fórmula e Conferência do Resultado Simplificado</div>
+          <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6;">
+            A apuração inicial do Cockpit utiliza a regra de resultado operacional gerencial do Playbook Mestre:
+          </p>
+          <div style="background: rgba(234, 179, 8, 0.08); border: 1px solid rgba(234, 179, 8, 0.3); border-radius: 8px; padding: 14px 18px; margin: 12px 0; font-family: 'Space Mono', monospace; font-size: 14px; color: var(--gold-500); text-align: center;">
+            Resultado = Receitas − Custos Diretos − Despesas Operacionais
+          </div>
+          <p style="color: #94a3b8; font-size: 13px; line-height: 1.6;">
+            <strong>Exemplo visto na tela:</strong> R$ 0,00 (Receitas) − R$ 0,00 (Custos Diretos) − R$ 1.050,00 (Despesas) = <strong>−R$ 1.050,00</strong>.
+          </p>
+          <div style="margin-top: 12px; padding: 10px 14px; background: rgba(56, 189, 248, 0.08); border-left: 3px solid #38bdf8; border-radius: 4px; font-size: 12.5px; color: #cbd5e1; line-height: 1.5;">
+            <strong>Atenção Contábil:</strong> O indicador exibido é descrito como <em>"resultado simplificado"</em>. Sua apuração reflete a movimentação do período selecionado e não deve ser confundida com um lucro líquido contábil societário formal, que exige competência, conciliação bancária completa e provisão de tributos.
+          </div>
+        </div>
+
+        <!-- ROTEIRO DE USO: CONFERENCIA MENSAL EM 10 PASSOS -->
+        <div class="card" style="margin-top: 20px;">
+          <div class="card-title">📋 Roteiro de Uso: Conferência Mensal em 10 Passos</div>
+          <ol style="color: #cbd5e1; font-size: 13.5px; line-height: 1.8; padding-left: 20px; margin-top: 10px;">
+            <li><strong>Acesso Autorizado:</strong> Entre em <em>Início &gt; Visão Geral</em> com suas credenciais de acesso;</li>
+            <li><strong>Seleção de Competência:</strong> Selecione no campo <em>Mês</em> a competência que deseja revisar;</li>
+            <li><strong>Controle de Lançamentos:</strong> Leia o contador de lançamentos e compare-o com seu controle físico/financeiro;</li>
+            <li><strong>Classificação de Entradas:</strong> Confira se todas as receitas foram registradas e classificadas corretamente;</li>
+            <li><strong>Auditoria de Saídas:</strong> Revise custos diretos e despesas, eliminando omissões ou duplicidades;</li>
+            <li><strong>Demonstrativo Detalhado:</strong> Verifique o resultado e abra o relatório DRE para examinar a composição dos grupos;</li>
+            <li><strong>Previsibilidade (Runway):</strong> Confira o saldo utilizado no Runway e compare com os saldos bancários disponíveis;</li>
+            <li><strong>Alocação por Área:</strong> Analise as áreas jurídicas, observando gastos gerais alocados à área institucional (Escritório);</li>
+            <li><strong>Rastreamento Individual:</strong> Consulte as movimentações individuais para investigar eventuais divergências;</li>
+            <li><strong>Fechamento:</strong> Apenas após a conferência documental completa, registre as conclusões do fechamento mensal.</li>
+          </ol>
+        </div>
+
+        <!-- TABELA DE FALHAS DE INTERPRETAÇÃO E COMO AGIR -->
+        <div class="card" style="margin-top: 20px;">
+          <div class="card-title">⚠️ Falhas Comuns de Interpretação e Como Agir</div>
+          <div class="table-container" style="margin-top: 12px;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th style="width: 25%;">Sintoma na Tela</th>
+                  <th>Providência Recomendada</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong style="color: #f87171;">Receita Zerada</strong></td>
+                  <td>Verificar a competência selecionada e confirmar se os recebimentos do mês foram registrados como receitas de honorários.</td>
+                </tr>
+                <tr>
+                  <td><strong style="color: #fbbf24;">Despesa Alta</strong></td>
+                  <td>Revisar duplicidade no extrato, verificar a natureza de lançamento e a descrição das movimentações registradas.</td>
+                </tr>
+                <tr>
+                  <td><strong style="color: #f87171;">Resultado Negativo</strong></td>
+                  <td>Verificar a abrangência e integridade dos registros antes de presumir insolvência financeira.</td>
+                </tr>
+                <tr>
+                  <td><strong style="color: #fbbf24;">Autonomia Zero</strong></td>
+                  <td>Não prova ausência de reserva; conferir saldo bancário efetivo, período ativo e os dados que compõem o Burn Rate.</td>
+                </tr>
+                <tr>
+                  <td><strong style="color: #38bdf8;">Margem de -100% sem receita</strong></td>
+                  <td>Não usar em comparações: resultado dividido por receita zero é matematicamente indefinido na interface.</td>
+                </tr>
+                <tr>
+                  <td><strong style="color: #94a3b8;">Dados Não Atualizados</strong></td>
+                  <td>Verificar salvamento recente, filtros ativos de período/texto e registros na tela de extrato.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+    </section>
+
+      <!-- MÓDULO 02 -->
+      <section id="modulo-02" class="module-section">
+        <div class="module-header">
+          <span class="module-badge">MÓDULO 02</span>
+          <h2 class="module-title">Novo Lançamento Financeiro & Extrato</h2>
+          <div class="module-subtitle">Entrada de Dados, Classificação em 3 Níveis e Integridade</div>
+          <div class="module-objective">
+            <strong>Objetivo:</strong> Registrar corretamente receitas, custos, despesas e operações patrimoniais, dominar os 7 campos obrigatórios e opcionais e auditar o histórico de movimentações salvas.
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="screenshot-card">
+            <div class="screenshot-bar">
+              <div class="mac-dots"><div class="mac-dot dot-red"></div><div class="mac-dot dot-yellow"></div><div class="mac-dot dot-green"></div></div>
+              <div class="screen-url">Lançamentos > Novo Lançamento</div>
+            </div>
+            <div class="screen-img-container">
+              <img src="assets/images/02_novo_lancamento.webp" alt="Tela Novo Lançamento Financeiro" class="screen-img">
+              <div class="zoom-hint">🔍 Clique para Ampliar</div>
+            </div>
+            <div class="screenshot-caption"><strong>Figura 2.1.</strong> Formulário dos 7 campos de registro financeiro.</div>
+          </div>
+
+          <div class="screenshot-card">
+            <div class="screenshot-bar">
+              <div class="mac-dots"><div class="mac-dot dot-red"></div><div class="mac-dot dot-yellow"></div><div class="mac-dot dot-green"></div></div>
+              <div class="screen-url">Lançamentos > Movimentações Registradas</div>
+            </div>
+            <div class="screen-img-container">
+              <img src="assets/images/02_extrato_lancamentos.webp" alt="Extrato de Lançamentos Registrados" class="screen-img">
+              <div class="zoom-hint">🔍 Clique para Ampliar</div>
+            </div>
+            <div class="screenshot-caption"><strong>Figura 2.2.</strong> Consulta e filtros de lançamentos registrados.</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Inventário dos 7 Campos do Lançamento</div>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Campo</th>
+                  <th>Obrigatório?</th>
+                  <th>Função Técnica</th>
+                  <th>Orientação de Uso</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Data</strong></td>
+                  <td>Sim</td>
+                  <td>Data do fato financeiro / recebimento</td>
+                  <td>Conferir comprovante ou extrato da conta bancária.</td>
+                </tr>
+                <tr>
+                  <td><strong>Natureza</strong></td>
+                  <td>Sim</td>
+                  <td>Classificação macro do fato</td>
+                  <td>Receita de honorários, Custo direto, Despesa operacional ou Patrimonial.</td>
+                </tr>
+                <tr>
+                  <td><strong>Classificação</strong></td>
+                  <td>Não</td>
+                  <td>Natureza específica no plano de contas</td>
+                  <td>Ex: Honorários Contratuais, Aluguel, Software, Honorários de Êxito.</td>
+                </tr>
+                <tr>
+                  <td><strong>Subcategoria</strong></td>
+                  <td>Não</td>
+                  <td>Detalhamento gerencial de 2º nível</td>
+                  <td>Ex: Filial Centro, Campanha Marketing Digital, Vara Trabalhista.</td>
+                </tr>
+                <tr>
+                  <td><strong>Valor (R$)</strong></td>
+                  <td>Sim</td>
+                  <td>Montante exato da operação</td>
+                  <td>Informar sempre positivo com centavos. O sinal negativo é definido pela Natureza.</td>
+                </tr>
+                <tr>
+                  <td><strong>Área</strong></td>
+                  <td>Sim</td>
+                  <td>Centro de resultado ou especialidade</td>
+                  <td>Ex: Trabalhista, Cível, Tributário, Institucional/Escritório.</td>
+                </tr>
+                <tr>
+                  <td><strong>Descrição</strong></td>
+                  <td>Sim</td>
+                  <td>Histórico auditável para conciliação</td>
+                  <td>Ex: "Honorários contratuais - Parcela 01/03 - Cliente Exemplo". Evitar descrições vagas.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      
+        <!-- INVENTARIO DOS 7 CAMPOS DO LANCAMENTO -->
+        <div class="card" style="margin-top: 20px;">
+          <div class="card-title">📝 Inventário dos 7 Campos do Lançamento Financeiro</div>
+          <div class="table-container" style="margin-top: 12px;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Campo</th>
+                  <th>Obrigatório?</th>
+                  <th>Função Operacional e Regras</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Data</strong></td>
+                  <td><span class="pill-badge pill-gold">Sim</span></td>
+                  <td>Identifica a data efetiva do fato financeiro. Deve ser confirmada com comprovante, recibo ou extrato bancário.</td>
+                </tr>
+                <tr>
+                  <td><strong>Natureza</strong></td>
+                  <td><span class="pill-badge pill-gold">Sim</span></td>
+                  <td>Define a macro-categoria: <em>Receita de honorários</em>, <em>Custo direto</em>, <em>Despesa operacional</em> ou <em>Patrimonial (Não-DRE)</em>.</td>
+                </tr>
+                <tr>
+                  <td><strong>Classificação</strong></td>
+                  <td><span class="pill-badge" style="background:#334155;color:#94a3b8;">Não</span></td>
+                  <td>Identifica a natureza específica vinculada no plano de contas (ex: Honorários Contratuais). Seu uso apura a DRE analítica.</td>
+                </tr>
+                <tr>
+                  <td><strong>Subcategoria</strong></td>
+                  <td><span class="pill-badge" style="background:#334155;color:#94a3b8;">Não</span></td>
+                  <td>Detalhamento gerencial de segundo nível subordinado à classificação. Pode ser mantido como "Sem subcategoria".</td>
+                </tr>
+                <tr>
+                  <td><strong>Valor (R$)</strong></td>
+                  <td><span class="pill-badge pill-gold">Sim</span></td>
+                  <td>Montante monetário maior que zero, digitado sem sinal negativo. <em>Nota técnica: armazenado em centavos inteiros no banco para eliminar erros de arredondamento decimal.</em></td>
+                </tr>
+                <tr>
+                  <td><strong>Área</strong></td>
+                  <td><span class="pill-badge pill-gold">Sim</span></td>
+                  <td>Especialidade jurídica (ex: Trabalhista, Cível) ou centro de custo institucional (Escritório). Evite alterar áreas apenas para balancear resultados.</td>
+                </tr>
+                <tr>
+                  <td><strong>Descrição</strong></td>
+                  <td><span class="pill-badge pill-gold">Sim</span></td>
+                  <td>Histórico objetivo e identificável para auditoria futura (de 2 a 130 caracteres). Evite descrições genéricas como "Pagamento" ou "Despesa".</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- EXEMPLO DIDATICO E PASSO A PASSO -->
+        <div class="card" style="margin-top: 20px;">
+          <div class="card-title">💼 Exemplo Didático Completo: Recebimento de Honorários</div>
+          <div class="grid-2" style="margin-top: 12px; align-items: start;">
+            <div>
+              <div class="table-container">
+                <table class="data-table">
+                  <thead><tr><th>Campo</th><th>Preenchimento do Exemplo</th></tr></thead>
+                  <tbody>
+                    <tr><td><strong>Data</strong></td><td>27/10/2026</td></tr>
+                    <tr><td><strong>Natureza</strong></td><td>Receita de honorários</td></tr>
+                    <tr><td><strong>Classificação</strong></td><td>Honorários Contratuais</td></tr>
+                    <tr><td><strong>Subcategoria</strong></td><td>Sem subcategoria</td></tr>
+                    <tr><td><strong>Valor</strong></td><td>R$ 2.500,00</td></tr>
+                    <tr><td><strong>Área</strong></td><td>Trabalhista</td></tr>
+                    <tr><td><strong>Descrição</strong></td><td>Honorários contratuais - Parcela 01/03 - Cliente Exemplo</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div>
+              <strong style="color:var(--gold-500);font-size:13.5px;">Passo a Passo Operacional (10 Etapas):</strong>
+              <ol style="color:#cbd5e1;font-size:13px;line-height:1.7;padding-left:18px;margin-top:8px;">
+                <li>Acesse <em>Lançamentos &gt; Novo Lançamento</em>;</li>
+                <li>Confirme a data efetiva do recebimento bancário;</li>
+                <li>Selecione <em>Receita de honorários</em>;</li>
+                <li>Escolha a classificação apropriada cadastrada;</li>
+                <li>Defina a subcategoria, se aplicável;</li>
+                <li>Informe o valor exato (R$ 2.500,00);</li>
+                <li>Selecione a área de atuação <em>Trabalhista</em>;</li>
+                <li>Escreva a descrição identificável da operação;</li>
+                <li>Clique em <em>Salvar lançamento</em> apenas uma única vez;</li>
+                <li>Abra <em>Movimentações Registradas</em> e confirme a gravação.</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
+        <!-- INFLUENCIA NOS DEMONSTRATIVOS E MENSAGENS -->
+        <div class="grid-2" style="margin-top: 20px;">
+          <div class="card">
+            <div class="card-title">📊 Como o Lançamento Influencia os Demonstrativos</div>
+            <div class="table-container" style="margin-top: 8px;">
+              <table class="data-table">
+                <thead><tr><th>Natureza Informada</th><th>Efeito Gerencial Esperado</th></tr></thead>
+                <tbody>
+                  <tr><td><strong>Receita de honorários</strong></td><td>Aumenta a Receita Bruta (G01) e o faturamento do período na DRE.</td></tr>
+                  <tr><td><strong>Custo direto</strong></td><td>Aumenta custos processuais (G03) e reduz a margem bruta da banca.</td></tr>
+                  <tr><td><strong>Despesa operacional</strong></td><td>Aumenta despesas de G04 a G08 e reduz o lucro operacional (EBIT).</td></tr>
+                  <tr><td><strong>Patrimonial (Não-DRE)</strong></td><td>Movimentação financeira de caixa segregada, sem afetar o resultado contábil.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">⚠️ Mensagens de Carregamento, Salvamento e Erros</div>
+            <div class="table-container" style="margin-top: 8px;">
+              <table class="data-table">
+                <thead><tr><th>Situação / Mensagem</th><th>Ação Recomendada do Usuário</th></tr></thead>
+                <tbody>
+                  <tr><td><strong>"Atualizando informações..."</strong></td><td>Aguardar o término da atualização antes de interpretar os valores.</td></tr>
+                  <tr><td><strong>Campos obrigatórios vazios</strong></td><td>Preencher Data, Natureza, Valor, Área e Descrição antes de salvar.</td></tr>
+                  <tr><td><strong>Valor zero ou inválido</strong></td><td>Informar valor monetário positivo com até duas casas decimais.</td></tr>
+                  <tr><td><strong>Falha ao salvar lançamento</strong></td><td>Ler a mensagem retornada, conferir conexão e verificar extrato antes de repetir.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- CHECKLIST E GOVERNANCA -->
+        <div class="card" style="margin-top: 20px; border-left: 4px solid var(--gold-500);">
+          <div class="card-title">🔒 Checklist Final de Lançamento &amp; Governança Financeira</div>
+          <div class="grid-2" style="margin-top: 10px;">
+            <ul style="color:#cbd5e1;font-size:13px;line-height:1.7;list-style:none;padding-left:0;">
+              <li>☑ Data corresponde exatamente ao comprovante bancário;</li>
+              <li>☑ Natureza reflete o tipo real da operação jurídica;</li>
+              <li>☑ Classificação e subcategoria são coerentes com o plano;</li>
+              <li>☑ Valor foi digitado sem divergências ou sinais indevidos;</li>
+            </ul>
+            <ul style="color:#cbd5e1;font-size:13px;line-height:1.7;list-style:none;padding-left:0;">
+              <li>☑ Área jurídica/centro de resultado selecionado corretamente;</li>
+              <li>☑ Descrição identifica o fato registrado de forma auditável;</li>
+              <li>☑ O sistema apresentou confirmação explícita de salvamento;</li>
+              <li>☑ <strong>Governança:</strong> Não registre valores de clientes ou despesas reembolsáveis como receita própria da banca!</li>
+            </ul>
+          </div>
+        </div>
+
+    </section>
+
+      <!-- MÓDULO 03 -->
+      <section id="modulo-03" class="module-section">
+        <div class="module-header">
+          <span class="module-badge">MÓDULO 03</span>
+          <h2 class="module-title">Demonstração do Resultado (DRE 10 Grupos CPC)</h2>
+          <div class="module-subtitle">Alinhado ao Pronunciamento Técnico CPC 00 (R2) & Provimento CFOAB nº 205/2021</div>
+          <div class="module-objective">
+            <strong>Objetivo:</strong> Dominar a cascata formal de apuração do resultado contábil e gerencial do escritório, interpretar deduções, EBIT, LAIR, lucro líquido e analisar o CAC (Custo de Aquisição de Clientes).
+          </div>
+        </div>
+
+        <div class="screenshot-card">
+          <div class="screenshot-bar">
+            <div class="mac-dots"><div class="mac-dot dot-red"></div><div class="mac-dot dot-yellow"></div><div class="mac-dot dot-green"></div></div>
+            <div class="screen-url">https://dre.almeidabraatzadvocacia.com.br/dre (DRE Contábil 10 Grupos)</div>
+          </div>
+          <div class="screen-img-container">
+            <img src="assets/images/03_dre_contabil_10grupos.webp" alt="DRE Contábil 10 Grupos CPC" class="screen-img">
+            <div class="zoom-hint">🔍 Clique para Ampliar DRE</div>
+          </div>
+          <div class="screenshot-caption">
+            <strong>Figura 3.</strong> Demonstração do Resultado do Exercício com cascata em 10 Grupos CPC, margem de contribuição e indicadores de CAC Comercial vs CAC Atendimento.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">A Cascata Contábil dos 10 Grupos CPC</div>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Grupo / Etapa</th>
+                  <th>Operação</th>
+                  <th>Significado Contábil na Advocacia</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>G01 - Receita Bruta de Serviços</strong></td>
+                  <td>(+) Entrada</td>
+                  <td>Total faturado ou recebido em honorários contratuais, êxito, sucumbência e assessoria.</td>
+                </tr>
+                <tr>
+                  <td><strong>G02 - Deduções da Receita</strong></td>
+                  <td>(-) Dedução</td>
+                  <td>Tributos sobre faturamento (Simples Nacional, ISS, PIS/COFINS) e eventuais glosas contratuais.</td>
+                </tr>
+                <tr style="background: rgba(235, 181, 44, 0.08);">
+                  <td><strong>= RECEITA OPERACIONAL LÍQUIDA</strong></td>
+                  <td>(=) Subtotal</td>
+                  <td>Receita líquida real disponível após os impostos sobre notas de honorários emitidas.</td>
+                </tr>
+                <tr>
+                  <td><strong>G03 - Custos dos Serviços Jurídicos</strong></td>
+                  <td>(-) Custo</td>
+                  <td>Correspondentes jurídicos, perícias técnicas da lide, custas de distribuição não reembolsáveis.</td>
+                </tr>
+                <tr style="background: rgba(235, 181, 44, 0.08);">
+                  <td><strong>= RESULTADO BRUTO (MARGEM BRUTA)</strong></td>
+                  <td>(=) Subtotal</td>
+                  <td>Margem da banca após cobrir os custos diretamente ligados aos processos e contratos.</td>
+                </tr>
+                <tr>
+                  <td><strong>G04 - Pessoal Administrativo</strong></td>
+                  <td>(-) Despesa</td>
+                  <td>Salários de secretária, recepcionista, controladoria interna e equipe de suporte.</td>
+                </tr>
+                <tr>
+                  <td><strong>G05 - Administração e Ocupação</strong></td>
+                  <td>(-) Despesa</td>
+                  <td>Aluguel do escritório, condomínio, energia elétrica, água, internet e materiais.</td>
+                </tr>
+                <tr>
+                  <td><strong>G06 - Comercial e Marketing Jurídico</strong></td>
+                  <td>(-) Despesa</td>
+                  <td>Investimento em anúncios online, branding, assessoria e captação ética (Provimento CFOAB 205/2021).</td>
+                </tr>
+                <tr>
+                  <td><strong>G07 - Tecnologia e Softwares</strong></td>
+                  <td>(-) Despesa</td>
+                  <td>Assinatura de softwares de processo, ERPs, IA jurídica, certificados digitais e nuvem.</td>
+                </tr>
+                <tr>
+                  <td><strong>G08 - Outras Despesas Operacionais</strong></td>
+                  <td>(-) Despesa</td>
+                  <td>Demais despesas correntes de manutenção da banca não alocadas nos grupos anteriores.</td>
+                </tr>
+                <tr style="background: rgba(56, 189, 248, 0.1);">
+                  <td><strong>= EBIT (RESULTADO OPERACIONAL)</strong></td>
+                  <td>(=) Resultado</td>
+                  <td>Lucro puramente operacional antes de juros bancários, receitas financeiras e impostos sobre lucro.</td>
+                </tr>
+                <tr>
+                  <td><strong>G09 - Resultado Financeiro Líquido</strong></td>
+                  <td>(+ / -)</td>
+                  <td>Rendimento de aplicações financeiras da banca menos tarifas bancárias e juros pagos.</td>
+                </tr>
+                <tr style="background: rgba(56, 189, 248, 0.1);">
+                  <td><strong>= LAIR</strong></td>
+                  <td>(=) Resultado</td>
+                  <td>Resultado antes da provisão de tributos sobre o lucro.</td>
+                </tr>
+                <tr>
+                  <td><strong>G10 - IRPJ / CSLL sobre o Lucro</strong></td>
+                  <td>(-) Provisão</td>
+                  <td>Tributação sobre o lucro no regime de Lucro Presumido ou Real (quando aplicável).</td>
+                </tr>
+                <tr style="background: rgba(34, 197, 94, 0.15); font-weight: bold;">
+                  <td><strong>= RESULTADO LÍQUIDO DO EXERCÍCIO</strong></td>
+                  <td>(=) Lucro Final</td>
+                  <td>Lucro ou prejuízo líquido consolidado para distribuição aos sócios ou reserva de lucros.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- SIMULADOR INTERATIVO DRE 10 GRUPOS -->
+        <div id="simulador-dre" class="calc-card">
+          <div class="calc-header">
+            <div class="calc-title">⚡ Simulador Interativo: Cascata DRE 10 Grupos CPC</div>
+            <span class="module-badge">CÁLCULO DINÂMICO</span>
+          </div>
+          <p style="color: var(--ice-200); font-size: 0.9rem; margin-bottom: 1.5rem;">
+            Altere os valores abaixo e observe a cascata de cálculo recalculando automaticamente a Receita Líquida, o Resultado Bruto, o EBIT e o Resultado Líquido com as respectivas margens:
+          </p>
+          <div class="calc-grid">
+            <div class="calc-field">
+              <label>G01 - Receita Bruta (R$)</label>
+              <input type="number" id="dreG01" value="100000" step="5000">
+            </div>
+            <div class="calc-field">
+              <label>G02 - Deduções e Tributos (R$)</label>
+              <input type="number" id="dreG02" value="6500" step="500">
+            </div>
+            <div class="calc-field">
+              <label>G03 - Custos dos Serviços (R$)</label>
+              <input type="number" id="dreG03" value="12000" step="1000">
+            </div>
+            <div class="calc-field">
+              <label>G04 a G08 - Despesas Operacionais (R$)</label>
+              <input type="number" id="dreDespesas" value="38000" step="2000">
+            </div>
+            <div class="calc-field">
+              <label>G09 - Resultado Financeiro Líquido (R$)</label>
+              <input type="number" id="dreG09" value="-1200" step="100">
+            </div>
+            <div class="calc-field">
+              <label>G10 - Provisão IRPJ / CSLL (R$)</label>
+              <input type="number" id="dreG10" value="0" step="500">
+            </div>
+          </div>
+          <div class="calc-result-box">
+            <div class="result-item">
+              <span class="result-label">Receita Operac. Líquida</span>
+              <span class="result-value" id="resRecLiquida">R$ 93.500,00</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Resultado Bruto (Margem)</span>
+              <span class="result-value" id="resLucroBruto">R$ 81.500,00 (87%)</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">EBIT (Operacional)</span>
+              <span class="result-value" id="resEbit">R$ 43.500,00</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Resultado Líquido Final</span>
+              <span class="result-value success" id="resLucroLiquido">R$ 42.300,00 (42.3%)</span>
+            </div>
+          </div>
+        </div>
+      
+        <!-- BOTOES E COMANDOS OPERACIONAIS DA DRE -->
+        <div class="card" style="margin-top: 20px;">
+          <div class="card-title">🔘 Comandos e Ações do Demonstrativo DRE</div>
+          <div class="table-container" style="margin-top: 10px;">
+            <table class="data-table">
+              <thead><tr><th>Controle</th><th>Como Utilizar / Finalidade</th></tr></thead>
+              <tbody>
+                <tr><td><strong>Mês</strong></td><td>Seleciona a competência mensal a ser analisada. Campo em branco exibe a competência geral consolidada.</td></tr>
+                <tr><td><strong>Atualizar DRE</strong></td><td>Solicita ao servidor o recálculo dos saldos acumulados de acordo com os filtros selecionados.</td></tr>
+                <tr><td><strong>Salvar DRE / Salvar Relatório</strong></td><td>Aciona a exportação/gravação do fechamento gerencial do período auditado.</td></tr>
+                <tr><td><strong>Imprimir A4</strong></td><td>Gera o fluxo de impressão padronizado para relatório executivo e prestação de contas aos sócios.</td></tr>
+                <tr><td><strong>Lista (em cada linha)</strong></td><td>Abre a listagem detalhada de todos os lançamentos individuais que compõem aquele grupo CPC específico.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- INDICADORES DE CAC E SUSTENTACAO DE CONTRATOS -->
+        <div class="card" style="margin-top: 20px;">
+          <div class="card-title">📈 Indicadores de CAC e Sustentação de Contratos</div>
+          <div class="table-container" style="margin-top: 10px;">
+            <table class="data-table">
+              <thead><tr><th>Indicador na Tela</th><th>Leitura Correta e Critério de Apuração</th></tr></thead>
+              <tbody>
+                <tr><td><strong>CAC Comercial (Marketing / G06)</strong></td><td>Relaciona o investimento em marketing (Grupo G06) ao número de contratos captados por marketing.</td></tr>
+                <tr><td><strong>CAC Atendimento do Escritório</strong></td><td>Relaciona despesas operacionais e overhead de atendimento aos contratos de balcão e indicação.</td></tr>
+                <tr><td><strong>CAC Total Consolidado</strong></td><td>Visão unificada das despesas totais (G06 + estrutura) dividida pelo total de novos contratos fechados.</td></tr>
+                <tr><td><strong>Ticket Médio &amp; Volume Fechado</strong></td><td>Indicadores comerciais informativos baseados nos valores declarados nos contratos (não receita da DRE).</td></tr>
+                <tr><td><strong>CAC unitário R$ 0,00 com 0 contratos</strong></td><td>Não significa aquisição gratuita: sem contratos no denominador, o cálculo é matematicamente indefinido.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- QUADRO COMPARATIVO POR CANAL E PASSO A PASSO -->
+        <div class="grid-2" style="margin-top: 20px;">
+          <div class="card">
+            <div class="card-title">⚖️ Passo a Passo da Conferência Mensal da DRE</div>
+            <ol style="color:#cbd5e1;font-size:13px;line-height:1.7;padding-left:18px;margin-top:8px;">
+              <li>Selecione a competência do mês a revisar e clique em <em>Atualizar DRE</em>;</li>
+              <li>Confira se a receita G01 e as deduções G02 batem com as notas fiscais emitidas;</li>
+              <li>Abra o botão <strong>Lista</strong> nas linhas com valores para auditar os lançamentos;</li>
+              <li>Confira os custos diretos G03 e as despesas de G04 a G08;</li>
+              <li>Revise receitas/despesas financeiras G09 e tributos sobre o lucro G10;</li>
+              <li>Valide o resultado líquido e investigue margens zeradas por falta de receita;</li>
+              <li>Nos quadros de CAC, verifique o volume fechado e a origem de cada contrato;</li>
+              <li>Após conferência e aprovação interna, salve e arquive o relatório oficial.</li>
+            </ol>
+          </div>
+
+          <div class="card">
+            <div class="card-title">⚠️ Erros Comuns e Providências na DRE</div>
+            <div class="table-container" style="margin-top: 8px;">
+              <table class="data-table">
+                <thead><tr><th>O que aparece</th><th>Providência Recomendada</th></tr></thead>
+                <tbody>
+                  <tr><td><strong>Resultado Negativo</strong></td><td>Investigar receitas pendentes de faturamento; não presumir automaticamente insolvência.</td></tr>
+                  <tr><td><strong>Receita R$ 0,00</strong></td><td>Conferir se houve reconhecimento de receita na competência e se o filtro de mês está correto.</td></tr>
+                  <tr><td><strong>CAC R$ 0,00 e 0 contratos</strong></td><td>Indicador sem denominador válido. Revisar os cadastros de contratos e canais de captação.</td></tr>
+                  <tr><td><strong>Valores divergentes entre Visão Geral e DRE</strong></td><td>Conferir recortes de competência, regras de competência contábil vs. caixa e naturezas de lançamento.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+    </section>
+
+      <!-- MÓDULO 04 -->
+      <section id="modulo-04" class="module-section">
+        <div class="module-header">
+          <span class="module-badge">MÓDULO 04</span>
+          <h2 class="module-title">Catálogo de Naturezas & Plano de Contas</h2>
+          <div class="module-subtitle">Padronização Estruturada em 3 Níveis</div>
+          <div class="module-objective">
+            <strong>Objetivo:</strong> Organizar e parametrizar as naturezas de operações financeiras da banca jurídica, padronizando grupos, naturezas e subcategorias sem fragmentar relatórios históricos.
+          </div>
+        </div>
+
+        <div class="screenshot-card">
+          <div class="screenshot-bar">
+            <div class="mac-dots"><div class="mac-dot dot-red"></div><div class="mac-dot dot-yellow"></div><div class="mac-dot dot-green"></div></div>
+            <div class="screen-url">Naturezas > Catálogo de Naturezas</div>
+          </div>
+          <div class="screen-img-container">
+            <img src="assets/images/04_catalogo_naturezas.webp" alt="Catálogo de Naturezas em 3 Níveis" class="screen-img">
+            <div class="zoom-hint">🔍 Clique para Ampliar Catálogo</div>
+          </div>
+          <div class="screenshot-caption"><strong>Figura 4.</strong> Tabela completa de parametrização de naturezas contábeis e gerenciais.</div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">A Estrutura de Classificação em Três Níveis</div>
+          <div class="grid-3">
+            <div class="metric-card">
+              <span class="metric-tag">NÍVEL 1 · MACRO</span>
+              <div class="metric-title">Grupo Contábil</div>
+              <div class="metric-desc">Grande categoria agregadora da DRE (ex: G06 - Despesas Comerciais e Marketing, G07 - Tecnologia).</div>
+            </div>
+            <div class="metric-card">
+              <span class="metric-tag">NÍVEL 2 · OPERACIONAL</span>
+              <div class="metric-title">Natureza da Operação</div>
+              <div class="metric-desc">Tipo específico selecionável no formulário de lançamento (ex: Honorários Contratuais, Assinatura de Software).</div>
+            </div>
+            <div class="metric-card">
+              <span class="metric-tag">NÍVEL 3 · ANALÍTICO</span>
+              <div class="metric-title">Subcategoria Gerencial</div>
+              <div class="metric-desc">Detalhamento gerencial subordinado (ex: Anúncios Google Ads, Software de Gestão de Processos, Vara Campinas).</div>
+            </div>
+          </div>
+        </div>
+      
+        <!-- LOCALIZACAO E CADASTRO DE NATUREZAS -->
+        <div class="grid-2" style="margin-top: 20px;">
+          <div class="card">
+            <div class="card-title">🔍 Como Localizar uma Natureza Existente</div>
+            <ol style="color:#cbd5e1;font-size:13px;line-height:1.7;padding-left:18px;margin-top:8px;">
+              <li>Abra o <em>Catálogo de Naturezas</em> e observe os filtros ativos;</li>
+              <li>Pesquise uma expressão objetiva (ex: "honorários", "software", "marketing");</li>
+              <li>Analise o código, o nome e o grupo apresentado antes de escolher;</li>
+              <li>Se houver opções parecidas, verifique a finalidade antes de criar uma nova;</li>
+              <li>Confirme a natureza correta ao retornar à tela de Novo Lançamento.</li>
+            </ol>
+          </div>
+
+          <div class="card">
+            <div class="card-title">➕ Como Cadastrar uma Nova Natureza com Segurança</div>
+            <ol style="color:#cbd5e1;font-size:13px;line-height:1.7;padding-left:18px;margin-top:8px;">
+              <li>Clique em <em>+ Nova Natureza</em> no catálogo ou na tela de lançamentos;</li>
+              <li>Informe um nome claro e específico, sem duplicar naturezas existentes;</li>
+              <li>Vincule a natureza ao grupo/tipo apropriado (Receita, Custo, Despesa ou Patrimonial);</li>
+              <li>Revise a classificação contábil antes de confirmar a gravação;</li>
+              <li>Retorne ao catálogo, pesquise o novo item e confirme sua ativação.</li>
+            </ol>
+          </div>
+        </div>
+
+        <!-- TABELA DE ERROS E CHECKLIST DO CATALOGO -->
+        <div class="grid-2" style="margin-top: 20px;">
+          <div class="card">
+            <div class="card-title">⚠️ Erros Comuns no Catálogo de Naturezas</div>
+            <div class="table-container" style="margin-top: 8px;">
+              <table class="data-table">
+                <thead><tr><th>Situação</th><th>Procedimento Recomendado</th></tr></thead>
+                <tbody>
+                  <tr><td><strong>Naturezas semelhantes</strong></td><td>Pesquise nomes e códigos antes de incluir opções duplicadas no sistema.</td></tr>
+                  <tr><td><strong>Item não aparece na lista</strong></td><td>Limpe filtros de busca, verifique o termo pesquisado e o vínculo com o grupo macro.</td></tr>
+                  <tr><td><strong>Classificação incorreta</strong></td><td>Não altere sem avaliar o impacto histórico; valide com o responsável financeiro.</td></tr>
+                  <tr><td><strong>Subcategorias excessivas</strong></td><td>Padronize termos e evite criar sinônimos que fragmentam relatórios gerenciais.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card" style="border-left: 4px solid var(--gold-500);">
+            <div class="card-title">🔒 Checklist de Conferência do Catálogo</div>
+            <ul style="color:#cbd5e1;font-size:13px;line-height:1.7;list-style:none;padding-left:0;margin-top:8px;">
+              <li>☑ A existência da natureza foi pesquisada antes de criar outra;</li>
+              <li>☑ O nome é compreensível, padronizado e sem duplicidade;</li>
+              <li>☑ O grupo contábil e o tipo da operação foram conferidos;</li>
+              <li>☑ A subcategoria está vinculada corretamente, quando utilizada;</li>
+              <li>☑ A alteração foi validada para não distorcer lançamentos históricos;</li>
+              <li>☑ O item final está ativo e selecionável nas telas de lançamento.</li>
+            </ul>
+          </div>
+        </div>
+
+    </section>
+
+      <!-- MÓDULO 05 -->
+      <section id="modulo-05" class="module-section">
+        <div class="module-header">
+          <span class="module-badge">MÓDULO 05</span>
+          <h2 class="module-title">Clientes, Contratos & Inteligência de CAC</h2>
+          <div class="module-subtitle">Gestão de Carteira, Ticket Médio e Canais de Captação</div>
+          <div class="module-objective">
+            <strong>Objetivo:</strong> Pesquisar, cadastrar e acompanhar clientes e contratos de honorários, diferenciando quantidade de clientes de contratos assinados, apurando ticket médio e segregando origens de captação.
+          </div>
+        </div>
+
+        <div class="grid-3">
+          <div class="screenshot-card">
+            <div class="screenshot-bar"><div class="mac-dots"><div class="mac-dot dot-red"></div><div class="mac-dot dot-yellow"></div><div class="mac-dot dot-green"></div></div><div class="screen-url">Base de Contratos</div></div>
+            <div class="screen-img-container">
+              <img src="assets/images/05_base_clientes_contratos.webp" alt="Base de Clientes e Contratos" class="screen-img">
+              <div class="zoom-hint">🔍 Ampliar</div>
+            </div>
+          </div>
+
+          <div class="screenshot-card">
+            <div class="screenshot-bar"><div class="mac-dots"><div class="mac-dot dot-red"></div><div class="mac-dot dot-yellow"></div><div class="mac-dot dot-green"></div></div><div class="screen-url">Cadastrar Cliente</div></div>
+            <div class="screen-img-container">
+              <img src="assets/images/05_cadastrar_cliente.webp" alt="Cadastrar Novo Cliente" class="screen-img">
+              <div class="zoom-hint">🔍 Ampliar</div>
+            </div>
+          </div>
+
+          <div class="screenshot-card">
+            <div class="screenshot-bar"><div class="mac-dots"><div class="mac-dot dot-red"></div><div class="mac-dot dot-yellow"></div><div class="mac-dot dot-green"></div></div><div class="screen-url">Novo Contrato</div></div>
+            <div class="screen-img-container">
+              <img src="assets/images/05_novo_contrato.webp" alt="Cadastrar Novo Contrato" class="screen-img">
+              <div class="zoom-hint">🔍 Ampliar</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Conceitos Fundamentais que Não Podem Ser Confundidos</div>
+          <div class="grid-2">
+            <div class="metric-card">
+              <span class="metric-tag">CONCEITO 01</span>
+              <div class="metric-title">Clientes Cadastrados ≠ Contratos Assinados</div>
+              <div class="metric-desc">Um mesmo cliente pode ter múltiplos contratos (ex: uma mesma empresa com ação trabalhista e consultoria societária). Cadastrar um cliente não gera contrato automático.</div>
+            </div>
+            <div class="metric-card">
+              <span class="metric-tag">CONCEITO 02</span>
+              <div class="metric-title">Volume Fechado (Info) ≠ Receita de Caixa</div>
+              <div class="metric-desc">O volume fechado representa o valor global acordado nos contratos para acompanhamento comercial. Ele só vira receita na DRE após a emissão da nota e efetivo recebimento.</div>
+            </div>
+          </div>
+        </div>
+      
+        <!-- TABELA DE INDICADORES DE CONTRATOS -->
+        <div class="card" style="margin-top: 20px;">
+          <div class="card-title">📊 Indicadores de Acompanhamento da Carteira</div>
+          <div class="table-container" style="margin-top: 10px;">
+            <table class="data-table">
+              <thead><tr><th>Indicador na Base</th><th>Como Interpretar Operacionalmente</th></tr></thead>
+              <tbody>
+                <tr><td><strong>Clientes no período</strong></td><td>Total de novos clientes cadastrados dentro do recorte mensal selecionado.</td></tr>
+                <tr><td><strong>Contratos assinados</strong></td><td>Quantidade de acordos de honorários formalizados e ativos na competência.</td></tr>
+                <tr><td><strong>Volume Fechado (Informativo)</strong></td><td>Montante total declarado nos contratos. É dado comercial, não receita contábil da DRE.</td></tr>
+                <tr><td><strong>Ticket Médio</strong></td><td>Média contratual por caso: calculado pelo volume fechado dividido pelo total de contratos.</td></tr>
+                <tr><td><strong>Marketing (G06)</strong></td><td>Contratos com origem de captação comercial atribuída a anúncios e canais digitais.</td></tr>
+                <tr><td><strong>Atendimento Escritório</strong></td><td>Contratos com origem atribuída a balcão, indicação direta ou relacionamento de sócios.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- PROCEDIMENTO RECOMENDADO E ERROS COMUNS -->
+        <div class="grid-2" style="margin-top: 20px;">
+          <div class="card">
+            <div class="card-title">📋 Procedimento Operacional Recomendado (9 Passos)</div>
+            <ol style="color:#cbd5e1;font-size:13px;line-height:1.7;padding-left:18px;margin-top:8px;">
+              <li>Abra <em>Clientes &amp; Contratos &gt; Base de Clientes e Contratos</em>;</li>
+              <li>Confirme se está visualizando <em>Todos os meses</em> ou a competência específica;</li>
+              <li>Use o campo <em>Buscar</em> para localizar um cliente ou contrato existente;</li>
+              <li>Verifique a quantidade de clientes e de contratos assinados;</li>
+              <li>Confira a divisão por canal: Marketing (G06) vs. Atendimento Escritório;</li>
+              <li>Interprete o Volume Fechado como métrica de pipeline comercial;</li>
+              <li>Em caso de novo cliente, acione <em>Cadastrar Cliente</em> primeiro;</li>
+              <li>Para novo acordo, abra <em>Novo Contrato</em> e vincule ao cliente cadastrado;</li>
+              <li>Retorne à base e valide se os registros constam no painel gerencial.</li>
+            </ol>
+          </div>
+
+          <div class="card">
+            <div class="card-title">⚠️ Erros Comuns e Checklist de Contratos</div>
+            <div class="table-container" style="margin-top: 8px;">
+              <table class="data-table">
+                <thead><tr><th>Situação</th><th>Verificação Orientada</th></tr></thead>
+                <tbody>
+                  <tr><td><strong>Tudo aparece zerado</strong></td><td>Remover filtros de mês e texto; confirmar conclusão do cadastro.</td></tr>
+                  <tr><td><strong>Cliente não aparece</strong></td><td>Revisar termo pesquisado, período do filtro e dados cadastrais.</td></tr>
+                  <tr><td><strong>Volume difere do caixa</strong></td><td>Confrontar valores contratuais com recebimentos efetivos no extrato.</td></tr>
+                  <tr><td><strong>Origem incoerente</strong></td><td>Revisar canal do contrato; não alterar dados apenas para inflar métricas.</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div style="margin-top:12px;padding:10px 14px;background:rgba(234,179,8,0.06);border-left:3px solid var(--gold-500);font-size:12.5px;color:#cbd5e1;">
+              <strong>Checklist:</strong> Clientes e contratos foram diferenciados? Valores contratuais foram segregados de receitas realizadas? Registros foram auditados antes de enviar ao fechamento?
+            </div>
+          </div>
+        </div>
+
+    </section>
+
+      <!-- MÓDULO 06 -->
+      <section id="modulo-06" class="module-section">
+        <div class="module-header">
+          <span class="module-badge">MÓDULO 06</span>
+          <h2 class="module-title">Diagnóstico Comercial & Funil de Atendimento</h2>
+          <div class="module-subtitle">Taxas de Conversão, SLA de 1º Contato e Análise de Gargalos</div>
+          <div class="module-objective">
+            <strong>Objetivo:</strong> Orientar a leitura e conferência do funil de vendas do escritório: volume de leads, qualificação, reuniões, propostas, contratos fechados e tempo de resposta.
+          </div>
+        </div>
+
+        <div class="screenshot-card">
+          <div class="screenshot-bar"><div class="mac-dots"><div class="mac-dot dot-red"></div><div class="mac-dot dot-yellow"></div><div class="mac-dot dot-green"></div></div><div class="screen-url">Diagnóstico > Saúde & Funil</div></div>
+          <div class="screen-img-container">
+            <img src="assets/images/06_diagnostico_saude_funil.webp" alt="Funil Comercial Jurídico e Diagnóstico" class="screen-img">
+            <div class="zoom-hint">🔍 Clique para Ampliar Funil</div>
+          </div>
+          <div class="screenshot-caption"><strong>Figura 6.</strong> Painel do funil com 6 etapas, SLA de primeiro contato (12 min) e canal campeão de captação.</div>
+        </div>
+
+        <!-- SIMULADOR INTERATIVO FUNIL JURÍDICO -->
+        <div id="simulador-funil" class="calc-card">
+          <div class="calc-header">
+            <div class="calc-title">⚡ Simulador Interativo: Funil de Conversão Jurídica</div>
+            <span class="module-badge">CALIBRAÇÃO DE GARGALO</span>
+          </div>
+          <div class="calc-grid">
+            <div class="calc-field">
+              <label>1. Leads Recebidos</label>
+              <input type="number" id="funilLeads" value="45">
+            </div>
+            <div class="calc-field">
+              <label>2. Leads Qualificados</label>
+              <input type="number" id="funilQualif" value="32">
+            </div>
+            <div class="calc-field">
+              <label>3. Reuniões Agendadas</label>
+              <input type="number" id="funilAgendadas" value="20">
+            </div>
+            <div class="calc-field">
+              <label>4. Reuniões Realizadas</label>
+              <input type="number" id="funilRealizadas" value="16">
+            </div>
+            <div class="calc-field">
+              <label>5. Propostas Enviadas</label>
+              <input type="number" id="funilPropostas" value="12">
+            </div>
+            <div class="calc-field">
+              <label>6. Contratos Fechados</label>
+              <input type="number" id="funilContratos" value="5">
+            </div>
+          </div>
+          <div class="calc-result-box">
+            <div class="result-item">
+              <span class="result-label">Conversão Global</span>
+              <span class="result-value" id="resConvGlobal">11,1%</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Fechamento de Propostas</span>
+              <span class="result-value" id="resFechPropostas">41,7%</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Taxa de Perda em Proposta</span>
+              <span class="result-value danger" id="resPerdaPropostas">58,3% (MAIOR GARGALO)</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Comparecimento a Reuniões</span>
+              <span class="result-value success" id="resComparecimento">80,0%</span>
+            </div>
+          </div>
+        </div>
+      
+        <!-- ETAPAS DO FUNIL COM DADOS REAIS DO PLAYBOOK -->
+        <div class="card" style="margin-top: 20px;">
+          <div class="card-title">🔍 As Seis Etapas do Funil Jurídico &amp; Taxas de Conversão</div>
+          <div class="table-container" style="margin-top: 10px;">
+            <table class="data-table">
+              <thead><tr><th>Etapa do Funil</th><th>Volume</th><th>Taxa de Conversão</th><th>Descarte / Perda</th><th>Leitura Operacional</th></tr></thead>
+              <tbody>
+                <tr><td><strong>1. Leads Recebidos</strong></td><td>45</td><td>100,0%</td><td>—</td><td>Total de oportunidades recebidas na entrada do funil comercial.</td></tr>
+                <tr><td><strong>2. Leads Qualificados</strong></td><td>32</td><td>71,1% dos leads</td><td>-28,9% descarte</td><td>13 contatos desqualificados por perfil, localização ou viabilidade.</td></tr>
+                <tr><td><strong>3. Reuniões Agendadas</strong></td><td>20</td><td>62,5% dos qualificados</td><td>-37,5% sem agenda</td><td>12 contatos qualificados que não agendaram sessão de diagnóstico.</td></tr>
+                <tr><td><strong>4. Reuniões Realizadas</strong></td><td>16</td><td>80,0% das agendas</td><td>-20,0% no-show</td><td>4 clientes faltaram à reunião (taxa de presença de 80%).</td></tr>
+                <tr><td><strong>5. Propostas Enviadas</strong></td><td>12</td><td>75,0% das reuniões</td><td>-25,0% sem proposta</td><td>4 reuniões que não demandaram envio imediato de proposta formal.</td></tr>
+                <tr><td><strong>6. Contratos Assinados</strong></td><td><strong style="color:var(--gold-500);">5</strong></td><td><strong style="color:#4ade80;">41,7% das propostas</strong></td><td><strong style="color:#f87171;">-58,3% perda (Gargalo)</strong></td><td>7 propostas recusadas. <strong>Maior ponto de ruptura do funil!</strong></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- MOTOR DE DIAGNOSTICO E CANAIS -->
+        <div class="grid-2" style="margin-top: 20px;">
+          <div class="card">
+            <div class="card-title">🤖 Motor de Diagnóstico &amp; Ponto Crítico de Investigação</div>
+            <p style="color:#cbd5e1;font-size:13px;line-height:1.6;">
+              O motor de inteligência identificou o <strong>Fechamento de Proposta (58,3% de perda)</strong> como o gargalo prioritário da banca:
+            </p>
+            <ul style="color:#cbd5e1;font-size:13px;line-height:1.7;margin-top:8px;padding-left:18px;">
+              <li><strong>Diagnóstico de Perda:</strong> A objeção de <em>Preço / Honorários</em> é dominante, com 8 clientes em follow-up ativo na carteira;</li>
+              <li><strong>SLA de 1º Contato:</strong> Média de resposta de <strong>12 minutos</strong> (excelente agilidade de atendimento);</li>
+              <li><strong>Hipótese para o Próximo Ciclo:</strong> Testar parcelamento da entrada de honorários iniciais ou estruturação mista (fixo menor + êxito maior).</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <div class="card-title">📢 Distribuição de Leads por Canal de Origem</div>
+            <div class="table-container" style="margin-top: 8px;">
+              <table class="data-table">
+                <thead><tr><th>Canal de Origem</th><th>Leads</th><th>Participação (%)</th></tr></thead>
+                <tbody>
+                  <tr><td><strong>Anúncios Online (Google / Meta)</strong></td><td>18</td><td>40,0% <span class="pill-badge pill-gold">Canal Campeão</span></td></tr>
+                  <tr><td><strong>Indicações / Parceiros</strong></td><td>14</td><td>31,1%</td></tr>
+                  <tr><td><strong>Orgânico / Conteúdo Jurídico</strong></td><td>9</td><td>20,0%</td></tr>
+                  <tr><td><strong>Balcão / Outros</strong></td><td>4</td><td>8,9%</td></tr>
+                  <tr style="font-weight:700;"><td>Total Consolidado</td><td>45</td><td>100,0%</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- FORMULAS E ROTEIRO DE REUNIAO -->
+        <div class="grid-2" style="margin-top: 20px;">
+          <div class="card">
+            <div class="card-title">📐 As 5 Fórmulas Matemáticas para Conferência do Funil</div>
+            <ul style="color:#cbd5e1;font-size:13px;line-height:1.8;padding-left:18px;margin-top:8px;">
+              <li><strong>Conversão Global:</strong> Contratos ÷ Leads × 100 = 5 ÷ 45 × 100 = <strong>11,1%</strong></li>
+              <li><strong>Qualificação:</strong> Qualificados ÷ Recebidos × 100 = 32 ÷ 45 × 100 = <strong>71,1%</strong></li>
+              <li><strong>Comparecimento:</strong> Realizadas ÷ Agendadas × 100 = 16 ÷ 20 × 100 = <strong>80,0%</strong></li>
+              <li><strong>Fechamento de Propostas:</strong> Contratos ÷ Propostas × 100 = 5 ÷ 12 × 100 = <strong>41,7%</strong></li>
+              <li><strong>Perda em Propostas:</strong> (Propostas − Contratos) ÷ Propostas × 100 = 7 ÷ 12 × 100 = <strong>58,3%</strong></li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <div class="card-title">🤝 Roteiro de Reunião Mensal com o Gestor (5 Passos)</div>
+            <ol style="color:#cbd5e1;font-size:13px;line-height:1.7;padding-left:18px;margin-top:8px;">
+              <li><strong>Reconciliação:</strong> Confirme se os 45 leads correspondem a entradas únicas no período;</li>
+              <li><strong>Identificação:</strong> Separe as propostas em aberto das recusas definitivas de clientes;</li>
+              <li><strong>Investigação:</strong> Consulte a justificativa dos contatos em follow-up para validar a objeção de preço;</li>
+              <li><strong>Experimento:</strong> Defina uma condição especial de pagamento para uma amostra controlada;</li>
+              <li><strong>Acompanhamento:</strong> Na reunião seguinte, meça se a alteração aumentou a taxa de conversão.</li>
+            </ol>
+          </div>
+        </div>
+
+    </section>
+
+      <!-- MÓDULO 06/1: TIME STUDIO PWA & APONTAMENTO DE HORAS -->
+      <section id="modulo-06-1" class="module-section">
+        <div class="module-header">
+          <span class="module-badge">MÓDULO 06/1</span>
+          <h2 class="module-title">Time Studio PWA: Apontamento de Horas & Timesheet</h2>
+          <div class="module-subtitle">Cronômetro em Tempo Real, Lembrete Anti-Esquecimento, Registro Retroativo e Sincronização Offline</div>
+          <div class="module-objective">
+            <strong>Objetivo Operacional:</strong> Capacitar os advogados e a controladoria na utilização do aplicativo PWA <em>Time Studio</em> para registro fidedigno de esforço técnico por contrato, garantindo integridade de horas trabalhadas, persistência de sessão e sincronização sem atrito com a base central do DRE Jurídico.
+          </div>
+        </div>
+
+        <!-- CARDS DAS 3 ABAS OPERACIONAIS DO TIME STUDIO -->
+        <div class="card" style="margin-bottom: 24px; border-left: 4px solid #eab308; background: linear-gradient(180deg, rgba(234, 179, 8, 0.06) 0%, rgba(15, 23, 42, 0.4) 100%);">
+          <div class="card-title" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+            <span>⏱️ As 3 Abas Operacionais do Time Studio PWA</span>
+            <span class="badge" style="background:#eab308;color:#0b1528;font-weight:700;padding:4px 10px;border-radius:12px;font-size:12px;">PWA Integrado • Offline First</span>
+          </div>
+          <p style="color: #cbd5e1; font-size: 14.5px; line-height: 1.6; margin-top: 8px;">
+            O <strong>Time Studio</strong> opera como uma aplicação web progressiva (PWA) independente, com interface otimizada para foco total no trabalho jurídico. O advogado alterna entre 3 abas fundamentais para registrar seu esforço:
+          </p>
+        </div>
+
+        <!-- GRID DAS 3 ABAS DO TIME STUDIO -->
+        <div class="grid-3">
+          <!-- ABA 1: CRONÔMETRO -->
+          <div class="screenshot-card">
+            <div class="screenshot-bar">
+              <div class="mac-dots"><div class="mac-dot dot-red"></div><div class="mac-dot dot-yellow"></div><div class="mac-dot dot-green"></div></div>
+              <div class="screen-url">Aba 01: ⏱️ Cronômetro</div>
+            </div>
+            <div class="screen-img-container">
+              <img src="assets/images/06_timestudio_cronometro.webp" alt="Time Studio - Aba 1 Cronômetro com Lembrete Anti-Esquecimento" class="screen-img">
+              <div class="zoom-hint">🔍 Clique para Ampliar</div>
+            </div>
+            <div class="screenshot-caption">
+              <strong>Aba 01 · Cronômetro ao Vivo:</strong> Contagem em tempo real, seleção de caso/contrato, etapa e tipo de ato, com <strong>Lembrete Anti-Esquecimento sonoro</strong> e garantia de persistência de sessão.
+            </div>
+          </div>
+
+          <!-- ABA 2: APONTAR MANUAL -->
+          <div class="screenshot-card">
+            <div class="screenshot-bar">
+              <div class="mac-dots"><div class="mac-dot dot-red"></div><div class="mac-dot dot-yellow"></div><div class="mac-dot dot-green"></div></div>
+              <div class="screen-url">Aba 02: ✍️ Apontar Manual</div>
+            </div>
+            <div class="screen-img-container">
+              <img src="assets/images/06_timestudio_apontar_manual.webp" alt="Time Studio - Aba 2 Registro Manual Retroativo" class="screen-img">
+              <div class="zoom-hint">🔍 Clique para Ampliar</div>
+            </div>
+            <div class="screenshot-caption">
+              <strong>Aba 02 · Registro Retroativo:</strong> Lançamento pós-evento para audiências externas e diligências, com atalhos <em>"1h atrás"</em>, <em>"Agora"</em>, dedução de pausa e <strong>cálculo automático</strong> de minutos úteis.
+            </div>
+          </div>
+
+          <!-- ABA 3: HISTÓRICO -->
+          <div class="screenshot-card">
+            <div class="screenshot-bar">
+              <div class="mac-dots"><div class="mac-dot dot-red"></div><div class="mac-dot dot-yellow"></div><div class="mac-dot dot-green"></div></div>
+              <div class="screen-url">Aba 03: 📋 Histórico</div>
+            </div>
+            <div class="screen-img-container">
+              <img src="assets/images/06_timestudio_historico.webp" alt="Time Studio - Aba 3 Histórico e Fila Local de Sincronização" class="screen-img">
+              <div class="zoom-hint">🔍 Clique para Ampliar</div>
+            </div>
+            <div class="screenshot-caption">
+              <strong>Aba 03 · Fila de Sincronização:</strong> Armazenamento local <em>offline-first</em>. Registros realizados sem internet ficam seguros no aparelho e são enviados em lote via botão <strong>"Sincronizar Agora"</strong>.
+            </div>
+          </div>
+        </div>
+
+        <!-- DETALHAMENTO DAS FUNCIONALIDADES CHAVE -->
+        <div class="grid-2" style="margin-top: 24px;">
+          <!-- CARD CRONOMETRO & ANTI-ESQUECIMENTO -->
+          <div class="card">
+            <div class="card-title">⏱️ 1. Cronômetro & Lembrete Anti-Esquecimento (Timeout Inteligente)</div>
+            <p style="color: #cbd5e1; font-size: 13.5px; line-height: 1.6;">
+              Ao iniciar um atendimento, o advogado clica em <strong>Iniciar</strong> e o cronômetro entra no estado <span style="background:rgba(34,197,94,0.15);color:#4ade80;padding:2px 8px;border-radius:6px;font-weight:700;font-size:12px;">• EM ANDAMENTO</span>. Para evitar horas fantasmas ou esquecimento ao se ausentar da mesa:
+            </p>
+            <ul style="color: #cbd5e1; font-size: 13px; line-height: 1.7; margin-top: 10px; padding-left: 18px;">
+              <li><strong>Alarme Sonoro Configurável:</strong> O usuário escolhe o intervalo do lembrete: <strong>30 min</strong>, <strong>45 min</strong>, <strong>60 min ★</strong>, <strong>90 min</strong>, <strong>2 horas</strong> ou <strong>Desativado</strong>.</li>
+              <li><strong>Toques Acústicos de Alerta:</strong> Opções de alerta sonoro de alta distinção: <em>Sino Cristalino 🔔</em>, <em>Ding-Dong 🔔</em> e <em>Arpejo Moderno ✨</em>, com botão <strong>"Testar Som"</strong> integrado.</li>
+              <li><strong>Alerta na Aba do Navegador:</strong> O título da janela pulsa com aviso luminoso (ex: <code>⏱️ Time Studio - ⚠️ 05:10:32</code>) caso a contagem ultrapasse o tempo usual de foco contínuo.</li>
+              <li><strong>💡 Persistência de Sessão Garantida:</strong> O cronômetro não depende de loops contínuos de JavaScript. O tempo decorrido é calculado matematicamente confrontando o <em>timestamp de início</em> com o <strong>relógio do sistema</strong>. O advogado pode fechar a janela, navegar em outros softwares ou reiniciar o computador sem perder o tempo acumulado.</li>
+            </ul>
+          </div>
+
+          <!-- CARD REGISTRO RETROATIVO & OFFLINE -->
+          <div class="card">
+            <div class="card-title">✍️ 2. Registro Retroativo & Sincronização Resiliente</div>
+            <p style="color: #cbd5e1; font-size: 13.5px; line-height: 1.6;">
+              Nem todo ato jurídico ocorre em frente ao computador. Para atos em fóruns, delegacias e reuniões de clientes:
+            </p>
+            <ul style="color: #cbd5e1; font-size: 13px; line-height: 1.7; margin-top: 10px; padding-left: 18px;">
+              <li><strong>Preenchimento Ágil com Atalhos:</strong> Atalhos de 1 toque preenchem o início (<em>"1h atrás"</em>) e o término (<em>"Agora"</em>), além de campo dedicado para deduzir pausas e intervalos não faturáveis.</li>
+              <li><strong>Cálculo Automático de Minutos Úteis:</strong> O sistema apura instantaneamente o total em minutos e converte para horas e minutos formatados (ex: <code>60 min = 1h 00min</code>), permitindo ajuste manual fino.</li>
+              <li><strong>Vínculo Obrigatório de Integridade:</strong> Cada apontamento exige o contrato/caso, a etapa processual e o tipo de ato praticado (Petição, Audiência, Diligência, Reunião ou Outro Ato).</li>
+              <li><strong>Fila Local & Sincronização em 1 Clique:</strong> Arquitetura <em>Offline-First</em> com armazenamento seguro local (IndexedDB/LocalStorage). Em locais sem sinal de internet, os registros ficam guardados na <em>Fila Local</em> e são transmitidos com integridade ao clicar em <strong>"Sincronizar Agora"</strong>.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- AMBIENTE DE LOGIN E VISÃO DESKTOP -->
+        <div class="grid-2" style="margin-top: 24px;">
+          <div class="screenshot-card">
+            <div class="screenshot-bar">
+              <div class="mac-dots"><div class="mac-dot dot-red"></div><div class="mac-dot dot-yellow"></div><div class="mac-dot dot-green"></div></div>
+              <div class="screen-url">Acesso ao Time Studio (Login)</div>
+            </div>
+            <div class="screen-img-container">
+              <img src="assets/images/06_timestudio_login.webp" alt="Tela de Login do Time Studio PWA" class="screen-img">
+              <div class="zoom-hint">🔍 Clique para Ampliar</div>
+            </div>
+            <div class="screenshot-caption">
+              <strong>Autenticação Dedicada:</strong> Acesso direto via e-mail e senha corporativa ou através de links individuais de convite gerados pelo gestor da banca.
+            </div>
+          </div>
+
+          <div class="screenshot-card">
+            <div class="screenshot-bar">
+              <div class="mac-dots"><div class="mac-dot dot-red"></div><div class="mac-dot dot-yellow"></div><div class="mac-dot dot-green"></div></div>
+              <div class="screen-url">Visão Desktop Time Studio</div>
+            </div>
+            <div class="screen-img-container">
+              <img src="assets/images/06_timestudio_desktop.webp" alt="Visão Desktop Completa do Time Studio" class="screen-img">
+              <div class="zoom-hint">🔍 Clique para Ampliar</div>
+            </div>
+            <div class="screenshot-caption">
+              <strong>Painel Operacional Completo:</strong> Interface limpa, modo noturno imersivo, barra de status com indicadores <code>• Online</code>, <code>Sincronizado</code> e botão de saída rápida.
+            </div>
+          </div>
+        </div>
+
+        <!-- PAINEL ADMINISTRATIVO E DUPLA CONTAGEM -->
+        <div class="card" style="margin-top: 24px;">
+          <div class="card-title">👔 Central de Homologação de Horas & Painel do Administrador</div>
+          <div class="grid-2" style="margin-top: 12px; align-items: center;">
+            <div>
+              <p style="color: #cbd5e1; font-size: 13.5px; line-height: 1.6;">
+                No painel central do DRE Jurídico, o sócio-administrador acessa a aba <strong>Produtividade & Horas</strong> para:
+              </p>
+              <ul style="color: #cbd5e1; font-size: 13px; line-height: 1.7; margin-top: 8px; padding-left: 18px;">
+                <li>Gerar e revogar links individuais de convite para advogados e correspondentes;</li>
+                <li>Homologar, aprovar ou rejeitar apontamentos antes da cobrança ou fechamento;</li>
+                <li>Acompanhar o valor da hora técnica de cada profissional e o custo total alocado por contrato;</li>
+                <li>Abrir a aplicação <em>Time Studio PWA</em> em 1 clique através do botão de atalho dedicado.</li>
+              </ul>
+            </div>
+            <div class="screenshot-card" style="margin: 0;">
+              <div class="screen-img-container">
+                <img src="assets/images/06_diagnostico_horas_custo.webp" alt="Horas e Custo da Equipe no Painel DRE" class="screen-img">
+                <div class="zoom-hint">🔍 Ampliar Painel Gerencial</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top: 18px; padding: 14px 18px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 8px;">
+            <strong style="color: #f87171; font-size: 13.5px;">⚠️ Diretriz Crucial contra Dupla Contagem Contábil:</strong>
+            <p style="color: #cbd5e1; font-size: 13px; line-height: 1.6; margin-top: 6px;">
+              O custo teórico de horas apontadas (ex: 2h x R$ 250/h = R$ 500) serve exclusivamente para apuração de <strong>esforço operacional, rentabilidade gerencial e precificação de honorários por contrato</strong>. Esse cálculo <strong>NÃO</strong> deve ser lançado novamente como despesa na DRE Contábil se a remuneração ou pró-labore do advogado já estiver registrado na folha de pagamento do <strong>Grupo G04 (Despesas com Pessoal & Pró-Labore)</strong>.
+            </p>
+          </div>
+        </div>
+      
+        <!-- FORMULAS DE TEMPO E CAPACIDADE DO TIME STUDIO -->
+        <div class="grid-2" style="margin-top: 20px;">
+          <div class="card">
+            <div class="card-title">⏱️ Regra de Conversão de Minutos e Horas Faturáveis</div>
+            <p style="color:#cbd5e1;font-size:13px;line-height:1.6;">
+              O Time Studio processa internamente todos os registros em <strong>minutos inteiros</strong>, garantindo precisão matemática absoluta sem dízimas:
+            </p>
+            <div style="background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.3);border-radius:6px;padding:12px;margin:10px 0;font-family:'Space Mono',monospace;font-size:13.5px;color:var(--cyan-400);text-align:center;">
+              Minutos = Horas × 60 &nbsp;|&nbsp; Horas = Minutos ÷ 60
+            </div>
+            <ul style="color:#cbd5e1;font-size:13px;line-height:1.7;padding-left:18px;">
+              <li><strong>15 minutos</strong> = 0,25h (despacho curto / contato telefônico);</li>
+              <li><strong>30 minutos</strong> = 0,50h (análise de andamento / protocolo);</li>
+              <li><strong>60 minutos</strong> = 1,00h (audiência / elaboração de recurso ordinário);</li>
+              <li><strong>90 minutos</strong> = 1,50h (redação de inicial complexa / sustentação oral).</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <div class="card-title">🔔 Lembrete Anti-Esquecimento &amp; Offline-First</div>
+            <p style="color:#cbd5e1;font-size:13px;line-height:1.6;">
+              Para impedir que o advogado esqueça o cronômetro rodando ao sair da mesa ou atender outro caso, o Time Studio oferece:
+            </p>
+            <ul style="color:#cbd5e1;font-size:13px;line-height:1.7;padding-left:18px;margin-top:8px;">
+              <li><strong>Alerta Sonoro Periódico:</strong> Intervalos configuráveis de 30m, 45m, 60m (recomendado ★), 90m ou 2h;</li>
+              <li><strong>Toques Personalizados:</strong> Sino Cristalino, Ding-Dong ou Arpejo Moderno;</li>
+              <li><strong>Persistência de Sessão:</strong> O tempo decorrido é calculado pelo relógio do sistema; fechar a janela ou reiniciar a máquina não zera a contagem;</li>
+              <li><strong>Fila Local de Sincronização:</strong> Apontamentos em locais sem internet (fóruns/audiências) são salvos no dispositivo e sincronizados assim que a conexão retornar.</li>
+            </ul>
+          </div>
+        </div>
+
+    </section>
+
+      <!-- MÓDULO 06/2: ETAPAS PROCESSUAIS -->
+      <section id="modulo-06-2" class="module-section">
+        <div class="module-header">
+          <span class="module-badge">MÓDULO 06/2</span>
+          <h2 class="module-title">Análise de Esforço por Etapa Processual</h2>
+          <div class="module-subtitle">Horas Previstas vs. Realizadas por Fase da Lide e Benchmarks de Eficiência</div>
+          <div class="module-objective">
+            <strong>Objetivo Operacional:</strong> Rastrear em qual fase do processo judicial ou consultivo o escritório consome mais recursos técnicos, comparando o esforço orçado na precificação inicial com a execução real despendida pela equipe.
+          </div>
+        </div>
+
+        <div class="screenshot-card">
+          <div class="screenshot-bar">
+            <div class="mac-dots"><div class="mac-dot dot-red"></div><div class="mac-dot dot-yellow"></div><div class="mac-dot dot-green"></div></div>
+            <div class="screen-url">Diagnóstico > Esforço por Etapa Processual</div>
+          </div>
+          <div class="screen-img-container">
+            <img src="assets/images/06_diagnostico_por_etapa.webp" alt="Esforço por Etapa Processual no DRE Jurídico" class="screen-img">
+            <div class="zoom-hint">🔍 Clique para Ampliar Gráfico de Etapas</div>
+          </div>
+          <div class="screenshot-caption">
+            <strong>Figura 6.2 · Painel de Etapas Processuais:</strong> Gráficos de dispersão de esforço, horas acumuladas por fase da lide, desvios percentuais e benchmarks comparativos da banca.
+          </div>
+        </div>
+
+        <div class="grid-2" style="margin-top: 20px;">
+          <div class="card">
+            <div class="card-title">⚖️ Mapeamento das 5 Fases da Lide Jurídica</div>
+            <ul style="color: #cbd5e1; font-size: 13.5px; line-height: 1.7; padding-left: 18px;">
+              <li><strong>Fase Postulatória:</strong> Elaboração da petição inicial, réplica, contestação e primeiras intervenções judiciais.</li>
+              <li><strong>Fase Instrutória:</strong> Produção de provas documentais, oitiva de testemunhas, audiências de instrução e perícias técnicas.</li>
+              <li><strong>Fase Decisória:</strong> Memoriais finais, análise de sentenças de 1º grau e oposição de embargos de declaração.</li>
+              <li><strong>Fase Recursal:</strong> Apelações, agravos de instrumento, recursos ordinários e tramitação nos Tribunais Superiores (STJ / STF).</li>
+              <li><strong>Cumprimento de Sentença / Execução:</strong> Cálculos de liquidação, penhoras, impugnações e levantamento dos alvarás de honorários.</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <div class="card-title">🔍 Diagnóstico de Gargalos & Rentabilidade Real</div>
+            <p style="color: #cbd5e1; font-size: 13.5px; line-height: 1.6;">
+              Ao cruzar os apontamentos do <em>Time Studio</em> com as etapas processuais cadastradas, o gestor detecta:
+            </p>
+            <ul style="color: #cbd5e1; font-size: 13px; line-height: 1.7; margin-top: 10px; padding-left: 18px;">
+              <li><strong>Desvios de Escopo:</strong> Processos em que a fase instrutória demandou 300% das horas orçadas sem honorários complementares contratados;</li>
+              <li><strong>Padronização de Peças:</strong> Identificação de etapas com alto volume de retrabalho que justificam automação ou padronização de teses;</li>
+              <li><strong>Precificação Fidedigna:</strong> Ajuste do valor cobrado em novos contratos com base no histórico real de horas despendidas em casos análogos.</li>
+            </ul>
+          </div>
+        </div>
+      
+        <!-- FORMULAS DE CUSTO E DESVIO POR ETAPA PROCESSUAL -->
+        <div class="card" style="margin-top: 20px;">
+          <div class="card-title">📐 Fórmulas Matemáticas de Custo e Desvio por Fase Processual</div>
+          <div class="grid-3" style="margin-top: 12px; gap: 14px;">
+            <div style="background:rgba(234,179,8,0.06);border:1px solid rgba(234,179,8,0.25);border-radius:8px;padding:14px;">
+              <strong style="color:var(--gold-500);font-size:13px;">1. Custo Efetivo da Atividade</strong>
+              <div style="font-family:'Space Mono',monospace;font-size:12.5px;color:#f8fafc;margin-top:8px;">
+                Custo = (Minutos ÷ 60) × Custo Hora
+              </div>
+              <p style="color:#94a3b8;font-size:12px;margin-top:6px;line-height:1.5;">
+                Multiplica as horas reais trabalhadas pelo custo/hora do profissional alocado.
+              </p>
+            </div>
+
+            <div style="background:rgba(56,189,248,0.06);border:1px solid rgba(56,189,248,0.25);border-radius:8px;padding:14px;">
+              <strong style="color:var(--cyan-400);font-size:13px;">2. Desvio de Horas da Fase</strong>
+              <div style="font-family:'Space Mono',monospace;font-size:12.5px;color:#f8fafc;margin-top:8px;">
+                Desvio = Horas Executadas − Horas Previstas
+              </div>
+              <p style="color:#94a3b8;font-size:12px;margin-top:6px;line-height:1.5;">
+                Valores positivos indicam estouro de orçamento de horas no processo.
+              </p>
+            </div>
+
+            <div style="background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.25);border-radius:8px;padding:14px;">
+              <strong style="color:#4ade80;font-size:13px;">3. Índice de Eficiência (%)</strong>
+              <div style="font-family:'Space Mono',monospace;font-size:12.5px;color:#f8fafc;margin-top:8px;">
+                Eficiência = (Previstas ÷ Executadas) × 100
+              </div>
+              <p style="color:#94a3b8;font-size:12px;margin-top:6px;line-height:1.5;">
+                Mede a acurácia da precificação de honorários em relação ao trabalho executado.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- TABELA DE CAPACIDADE E RECOMENDACOES DE GESTAO -->
+        <div class="grid-2" style="margin-top: 20px;">
+          <div class="card">
+            <div class="card-title">👥 Tabela de Capacidade Nominal Mensal da Equipe</div>
+            <div class="table-container" style="margin-top: 8px;">
+              <table class="data-table">
+                <thead><tr><th>Nível do Advogado</th><th>Horas Úteis/Mês</th><th>Capacidade (Minutos)</th><th>Meta Ocupação</th></tr></thead>
+                <tbody>
+                  <tr><td><strong>Advogado Sênior / Sócio</strong></td><td>140h</td><td>8.400 min</td><td>65% faturável</td></tr>
+                  <tr><td><strong>Advogado Pleno</strong></td><td>160h</td><td>9.600 min</td><td>80% faturável</td></tr>
+                  <tr><td><strong>Advogado Júnior</strong></td><td>168h</td><td>10.080 min</td><td>85% faturável</td></tr>
+                  <tr><td><strong>Estagiário / Paralegal</strong></td><td>120h</td><td>7.200 min</td><td>90% operacional</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">⚠️ Alertas de Desvio e Reprecificação Contratual</div>
+            <div class="table-container" style="margin-top: 8px;">
+              <table class="data-table">
+                <thead><tr><th>Desvio Identificado</th><th>Impacto Financeiro</th><th>Providência Gerencial</th></tr></thead>
+                <tbody>
+                  <tr><td><strong>Desvio &gt; +30% na Instrução</strong></td><td>Erosão da margem de lucro</td><td>Elaborar aditivo de honorários para perícias/audiências excedentes.</td></tr>
+                  <tr><td><strong>Execução &lt; 50% do orçado</strong></td><td>Superestimativa de esforço</td><td>Calibrar precificação para tornar propostas futuras mais competitivas.</td></tr>
+                  <tr><td><strong>Ocupação &gt; 90% da equipe</strong></td><td>Risco de perda de prazos</td><td>Contratação de correspondente ou novo advogado associado.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+    </section>
+
+      <!-- MÓDULO 06/3: METAS & PLANEJAMENTO ORÇAMENTÁRIO -->
+      <section id="modulo-06-3" class="module-section">
+        <div class="module-header">
+          <span class="module-badge">MÓDULO 06/3</span>
+          <h2 class="module-title">Metas de Honorários & Planejamento Orçamentário</h2>
+          <div class="module-subtitle">Fixação de Metas, Rateio de Custos Fixos (Overhead) e Ponto de Equilíbrio</div>
+          <div class="module-objective">
+            <strong>Objetivo Operacional:</strong> Estruturar o orçamento anual da banca, definir metas mensais de faturamento por área de atuação e por advogado sócio/associado, e acompanhar o ponto de equilíbrio gerencial do escritório.
+          </div>
+        </div>
+
+        <div class="screenshot-card">
+          <div class="screenshot-bar">
+            <div class="mac-dots"><div class="mac-dot dot-red"></div><div class="mac-dot dot-yellow"></div><div class="mac-dot dot-green"></div></div>
+            <div class="screen-url">Diagnóstico > Metas & Planejamento Orçamentário</div>
+          </div>
+          <div class="screen-img-container">
+            <img src="assets/images/06_diagnostico_metas.webp" alt="Metas e Planejamento Orçamentário" class="screen-img">
+            <div class="zoom-hint">🔍 Clique para Ampliar Painel de Metas</div>
+          </div>
+          <div class="screenshot-caption">
+            <strong>Figura 6.3 · Cockpit de Metas & Planejamento:</strong> Metas de receita contratual e êxito, acompanhamento percentual de atingimento, projeções de fluxo e alocação de capacidade produtiva.
+          </div>
+        </div>
+
+        <div class="grid-3" style="margin-top: 20px;">
+          <div class="card">
+            <div class="card-title">🎯 1. Metas por Especialidade</div>
+            <p style="color: #cbd5e1; font-size: 13px; line-height: 1.6;">
+              Definição de objetivos de faturamento separados por carteira jurídica (Tributário, Trabalhista, Previdenciário, Empresarial, Cível). Acompanhamento do previsto vs. realizado em cada fechamento mensal.
+            </p>
+          </div>
+
+          <div class="card">
+            <div class="card-title">🏢 2. Rateio de Overhead</div>
+            <p style="color: #cbd5e1; font-size: 13px; line-height: 1.6;">
+              Metodologia de rateio das despesas administrativas e custos estruturais (aluguel, software, marketing, copa) sobre as áreas geradoras de honorários, apurando a real margem de contribuição de cada equipe.
+            </p>
+          </div>
+
+          <div class="card">
+            <div class="card-title">⚖️ 3. Capacidade & Ocupação</div>
+            <p style="color: #cbd5e1; font-size: 13px; line-height: 1.6;">
+              Monitoramento da taxa de ocupação da equipe técnica (horas faturáveis vs. horas disponíveis no mês). Alerta preventivo quando a equipe ultrapassa 85% de ocupação, indicando necessidade de nova contratação.
+            </p>
+          </div>
+        </div>
+      
+        <!-- PONTO DE EQUILIBRIO E RATEIO DE OVERHEAD -->
+        <div class="grid-2" style="margin-top: 20px;">
+          <div class="card">
+            <div class="card-title">⚖️ Fórmula do Ponto de Equilíbrio (Break-Even) da Banca</div>
+            <p style="color:#cbd5e1;font-size:13px;line-height:1.6;">
+              O Break-Even financeiro determina o faturamento mínimo mensal necessário para cobrir todos os custos estruturais do escritório:
+            </p>
+            <div style="background:rgba(234,179,8,0.08);border:1px solid rgba(234,179,8,0.3);border-radius:6px;padding:12px;margin:10px 0;font-family:'Space Mono',monospace;font-size:13px;color:var(--gold-500);text-align:center;">
+              Break-Even (R$) = Custos Fixos Totais ÷ Margem de Contribuição (%)
+            </div>
+            <p style="color:#94a3b8;font-size:12.5px;line-height:1.5;">
+              <strong>Custos Fixos:</strong> Soma dos grupos G04 (Pessoal adm), G05 (Instalações), G07 (Tecnologia) e G08 (Despesas gerais). Faturamento acima desse valor gera lucro operacional real.
+            </p>
+          </div>
+
+          <div class="card">
+            <div class="card-title">🏢 Metodologia de Rateio de Overhead Estrutural</div>
+            <p style="color:#cbd5e1;font-size:13px;line-height:1.6;">
+              Para precificar processos com precisão, a banca deve incorporar o custo estrutural por hora trabalhada:
+            </p>
+            <div style="background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.3);border-radius:6px;padding:12px;margin:10px 0;font-family:'Space Mono',monospace;font-size:13px;color:var(--cyan-400);text-align:center;">
+              Overhead/Hora (R$/h) = Despesas Estruturais ÷ Horas Totais Produtivas
+            </div>
+            <p style="color:#94a3b8;font-size:12.5px;line-height:1.5;">
+              Exemplo: R$ 30.000 de despesas fixas rateadas entre 600 horas faturáveis da equipe geram um custo estrutural adicional de <strong>R$ 50,00 por hora</strong> em cada processo.
+            </p>
+          </div>
+        </div>
+
+        <!-- ROTINA DE REVISAO ORCAMENTARIA -->
+        <div class="card" style="margin-top: 20px;">
+          <div class="card-title">📅 Rotina de Governança e Revisão Orçamentária Trimestral</div>
+          <div class="table-container" style="margin-top: 10px;">
+            <table class="data-table">
+              <thead><tr><th>Frequência</th><th>Ação de Governança</th><th>Responsáveis</th><th>Entregável Esperado</th></tr></thead>
+              <tbody>
+                <tr><td><strong>Mensal</strong></td><td>Confrontar Previsto vs. Realizado por área jurídica e advogado</td><td>Controladoria e Sócios</td><td>Relatório DRE fechado e apuração de CAC por canal.</td></tr>
+                <tr><td><strong>Trimestral</strong></td><td>Recalibrar Break-Even e taxa de Overhead por hora produtiva</td><td>Comitê de Gestão</td><td>Ajuste da tabela de precificação e metas do trimestre seguinte.</td></tr>
+                <tr><td><strong>Anual</strong></td><td>Definição de metas orçamentárias de honorários e distribuição de lucros</td><td>Assembleia de Sócios</td><td>Orçamento anual aprovado e política de bônus por resultado.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+    
+        <!-- FORMULARIOS OPERACIONAIS DO MODULO 6/3 -->
+        <div class="card" style="margin-top: 20px;">
+          <div class="card-title">📝 Inventário dos 4 Formulários Operacionais de Metas &amp; Capacidade</div>
+          <div class="table-container" style="margin-top: 10px;">
+            <table class="data-table">
+              <thead><tr><th>Formulário</th><th>Campos Principais</th><th>Como Preencher / Exemplo</th><th>Regra de Governança</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><strong>7. Fixar Meta Mensal de Faturamento</strong></td>
+                  <td>Mês de Referência; Meta de Receitas de Honorários (R$)</td>
+                  <td>Ex: Novembro/2026, R$ 50.000,00. Clique em <em>Salvar Meta Mensal</em> e confira o cartão Meta Fixada.</td>
+                  <td><span class="pill-badge pill-gold">Atenção</span> Uma meta planejada não cria faturamento nem altera o saldo bancário.</td>
+                </tr>
+                <tr>
+                  <td><strong>8. Classificar Contrato em Especialidade</strong></td>
+                  <td>Contrato de Honorários; Ramo / Especialidade Jurídica</td>
+                  <td>Selecione um contrato cadastrado e vincule à especialidade (ex: Trabalhista, Tributário). Clique em <em>Salvar Classificação</em>.</td>
+                  <td>Finalidade analítica; classificações genéricas prejudicam comparações de margem por área jurídica.</td>
+                </tr>
+                <tr>
+                  <td><strong>9. Declarar Capacidade Mensal do Profissional</strong></td>
+                  <td>Profissional / Advogado; Minutos Disponíveis no Mês</td>
+                  <td>Informe os minutos úteis: <code>min = horas × 60</code> (ex: 9.600 min = 160h). Clique em <em>Salvar Capacidade</em>.</td>
+                  <td>Considere férias, feriados e reuniões internas; não atribua 160h automaticamente a todos.</td>
+                </tr>
+                <tr>
+                  <td><strong>10. Adicionar Despesa Indireta para Simulação</strong></td>
+                  <td>Descrição do Pool; Valor (R$); Fonte e Justificativa Contábil</td>
+                  <td>Ex: "Software jurídico - estrutura", R$ 3.500,00. Clique em <em>Simular Rateio por Horas</em>.</td>
+                  <td><span class="pill-badge" style="background:#dc2626;color:#fff;">Controle Dupla Contagem</span> Não some despesas já lançadas na DRE.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- DUVIDAS E ERROS COMUNS DO PLANEJAMENTO -->
+        <div class="card" style="margin-top: 20px;">
+          <div class="card-title">⚠️ Dúvidas e Erros Comuns em Metas &amp; Capacidade (Pág. 47)</div>
+          <div class="table-container" style="margin-top: 8px;">
+            <table class="data-table">
+              <thead><tr><th>Situação na Tela</th><th>Verificação Sugerida</th></tr></thead>
+              <tbody>
+                <tr><td><strong>Meta "Não Definida"</strong></td><td>Confirme o mês selecionado e salve uma meta monetária positiva para a competência.</td></tr>
+                <tr><td><strong>Receita zero com contratos existentes</strong></td><td>Diferencie valor contratado de recebimento efetivo; confira notas e filtros de competência.</td></tr>
+                <tr><td><strong>Capacidade "ND"</strong></td><td>Informe os minutos disponíveis do profissional através do formulário de capacidade.</td></tr>
+                <tr><td><strong>Taxa de ocupação zero</strong></td><td>Confirme se existem horas apontadas e aprovadas no Time Studio e capacidade declarada.</td></tr>
+                <tr><td><strong>Nenhum resultado por especialidade</strong></td><td>Classifique os contratos ativos nas áreas jurídicas correspondentes (Trabalhista, Cível, etc.).</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+</section>
+
+      <!-- MÓDULO 07 -->
+      <section class="module-section" id="modulo-07">
+  <div class="module-header">
+    <span class="module-badge">MÓDULO 07</span>
+    <h2 class="module-title">Governança &amp; Gestão de Perfis de Acesso</h2>
+    <div class="module-subtitle">Matriz de Permissões, Concessão de Acessos e Segregação de Funções</div>
+    <div class="module-objective">
+      <strong>Objetivo Operacional:</strong> Administrar os usuários da banca jurídica, definir perfis de permissão (Administrador, Editor e Visualizador) e garantir a segregação de funções conforme a governança do escritório.
+    </div>
+  </div>
+
+  <div class="screenshot-card">
+    <div class="screenshot-bar">
+      <div class="mac-dots"><div class="mac-dot dot-red"></div><div class="mac-dot dot-yellow"></div><div class="mac-dot dot-green"></div></div>
+      <div class="screen-url">Configurações &gt; Gestão de Usuários &amp; Acessos</div>
+    </div>
+    <div class="screen-img-container">
+      <img src="assets/images/07_gestao_acessos_equipe.webp" alt="Gestão de Acessos e Perfis da Equipe" class="screen-img" />
+      <div class="zoom-hint">🔍 Clique para Ampliar Gestão de Acessos</div>
+    </div>
+    <div class="screenshot-caption">
+      <strong>Figura 7.0 · Painel de Usuários da Banca:</strong> Listagem de advogados, assistentes e sócios cadastrados, com controle individual de permissões e status de ativação.
+    </div>
+  </div>
+
+  <div class="card" style="margin-top: 20px;">
+    <div class="card-title">Matriz de Perfis de Acesso da Banca</div>
+    <div class="table-container" style="margin-top: 10px;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Perfil</th>
+            <th>Permissões Concedidas</th>
+            <th>Público Recomendado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong style="color:var(--gold-500);">Administrador</strong></td>
+            <td>Acesso irrestrito a DRE contábil, auditoria, configurações de equipe, parametrização e governança.</td>
+            <td>Sócios titulares, administradores e diretoria financeira.</td>
+          </tr>
+          <tr>
+            <td><strong style="color:var(--cyan-400);">Editor</strong></td>
+            <td>Cadastra e edita despesas, receitas, contratos, apontamentos e conciliações bancárias.</td>
+            <td>Controladoria, gerentes jurídicos e assistentes financeiros.</td>
+          </tr>
+          <tr>
+            <td><strong style="color:#4ade80;">Visualizador</strong></td>
+            <td>Apenas consulta de relatórios, dashboards e indicadores executivos (sem permissão de escrita).</td>
+            <td>Advogados associados, consultores externos e sócios minoritários.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+        <!-- CASOS PRATICOS DE PERMISSAO -->
+        <div class="card" style="margin-top: 20px;">
+          <div class="card-title">💼 Casos Práticos de Aplicação de Perfis na Banca Jurídica</div>
+          <div class="grid-3" style="margin-top: 12px; gap: 14px;">
+            <div style="background:rgba(234,179,8,0.06);border:1px solid rgba(234,179,8,0.25);border-radius:8px;padding:14px;">
+              <strong style="color:var(--gold-500);font-size:13.5px;">Caso A: Sócio Titular / Administrador</strong>
+              <p style="color:#cbd5e1;font-size:12.5px;margin-top:8px;line-height:1.6;">
+                Necessita de acesso pleno a todos os módulos, fechamentos mensais da DRE, auditoria e gestão de usuários.
+              </p>
+              <div style="margin-top:8px;font-size:12px;color:var(--gold-500);font-weight:600;">Perfil: Administrador</div>
+            </div>
+
+            <div style="background:rgba(56,189,248,0.06);border:1px solid rgba(56,189,248,0.25);border-radius:8px;padding:14px;">
+              <strong style="color:var(--cyan-400);font-size:13.5px;">Caso B: Assistente Financeiro / Controladoria</strong>
+              <p style="color:#cbd5e1;font-size:12.5px;margin-top:8px;line-height:1.6;">
+                Cadastra receitas, despesas, contratos e conciliações bancárias, mas sem acesso à criação de usuários ou trilha técnica.
+              </p>
+              <div style="margin-top:8px;font-size:12px;color:var(--cyan-400);font-weight:600;">Perfil: Editor</div>
+            </div>
+
+            <div style="background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.25);border-radius:8px;padding:14px;">
+              <strong style="color:#4ade80;font-size:13.5px;">Caso C: Advogado Associado</strong>
+              <p style="color:#cbd5e1;font-size:12.5px;margin-top:8px;line-height:1.6;">
+                Utiliza o Time Studio para apontamento de horas técnicas e consulta seus próprios casos e processos, sem acesso à DRE societária.
+              </p>
+              <div style="margin-top:8px;font-size:12px;color:#4ade80;font-weight:600;">Perfil: Visualizador</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PROCEDIMENTO DE CONCESSAO E REVOGACAO -->
+        <div class="grid-2" style="margin-top: 20px;">
+          <div class="card">
+            <div class="card-title">🔑 Procedimento de Concessão de Novos Acessos</div>
+            <ol style="color:#cbd5e1;font-size:13px;line-height:1.7;padding-left:18px;margin-top:8px;">
+              <li>Acesse <em>Configurações &gt; Gestão de Usuários &amp; Acessos</em> com perfil de Administrador;</li>
+              <li>Clique em <em>+ Convidar Novo Usuário</em>;</li>
+              <li>Informe o e-mail corporativo individual do advogado ou colaborador;</li>
+              <li>Selecione o perfil correspondente (Administrador, Editor ou Visualizador);</li>
+              <li>Confirme o envio do convite com link seguro de primeiro acesso;</li>
+              <li>O colaborador receberá o link e deverá cadastrar sua senha forte imediatamente.</li>
+            </ol>
+          </div>
+
+          <div class="card">
+            <div class="card-title">🚫 Procedimento de Revogação Imediata (Desligamento)</div>
+            <ol style="color:#cbd5e1;font-size:13px;line-height:1.7;padding-left:18px;margin-top:8px;">
+              <li>Localize o usuário na listagem ativa de colaboradores da banca;</li>
+              <li>Alterne o status da conta de <em>Ativo</em> para <strong>Inativo / Revogado</strong>;</li>
+              <li>Acione a opção <strong>Encerrar Todas as Sessões Ativas</strong> do usuário;</li>
+              <li>Os tokens de acesso em todos os dispositivos serão cancelados imediatamente;</li>
+              <li>O histórico de apontamentos e lançamentos do usuário é preservado intacto na auditoria.</li>
+            </ol>
+          </div>
+        </div>
+
+
+        <!-- DUVIDAS E SITUACOES FREQUENTES DE ACESSO -->
+        <div class="card" style="margin-top: 20px;">
+          <div class="card-title">⚠️ Situações Frequentes e Tratamento de Perfis (Pág. 51)</div>
+          <div class="table-container" style="margin-top: 8px;">
+            <table class="data-table">
+              <thead><tr><th>Situação Observada</th><th>Conferência Recomendada</th></tr></thead>
+              <tbody>
+                <tr><td><strong>Usuário recém-cadastrado não aparece na lista</strong></td><td>Verificar a mensagem de retorno do cadastro e aguardar o término de "Atualizando informações...". Não cadastrar de novo sem antes atualizar a página.</td></tr>
+                <tr><td><strong>Colaborador não consegue editar lançamentos</strong></td><td>Conferir se o perfil atribuído é Visualizador. Se a função exigir inserção de receitas/despesas, o administrador deve ajustar para <strong>Editor</strong>.</td></tr>
+                <tr><td><strong>Advogado associado precisa apenas apontar horas</strong></td><td>Utilizar o convite direto para o <strong>Time Studio PWA</strong> com credenciais próprias de apontamento; não equivale ao perfil Visualizador do DRE.</td></tr>
+                <tr><td><strong>Status "Segurança Ativa"</strong></td><td>Indicação de interface que confirma parâmetros básicos; não substitui a auditoria individual de MFA por colaborador.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+</section>
+
+<section class="module-section" id="modulo-07-1">
+  <div class="module-header">
+    <span class="module-badge">MÓDULO 07/1</span>
+    <h2 class="module-title">Trilha de Auditoria &amp; Rastreabilidade Total (Audit Trail)</h2>
+    <div class="module-subtitle">Registros Imutáveis, Horários Padronizados UTC e Conformidade LGPD</div>
+    <div class="module-objective">
+      <strong>Objetivo Operacional:</strong> Rastrear todas as operações financeiras, acessos de usuários e apontamentos de horas realizados no sistema, assegurando conformidade com as diretrizes da LGPD e os padrões de governança da OAB.
+    </div>
+  </div>
+
+  <div class="screenshot-card">
+    <div class="screenshot-bar">
+      <div class="mac-dots"><div class="mac-dot dot-red"></div><div class="mac-dot dot-yellow"></div><div class="mac-dot dot-green"></div></div>
+      <div class="screen-url">Configurações &gt; Trilha de Auditoria &amp; Logs</div>
+    </div>
+    <div class="screen-img-container">
+      <img src="assets/images/07_trilha_auditoria.webp" alt="Trilha de Auditoria e Logs do DRE Jurídico" class="screen-img" />
+      <div class="zoom-hint">🔍 Clique para Ampliar Trilha de Auditoria</div>
+    </div>
+    <div class="screenshot-caption">
+      <strong>Figura 7.1 · Painel de Auditoria Operacional:</strong> Registro em ordem cronológica reversa contendo timestamp UTC, e-mail do autor, tipo de evento, endereço IP de origem e detalhamento do dado modificado.
+    </div>
+  </div>
+
+  <!-- TIMESTAMP UTC E REGRA DE CONVERSAO -->
+  <div class="card" style="margin-top: 20px;">
+    <div class="card-title">🌐 Padrão de Horário UTC (+00:00) &amp; Conversão para Horário de Brasília</div>
+    <p style="color:#cbd5e1;font-size:13.5px;line-height:1.6;">
+      Para garantir validade probatória em litígios e eliminar ambiguidades causadas por fusos locais ou horário de verão, todos os registros da trilha de auditoria são carimbados no formato universal <strong>UTC (Coordinated Universal Time / +00:00)</strong>:
+    </p>
+    <div style="background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.3);border-radius:6px;padding:12px;margin:12px 0;font-family:'Space Mono',monospace;font-size:13.5px;color:var(--cyan-400);text-align:center;">
+      Horário de Brasília (BRT) = Horário Registrado no Log (UTC) − 3 Horas
+    </div>
+    <p style="color:#94a3b8;font-size:12.5px;line-height:1.5;">
+      <strong>Exemplo prático:</strong> Se um evento constar na trilha com o horário <code>2026-10-30 17:45:00 UTC</code>, a operação foi realizada pontualmente às <strong>14h45min no Horário de Brasília</strong>.
+    </p>
+  </div>
+
+  <!-- OS 4 EVENTOS FUNDAMENTAIS -->
+  <div class="card" style="margin-top: 20px;">
+    <div class="card-title">🔍 Os 4 Eventos Técnicos Fundamentais Registrados na Trilha</div>
+    <div class="table-container" style="margin-top: 10px;">
+      <table class="data-table">
+        <thead><tr><th>Código do Evento</th><th>Quando é Disparado</th><th>Dados Gravados no Log</th><th>Finalidade de Governança</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong style="color:var(--gold-500);">AUTH_LOGIN</strong></td>
+            <td>Tentativa de acesso ao sistema (sucesso ou falha de senha/MFA).</td>
+            <td>E-mail, data/hora UTC, IP de origem, dispositivo e status de sucesso.</td>
+            <td>Detectar tentativas de invasão, ataques de força bruta e acessos fora de expediente.</td>
+          </tr>
+          <tr>
+            <td><strong style="color:var(--cyan-400);">FINANCIAL_ENTRY_CREATE / UPDATE / DELETE</strong></td>
+            <td>Inclusão, alteração de valor/natureza ou exclusão de lançamento financeiro.</td>
+            <td>ID do lançamento, valor anterior, valor novo, natureza e usuário autenticado.</td>
+            <td>Impedir adulteração fraudulenta de saldos, conciliações e despesas da banca.</td>
+          </tr>
+          <tr>
+            <td><strong style="color:#a78bfa);">CONTRACT_CREATE / UPDATE</strong></td>
+            <td>Formalização de novo contrato de honorários ou edição de valores declarados.</td>
+            <td>Cliente, número do contrato, volume de honorários contratado e canal de captação.</td>
+            <td>Assegurar rastreabilidade entre contratos assinados e pipeline de CAC.</td>
+          </tr>
+          <tr>
+            <td><strong style="color:#4ade80);">TIMETRACK_LOG</strong></td>
+            <td>Gravação de apontamento de horas pelo cronômetro ou lançamento manual.</td>
+            <td>Advogado, processo/caso atendido, etapa processual e minutagem faturável.</td>
+            <td>Comprovação documental de horas trabalhadas para prestação de contas a clientes.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- EXPORTACAO E SEGURANCA DOS LOGS -->
+  <div class="grid-2" style="margin-top: 20px;">
+    <div class="card">
+      <div class="card-title">📥 Exportação para Planilha &amp; Auditoria Externa</div>
+      <p style="color:#cbd5e1;font-size:13px;line-height:1.6;">
+        Os administradores podem acionar o botão <strong>Exportar CSV / Excel</strong> para gerar relatórios de auditoria filtrados por:
+      </p>
+      <ul style="color:#cbd5e1;font-size:13px;line-height:1.7;margin-top:8px;padding-left:18px;">
+        <li>Intervalo de datas específico (ex: fechamento trimestral);</li>
+        <li>Usuário específico ou endereço IP sob averiguação;</li>
+        <li>Tipo de evento (ex: filtrar apenas exclusões e alterações financeiras).</li>
+      </ul>
+      <div style="margin-top:10px;padding:8px 12px;background:rgba(234,179,8,0.06);border-left:3px solid var(--gold-500);font-size:12px;color:#cbd5e1;">
+        O arquivo gerado contém assinatura hash SHA-256 para comprovar autenticidade e integridade em auditorias externas e due diligence.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🛡️ Princípio da Inviolabilidade (Append-Only Ledger)</div>
+      <p style="color:#cbd5e1;font-size:13px;line-height:1.6;">
+        A trilha de auditoria opera sob o princípio contábil e de segurança da <strong>imutabilidade</strong>:
+      </p>
+      <ul style="color:#cbd5e1;font-size:13px;line-height:1.7;margin-top:8px;padding-left:18px;">
+        <li>Nenhum usuário — nem mesmo o Sócio Administrador Titular — possui permissão para editar, alterar ou excluir registros da trilha;</li>
+        <li>Toda exclusão de lançamento financeiro gera um novo registro de auditoria documentando quem realizou a exclusão e o motivo declarado;</li>
+        <li>Garantia irrestrita de conformidade com os artigos 46 e 48 da LGPD (Lei nº 13.709/2018).</li>
+      </ul>
+    </div>
+  </div>
+
+        <!-- COLUNAS E SIGNIFICADO DA TRILHA DE AUDITORIA -->
+        <div class="card" style="margin-top: 20px;">
+          <div class="card-title">📋 Estrutura das Colunas da Trilha &amp; Interpretação Segura (Pág. 53-55)</div>
+          <div class="table-container" style="margin-top: 8px;">
+            <table class="data-table">
+              <thead><tr><th>Coluna da Trilha</th><th>Como Ler</th><th>Cuidados de Governança</th></tr></thead>
+              <tbody>
+                <tr><td><strong>Horário</strong></td><td>Timestamp ISO em UTC (+00:00).</td><td>Subtrair 3 horas para converter para o horário de Brasília (UTC-3).</td></tr>
+                <tr><td><strong>Responsável</strong></td><td>Conta de e-mail ou identificador da ação.</td><td>Registros como "usuário não encontrado" indicam convite pendente ou falha de sessão sob averiguação.</td></tr>
+                <tr><td><strong>Operação</strong></td><td>Código técnico: <code>login</code>, <code>create</code>, <code>timestudio.invite.create</code>, <code>timestudio.invite.accept</code>.</td><td>O código isolado indica a ação, devendo ser contextualizado com o Alvo para análise completa.</td></tr>
+                <tr><td><strong>Alvo</strong></td><td>Identificador único (UUID) do objeto afetado.</td><td>ID técnico do recurso (lançamento, contrato, convite); não é o nome textual do cliente.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- CUIDADOS DE SEGURANCA COM AUDITORIA -->
+        <div class="card" style="margin-top: 20px; border-left: 4px solid var(--gold-500);">
+          <div class="card-title">🔒 Cuidados de Segurança e Tratamento de Discrepâncias na Auditoria</div>
+          <div class="grid-2" style="margin-top: 10px;">
+            <div>
+              <strong style="color:var(--gold-500);font-size:13px;">Tratamento de Ocorrências:</strong>
+              <ul style="color:#cbd5e1;font-size:12.5px;line-height:1.7;padding-left:18px;margin-top:6px;">
+                <li><strong>Operação "create" genérica:</strong> Consultar o ID do Alvo e a trilha complementar para identificar o recurso exato;</li>
+                <li><strong>Horário divergente:</strong> Checar o fuso UTC (+00:00) vs. horário local e verificar a sincronização do relógio do servidor;</li>
+                <li><strong>Poucas linhas visíveis:</strong> Utilizar a paginação/rolagem e verificar o alcance dos filtros ativos de data;</li>
+                <li><strong>CSV divergente da tela:</strong> Confirmar o instante exato da extração e os filtros de escopo aplicados.</li>
+              </ul>
+            </div>
+            <div>
+              <strong style="color:var(--cyan-400);font-size:13px;">Governança de Arquivos Exportados:</strong>
+              <ul style="color:#cbd5e1;font-size:12.5px;line-height:1.7;padding-left:18px;margin-top:6px;">
+                <li>Arquivos CSV contêm e-mails e IPs confidenciais; nunca divulgue em canais abertos;</li>
+                <li>Armazene backups de auditoria em diretório criptografado com acesso restrito aos sócios;</li>
+                <li>Nunca edite arquivos CSV brutos utilizados como prova documental em investigações internas;</li>
+                <li>Mantenha histórico de exportações em conformidade com as diretrizes do Provimento CFOAB.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+</section>
+
+
+<section class="module-section" id="modulo-07-2">
+  <div class="module-header">
+    <span class="module-badge">MÓDULO 07/2</span>
+    <h2 class="module-title">Segurança da Conta, Timeout de Sessão &amp; Autenticação MFA</h2>
+    <div class="module-subtitle">Proteção Criptográfica por TOTP, Política de Inatividade de 15 Minutos e Gestão de Sessões</div>
+    <div class="module-objective">
+      <strong>Objetivo Operacional:</strong> Proteger os dados confidenciais e sigilosos dos clientes da banca jurídica através de senhas complexas, segundo fator por aplicativo autenticador (TOTP) e bloqueio automático por timeout de inatividade.
+    </div>
+  </div>
+
+  <div class="screenshot-card">
+    <div class="screenshot-bar">
+      <div class="mac-dots"><div class="mac-dot dot-red"></div><div class="mac-dot dot-yellow"></div><div class="mac-dot dot-green"></div></div>
+      <div class="screen-url">Configurações &gt; Segurança da Conta &amp; MFA</div>
+    </div>
+    <div class="screen-img-container">
+      <img src="assets/images/07_seguranca_conta_mfa.webp" alt="Segurança da Conta e MFA no DRE Jurídico" class="screen-img" />
+      <div class="zoom-hint">🔍 Clique para Ampliar Configurações de Segurança</div>
+    </div>
+    <div class="screenshot-caption">
+      <strong>Figura 7.2 · Painel de Segurança &amp; Credenciais:</strong> Requisitos mínimos de senha de 12 caracteres, autenticação em dois fatores (MFA) via aplicativo TOTP e encerramento em lote de sessões ativas.
+    </div>
+  </div>
+
+  <!-- REQUISITO EXPLICITO: TIMEOUT DE SESSAO POR INATIVIDADE -->
+  <div class="card" style="margin-top: 20px; border-left: 4px solid var(--gold-500);">
+    <div class="card-title">⏱️ Política Obrigatória de Timeout por Inatividade (15 Minutos)</div>
+    <p style="color:#cbd5e1;font-size:13.5px;line-height:1.6;">
+      Para preservar o sigilo profissional da advocacia e proteger a banca contra acessos indevidos em estações de trabalho não bloqueadas, o sistema adota uma <strong>política estrita de timeout automático de sessão</strong>:
+    </p>
+    <div class="grid-3" style="margin-top: 14px; gap: 14px;">
+      <div style="background:rgba(234,179,8,0.06);border:1px solid rgba(234,179,8,0.25);border-radius:8px;padding:14px;">
+        <strong style="color:var(--gold-500);font-size:13px;">1. Desconexão aos 15 Minutos</strong>
+        <p style="color:#cbd5e1;font-size:12px;margin-top:6px;line-height:1.5;">
+          Após exatamente 15 minutos sem interação (cliques, digitação ou rolagem), a sessão é suspensa preventivamente e a tela de login seguro é reexibida.
+        </p>
+      </div>
+
+      <div style="background:rgba(56,189,248,0.06);border:1px solid rgba(56,189,248,0.25);border-radius:8px;padding:14px;">
+        <strong style="color:var(--cyan-400);font-size:13px;">2. Alerta Prévio aos 14 Minutos</strong>
+        <p style="color:#cbd5e1;font-size:12px;margin-top:6px;line-height:1.5;">
+          Um banner flutuante avisa 60 segundos antes da expiração. Um único clique no botão <em>"Permanecer Conectado"</em> renova a sessão por mais 15 minutos.
+        </p>
+      </div>
+
+      <div style="background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.25);border-radius:8px;padding:14px;">
+        <strong style="color:#4ade80;font-size:13px;">3. Salva-Vidas de Digitação</strong>
+        <p style="color:#cbd5e1;font-size:12px;margin-top:6px;line-height:1.5;">
+          Textos parciais digitados em descrições de lançamentos ou no Time Studio ficam salvos na memória local do navegador, evitando perda de trabalho após reautenticação.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SEGUNDO FATOR TOTP E PROCEDIMENTO -->
+  <div class="grid-2" style="margin-top: 20px;">
+    <div class="card">
+      <div class="card-title">📱 Autenticação em Dois Fatores (MFA / TOTP)</div>
+      <p style="color:#cbd5e1;font-size:13px;line-height:1.6;">
+        O segundo fator utiliza o protocolo universal <strong>TOTP (Time-based One-Time Password)</strong>, gerando códigos de 6 dígitos temporários:
+      </p>
+      <ul style="color:#cbd5e1;font-size:13px;line-height:1.7;margin-top:8px;padding-left:18px;">
+        <li>Compatível com Google Authenticator, Microsoft Authenticator e 1Password;</li>
+        <li>O token é renovado a cada 30 segundos, sem depender de SMS ou e-mail (imune a golpes de clonagem SIM Swap);</li>
+        <li><strong>Como ativar:</strong> Escaneie o QR Code na tela com a câmera do seu aplicativo e digite o código de 6 dígitos gerado para confirmar o vínculo.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔐 Requisitos de Senha Forte &amp; Bloqueio Preventivo</div>
+      <p style="color:#cbd5e1;font-size:13px;line-height:1.6;">
+        O sistema impõe diretrizes estritas de complexidade criptográfica:
+      </p>
+      <ul style="color:#cbd5e1;font-size:13px;line-height:1.7;margin-top:8px;padding-left:18px;">
+        <li><strong>Comprimento Mínimo:</strong> 12 caracteres alfanuméricos;</li>
+        <li><strong>Composição Obrigatória:</strong> Letras maiúsculas, minúsculas, números e símbolos especiais (ex: <code>@, #, $, %</code>);</li>
+        <li><strong>Bloqueio Automático:</strong> 5 tentativas incorretas consecutivas bloqueiam temporariamente a conta por 30 minutos;</li>
+        <li><strong>Criptografia em Trânsito:</strong> Todo tráfego protegido por TLS 1.3 com certificado HTTPS de 256 bits.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ENCERRAMENTO DE SESSOES E CELULAR PERDIDO -->
+  <div class="grid-2" style="margin-top: 20px;">
+    <div class="card">
+      <div class="card-title">🚪 Botão "Encerrar Todas as Sessões Conectadas"</div>
+      <p style="color:#cbd5e1;font-size:13px;line-height:1.6;">
+        Em caso de suspeita de acesso indevido ou quando o usuário esquecer o sistema aberto em computador externo ou de terceiros:
+      </p>
+      <ol style="color:#cbd5e1;font-size:13px;line-height:1.7;padding-left:18px;margin-top:8px;">
+        <li>Acesse <em>Configurações &gt; Segurança &amp; MFA</em>;</li>
+        <li>Clique no botão vermelho <strong>Encerrar Todas as Sessões</strong>;</li>
+        <li>Todos os tokens JWT e cookies de autenticação em outros computadores e smartphones são imediatamente revogados;</li>
+        <li>Apenas a sessão atual em uso permanece ativa.</li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🆘 Procedimento de Emergência: Celular Perdido ou Extraviado</div>
+      <p style="color:#cbd5e1;font-size:13px;line-height:1.6;">
+        Se o advogado perder o smartphone onde estava instalado o aplicativo autenticador TOTP:
+      </p>
+      <ol style="color:#cbd5e1;font-size:13px;line-height:1.7;padding-left:18px;margin-top:8px;">
+        <li>Entre em contato imediatamente com o <strong>Sócio Administrador Titular</strong> da banca;</li>
+        <li>O Administrador acessa a gestão de usuários e aciona o <em>Reset de MFA</em> após verificação biométrica ou presencial;</li>
+        <li>O advogado receberá um link temporário exclusivo de uso único para redefinir o acesso;</li>
+        <li>No primeiro login após o reset, o cadastro de um novo aplicativo autenticador será compulsoriamente exigido.</li>
+      </ol>
+    </div>
+  </div>
+
+        <!-- PAINEL ALTERAR SENHA E PROCEDIMENTO DE 6 PASSOS MFA -->
+        <div class="grid-2" style="margin-top: 20px;">
+          <div class="card">
+            <div class="card-title">🔑 Painel "Alterar Senha de Acesso" (Pág. 57)</div>
+            <p style="color:#cbd5e1;font-size:13px;line-height:1.6;">
+              O painel de credenciais exige preenchimento rigoroso de segurança:
+            </p>
+            <ul style="color:#cbd5e1;font-size:13px;line-height:1.7;padding-left:18px;margin-top:8px;">
+              <li><strong>Senha Atual:</strong> Confirmação da credencial vigente para prevenir alterações por terceiros;</li>
+              <li><strong>Nova Senha:</strong> Mínimo obrigatório de 12 caracteres alfanuméricos com complexidade;</li>
+              <li><strong>Botão "Alterar Senha e Sair":</strong> Salva a nova senha e <em>revoga compulsoriamente todas as outras sessões ativas</em> da conta;</li>
+              <li><strong>Novo Login Imediato:</strong> O usuário deve efetuar login em seguida com a nova senha para validar o acesso.</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <div class="card-title">📱 Passo a Passo Oficial de Ativação do MFA/TOTP (6 Etapas)</div>
+            <ol style="color:#cbd5e1;font-size:13px;line-height:1.7;padding-left:18px;margin-top:8px;">
+              <li>Verifique o status na seção <em>Autenticação de Dois Fatores (MFA)</em>;</li>
+              <li>Clique em <strong>1. Preparar Chave / QR Code</strong> para gerar o segredo temporário;</li>
+              <li>Abra o app autenticador (Google Authenticator, Microsoft Authenticator) e leia o QR Code;</li>
+              <li>Localize no app o código temporário de 6 dígitos do DRE Jurídico;</li>
+              <li>Digite o código de 6 dígitos no campo de validação da plataforma;</li>
+              <li>Clique em <strong>Confirmar e Ativar MFA</strong> e valide a mensagem de sucesso exibida.</li>
+            </ol>
+            <div style="margin-top:8px;padding:8px 12px;background:rgba(234,179,8,0.08);border-left:3px solid var(--gold-500);font-size:12px;color:#cbd5e1;">
+              <strong>Importante:</strong> Preparar a chave não ativa a proteção! O MFA só é efetivado após digitar e confirmar o primeiro código de 6 dígitos no sistema.
+            </div>
+          </div>
+        </div>
+
+        <!-- TABELA DE SITUACOES COMUNS DO MFA E CHECKLIST DE SEGURANCA -->
+        <div class="card" style="margin-top: 20px;">
+          <div class="card-title">⚠️ Situações Comuns e Resolução de Incidentes de Segurança (Pág. 60)</div>
+          <div class="table-container" style="margin-top: 10px;">
+            <table class="data-table">
+              <thead><tr><th>Situação / Incidente</th><th>Procedimento Operacional Recomendado</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><strong>MFA Não Configurado</strong></td>
+                  <td>Iniciar o preparo da chave, ler o QR Code no app e concluir a confirmação pelo código de 6 dígitos.</td>
+                </tr>
+                <tr>
+                  <td><strong>Código TOTP recusado pelo sistema</strong></td>
+                  <td>Aguardar o próximo ciclo de 30 segundos; conferir se a hora do smartphone está configurada em modo "Automático (Rede)".</td>
+                </tr>
+                <tr>
+                  <td><strong>Senha não aceita no formulário</strong></td>
+                  <td>Revisar a senha atual digitada e verificar se a nova senha atende rigorosamente ao requisito de 12 caracteres.</td>
+                </tr>
+                <tr>
+                  <td><strong>Celular autenticador perdido ou furtado</strong></td>
+                  <td>Acionar imediatamente o Sócio Administrador para reset oficial do MFA após verificação de identidade; não tentar contornos paralelos.</td>
+                </tr>
+                <tr>
+                  <td><strong>Sessão suspeita ou dispositivo esquecido</strong></td>
+                  <td>Alterar a senha imediatamente, clicar em <em>"Encerrar Todas as Sessões"</em>, revisar permissões e auditar logs na Trilha de Auditoria.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- CHECKLIST FINAL DE SEGURANCA DA BANCA -->
+        <div class="card" style="margin-top: 20px; border-left: 4px solid var(--gold-500);">
+          <div class="card-title">🔒 Checklist Final de Segurança Cibernética &amp; Proteção de Dados (10 Itens)</div>
+          <div class="grid-2" style="margin-top: 10px;">
+            <ul style="color:#cbd5e1;font-size:13px;line-height:1.7;list-style:none;padding-left:0;">
+              <li>☑ Cada colaborador da banca possui login corporativo individual e intransferível;</li>
+              <li>☑ Perfis de acesso estão estritamente compatíveis com as funções exercidas (segregação de funções);</li>
+              <li>☑ Senhas são exclusivas, com 12+ caracteres, e gerenciadas com segurança;</li>
+              <li>☑ Segundo fator (MFA) ativo e testado para todos os sócios e operadores financeiros;</li>
+              <li>☑ Política de timeout de 15 minutos ativa para bloqueio automático de tela em inatividade;</li>
+            </ul>
+            <ul style="color:#cbd5e1;font-size:13px;line-height:1.7;list-style:none;padding-left:0;">
+              <li>☑ Apontamentos e descrições do Time Studio protegidos por persistência local de rascunhos;</li>
+              <li>☑ Revogação de acesso e encerramento de sessões executados no mesmo dia em caso de desligamento;</li>
+              <li>☑ Trilha de auditoria consultada regularmente para fiscalização de alterações financeiras;</li>
+              <li>☑ Exportações CSV arquivadas em ambiente protegido, em conformidade com a LGPD;</li>
+              <li>☑ Procedimento formal de contingência estabelecido para caso de perda de smartphone com MFA.</li>
+            </ul>
+          </div>
+        </div>
+
+</section>
+
+
+      <!-- CONTRA-CAPA & FECHAMENTO -->
+      <section id="contracapa" class="module-section">
+        <div class="card" style="border: 2px solid var(--gold-500); text-align: center; padding: 3rem 2rem;">
+          <img src="assets/images/Amarelo LOGO.png" alt="Venda+ Tech" style="height: 60px; margin-bottom: 1rem;">
+          <h2 style="font-size: 2rem; color: var(--gold-500); font-weight: 900; margin-bottom: 1rem;">
+            "Vitória Jurídica Começa com Infraestrutura Comercial."
+          </h2>
+          <p style="font-size: 1.15rem; color: var(--ice-100); max-width: 800px; margin: 0 auto 2rem auto; line-height: 1.6;">
+            Transformando escritórios de advocacia em máquinas comerciais que vencem — com a mesma precisão, técnica e disciplina com que vencem no tribunal.
+          </p>
+          <div style="font-family: 'Space Mono'; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 2.5rem;">
+            — MANIFESTO ESTRATÉGICO VENDA+ TECH · PILAR KAPFERER & RIES
+          </div>
+
+          <div class="grid-3" style="text-align: left; margin-bottom: 2.5rem;">
+            <div class="metric-card">
+              <span class="metric-tag">SEGURANÇA ATIVA</span>
+              <div class="metric-title">MFA / TOTP Integrado</div>
+              <div class="metric-desc">Proteção de acesso com Google Authenticator ou Authy para toda a equipe.</div>
+            </div>
+            <div class="metric-card">
+              <span class="metric-tag">RASTREAMENTO TOTAL</span>
+              <div class="metric-title">100% Auditável</div>
+              <div class="metric-desc">Histórico de eventos operacionais com carimbo temporal e exportação tabular.</div>
+            </div>
+            <div class="metric-card">
+              <span class="metric-tag">CONFORMIDADE LEGAL</span>
+              <div class="metric-title">CPC 00 & CFOAB 205/2021</div>
+              <div class="metric-desc">Regras estritas alinhadas às diretrizes societárias e ao estatuto da advocacia.</div>
+            </div>
+          </div>
+
+          <!-- Protocolo de Entrega -->
+          <div style="background: var(--navy-850); border: 1px dashed var(--gold-500); border-radius: var(--radius-md); padding: 1.5rem; text-align: left; max-width: 800px; margin: 0 auto;">
+            <div style="font-family: 'Space Mono'; font-size: 0.8rem; color: var(--gold-500); font-weight: 700; margin-bottom: 0.8rem;">
+              PROTOCOLO FORMAL DE HOMOLOGAÇÃO & ENTREGA
+            </div>
+            <p style="font-size: 0.9rem; margin-bottom: 0.6rem;">
+              <strong>Banca Jurídica Titular:</strong> Almeida Braatz Advocacia
+            </p>
+            <p style="font-size: 0.9rem; margin-bottom: 0.6rem;">
+              <strong>Sistema:</strong> DRE Jurídico — Gestão Contábil, DRE e Honorários de Bancas Jurídicas
+            </p>
+            <p style="font-size: 0.9rem; margin-bottom: 1.5rem;">
+              <strong>Status da Operação:</strong> Homologado para Produção · Outubro / 2026
+            </p>
+            <div style="display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap;">
+              <div>____________________________________________<br><small style="color:var(--text-muted)">Assinatura do Sócio Administrador</small></div>
+              <div>Data: _____ / _____ / 2026</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer class="app-footer">
+        <img src="assets/images/Amarelo LOGO.png" alt="Venda+ Tech" class="footer-logo">
+        <div class="footer-tagline">VENDA+ TECH • CONSULTORIA DE IA &amp; GROWTH</div>
+        <div class="footer-creds">
+          Infraestrutura Comercial Construída do Zero para a Advocacia Brasileira · vendamais.tech · contato@vendamais.tech
+        </div>
+        <div class="footer-copy">
+          © 2026 Venda+ Tech. Todos os direitos reservados. Documento confidencial destinado à banca credenciada.
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <!-- Footer -->
+  
+
+  <!-- Lightbox Modal (Ultra Robust with Zoom controls) -->
+  <div class="lightbox-modal" id="lightboxModal" onclick="handleLightboxBackdrop(event)">
+    <div class="lightbox-toolbar">
+      <div class="lightbox-title-text" id="lightboxCaption">Visualização em Alta Definição</div>
+      <div class="lightbox-btns">
+        <button class="lightbox-btn" onclick="zoomIn()" title="Aumentar Zoom">➕ Zoom</button>
+        <button class="lightbox-btn" onclick="zoomOut()" title="Diminuir Zoom">➖ Reduzir</button>
+        <button class="lightbox-btn" onclick="zoomReset()" title="Redefinir Tamanho">↺ Reset</button>
+        <button class="lightbox-btn" onclick="closeLightbox()" style="background:var(--gold-500); color:#010E38; border-color:var(--gold-500);" title="Fechar (ESC)">✕ Fechar</button>
+      </div>
+    </div>
+    <div class="lightbox-content-box" id="lightboxBox">
+      <img src="" alt="Ampliação de Tela" class="lightbox-img" id="lightboxImg">
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script>
+    // Reading Progress Bar
+    window.addEventListener('scroll', () => {
+      const winScroll = document.documentElement.scrollTop || document.body.scrollTop;
+      const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const scrolled = (winScroll / height) * 100;
+      document.getElementById('progressBar').style.width = scrolled + '%';
+    });
+
+    // Lightbox Logic (Bulletproof)
+    let currentZoom = 1;
+
+    function openLightbox(src, caption) {
+      if (!src) return;
+      const modal = document.getElementById('lightboxModal');
+      const img = document.getElementById('lightboxImg');
+      const cap = document.getElementById('lightboxCaption');
+      
+      currentZoom = 1;
+      img.style.transform = `scale(1)`;
+      img.src = src;
+      cap.textContent = caption || 'Visualização em Alta Definição';
+      
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeLightbox() {
+      const modal = document.getElementById('lightboxModal');
+      modal.classList.remove('active');
+      document.body.style.overflow = '';
+      currentZoom = 1;
+      const img = document.getElementById('lightboxImg');
+      if (img) img.style.transform = `scale(1)`;
+    }
+
+    function handleLightboxBackdrop(e) {
+      if (e.target.id === 'lightboxModal' || e.target.id === 'lightboxBox') {
+        closeLightbox();
+      }
+    }
+
+    function zoomIn() {
+      currentZoom = Math.min(currentZoom + 0.25, 3);
+      document.getElementById('lightboxImg').style.transform = `scale(${currentZoom})`;
+    }
+
+    function zoomOut() {
+      currentZoom = Math.max(currentZoom - 0.25, 0.5);
+      document.getElementById('lightboxImg').style.transform = `scale(${currentZoom})`;
+    }
+
+    function zoomReset() {
+      currentZoom = 1;
+      document.getElementById('lightboxImg').style.transform = `scale(1)`;
+    }
+
+    // Keyboard ESC to close lightbox
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeLightbox();
+      if (e.key === '+' || e.key === '=') zoomIn();
+      if (e.key === '-') zoomOut();
+    });
+
+    // Attach dynamic click listeners to all screenshots
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.screen-img-container, .hero-mockup-wrapper').forEach(container => {
+        container.addEventListener('click', function() {
+          const img = this.querySelector('img');
+          if (img) {
+            // Find parent caption
+            const parentCard = this.closest('.screenshot-card') || this.parentElement;
+            const captionEl = parentCard ? parentCard.querySelector('.screenshot-caption') : null;
+            const caption = captionEl ? captionEl.innerText.trim() : (img.alt || 'Visualização da Tela');
+            // ALWAYS use currently loaded source (currentSrc or src)
+            const activeSrc = img.currentSrc || img.src;
+            openLightbox(activeSrc, caption);
+          }
+        });
+      });
+    });
+
+    // Checkbox toggle
+    function toggleCheck(el) {
+      const input = el.querySelector('input[type="checkbox"]');
+      if (event.target !== input) {
+        input.checked = !input.checked;
+      }
+      el.classList.toggle('checked', input.checked);
+    }
+
+    // Quick Search filter
+    const searchInput = document.getElementById('quickSearch');
+    if (searchInput) searchInput.addEventListener('input', (e) => {
+      const val = e.target.value.toLowerCase().trim();
+      const sections = document.querySelectorAll('section.module-section');
+      sections.forEach(sec => {
+        if (!val || sec.innerText.toLowerCase().includes(val)) {
+          sec.style.display = 'block';
+        } else {
+          sec.style.display = 'none';
+        }
+      });
+    });
+
+    // DRE Simulator
+    function updateDreSim() {
+      const g01 = parseFloat(document.getElementById('dreG01').value) || 0;
+      const g02 = parseFloat(document.getElementById('dreG02').value) || 0;
+      const g03 = parseFloat(document.getElementById('dreG03').value) || 0;
+      const desp = parseFloat(document.getElementById('dreDespesas').value) || 0;
+      const g09 = parseFloat(document.getElementById('dreG09').value) || 0;
+      const g10 = parseFloat(document.getElementById('dreG10').value) || 0;
+
+      const recLiq = g01 - g02;
+      const lucroBruto = recLiq - g03;
+      const ebit = lucroBruto - desp;
+      const lair = ebit + g09;
+      const lucroLiq = lair - g10;
+
+      const margemBruta = recLiq > 0 ? ((lucroBruto / recLiq) * 100).toFixed(1) : 0;
+      const margemLiq = g01 > 0 ? ((lucroLiq / g01) * 100).toFixed(1) : 0;
+
+      document.getElementById('resRecLiquida').textContent = 'R$ ' + recLiq.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+      document.getElementById('resLucroBruto').textContent = 'R$ ' + lucroBruto.toLocaleString('pt-BR', {minimumFractionDigits: 2}) + ' (' + margemBruta + '%)';
+      document.getElementById('resEbit').textContent = 'R$ ' + ebit.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+      
+      const elLiq = document.getElementById('resLucroLiquido');
+      elLiq.textContent = 'R$ ' + lucroLiq.toLocaleString('pt-BR', {minimumFractionDigits: 2}) + ' (' + margemLiq + '%)';
+      if (lucroLiq >= 0) {
+        elLiq.className = 'result-value success';
+      } else {
+        elLiq.className = 'result-value danger';
+      }
+    }
+
+    ['dreG01', 'dreG02', 'dreG03', 'dreDespesas', 'dreG09', 'dreG10'].forEach(id => {
+      document.getElementById(id).addEventListener('input', updateDreSim);
+    });
+
+    // Runway Simulator
+    function updateRunwaySim() {
+      const saldo = parseFloat(document.getElementById('burnSaldo').value) || 0;
+      const rate = parseFloat(document.getElementById('burnRate').value) || 0;
+      const rec = parseFloat(document.getElementById('burnReceita').value) || 0;
+
+      const queimaLiq = rate - rec;
+      document.getElementById('resQueimaLiquida').textContent = 'R$ ' + Math.max(0, queimaLiq).toLocaleString('pt-BR', {minimumFractionDigits: 2});
+
+      if (queimaLiq <= 0) {
+        document.getElementById('resAutonomia').textContent = 'Infinita (Superávit)';
+        document.getElementById('resStatusRunway').textContent = 'Operação Superavitária';
+        document.getElementById('resStatusRunway').className = 'result-value success';
+      } else if (saldo <= 0) {
+        document.getElementById('resAutonomia').textContent = '0,0 Meses';
+        document.getElementById('resStatusRunway').textContent = 'Caixa Zerado / Crítico';
+        document.getElementById('resStatusRunway').className = 'result-value danger';
+      } else {
+        const meses = (saldo / queimaLiq).toFixed(1);
+        document.getElementById('resAutonomia').textContent = meses + ' Meses';
+        if (meses < 3) {
+          document.getElementById('resStatusRunway').textContent = 'Alerta: Caixa Baixo';
+          document.getElementById('resStatusRunway').className = 'result-value danger';
+        } else if (meses < 6) {
+          document.getElementById('resStatusRunway').textContent = 'Atenção Operacional';
+          document.getElementById('resStatusRunway').className = 'result-value';
+        } else {
+          document.getElementById('resStatusRunway').textContent = 'Equilíbrio Estável';
+          document.getElementById('resStatusRunway').className = 'result-value success';
+        }
+      }
+    }
+
+    ['burnSaldo', 'burnRate', 'burnReceita'].forEach(id => {
+      document.getElementById(id).addEventListener('input', updateRunwaySim);
+    });
+
+    // Funil Simulator
+    function updateFunilSim() {
+      const leads = parseFloat(document.getElementById('funilLeads').value) || 1;
+      const qualif = parseFloat(document.getElementById('funilQualif').value) || 0;
+      const agendadas = parseFloat(document.getElementById('funilAgendadas').value) || 0;
+      const realizadas = parseFloat(document.getElementById('funilRealizadas').value) || 0;
+      const propostas = parseFloat(document.getElementById('funilPropostas').value) || 0;
+      const contratos = parseFloat(document.getElementById('funilContratos').value) || 0;
+
+      const convGlobal = ((contratos / leads) * 100).toFixed(1) + '%';
+      const fechProp = propostas > 0 ? ((contratos / propostas) * 100).toFixed(1) + '%' : '0%';
+      const perdaProp = propostas > 0 ? (((propostas - contratos) / propostas) * 100).toFixed(1) + '%' : '0%';
+      const compRec = agendadas > 0 ? ((realizadas / agendadas) * 100).toFixed(1) + '%' : '0%';
+
+      document.getElementById('resConvGlobal').textContent = convGlobal;
+      document.getElementById('resFechPropostas').textContent = fechProp;
+      document.getElementById('resPerdaPropostas').textContent = perdaProp + ' (Gargalo)';
+      document.getElementById('resComparecimento').textContent = compRec;
+    }
+
+    ['funilLeads', 'funilQualif', 'funilAgendadas', 'funilRealizadas', 'funilPropostas', 'funilContratos'].forEach(id => {
+      document.getElementById(id).addEventListener('input', updateFunilSim);
+    });
+
+    // Mobile Drawer Navigation Logic
+    const mobileNavToggle = document.getElementById('mobileNavToggle');
+    const sidebarNav = document.getElementById('sidebarNav');
+    const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+    const drawerCloseBtn = document.getElementById('drawerCloseBtn');
+
+    function openMobileDrawer() {
+      if (sidebarNav && sidebarBackdrop) {
+        sidebarNav.classList.add('active');
+        sidebarBackdrop.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      }
+    }
+
+    function closeMobileDrawer() {
+      if (sidebarNav && sidebarBackdrop) {
+        sidebarNav.classList.remove('active');
+        sidebarBackdrop.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+    }
+
+    if (mobileNavToggle) {
+      mobileNavToggle.addEventListener('click', openMobileDrawer);
+    }
+    if (drawerCloseBtn) {
+      drawerCloseBtn.addEventListener('click', closeMobileDrawer);
+    }
+    if (sidebarBackdrop) {
+      sidebarBackdrop.addEventListener('click', closeMobileDrawer);
+    }
+
+    // Auto-close drawer on mobile when any navigation link is clicked
+    document.querySelectorAll('.nav-item a').forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 900) {
+          closeMobileDrawer();
+        }
+      });
+    });
+
+    // Mobile Drawer Search filter
+    const mobileDrawerSearch = document.getElementById('mobileDrawerSearch');
+    if (mobileDrawerSearch) {
+      mobileDrawerSearch.addEventListener('input', (e) => {
+        const val = e.target.value.toLowerCase().trim();
+        // Filter sections on page
+        const sections = document.querySelectorAll('section.module-section');
+        sections.forEach(sec => {
+          if (!val || sec.innerText.toLowerCase().includes(val)) {
+            sec.style.display = 'block';
+          } else {
+            sec.style.display = 'none';
+          }
+        });
+        // Also highlight/filter nav items
+        document.querySelectorAll('.nav-item').forEach(item => {
+          if (!val || item.innerText.toLowerCase().includes(val)) {
+            item.style.display = 'block';
+          } else {
+            item.style.display = 'none';
+          }
+        });
+      });
+    }
+
+    // Esc key closes drawer if open
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeMobileDrawer();
+      }
+    });
+
+    // Highlight active sidebar item on scroll
+    const sections = document.querySelectorAll('section.module-section');
+    const navLinks = document.querySelectorAll('.nav-item a');
+    window.addEventListener('scroll', () => {
+      let current = '';
+      sections.forEach(s => {
+        const top = s.offsetTop - 120;
+        if (window.scrollY >= top) current = s.getAttribute('id');
+      });
+      navLinks.forEach(a => {
+        if (a.getAttribute('href') === '#' + current) {
+          a.classList.add('active');
+        } else {
+          a.classList.remove('active');
+        }
+      });
+    });
+  </script>
+</body>
+</html>
