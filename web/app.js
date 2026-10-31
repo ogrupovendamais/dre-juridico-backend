@@ -5595,3 +5595,797 @@ window.openTimeStudioPWA = function(ev) {
     window.open('/timestudio/', '_blank');
   }
 };
+
+
+// ============================================================================
+// MÓDULO DE RELATÓRIOS DE FECHAMENTO DO MÊS (DIAGNÓSTICO EXECUTIVO)
+// Gera relatórios formais consolidados no último dia do mês para cada subaba
+// ============================================================================
+
+function getClosingDateDetails(monthStr) {
+  if (!monthStr || !monthStr.includes('-')) {
+    const now = new Date();
+    monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  }
+  const [yyyy, mm] = monthStr.split('-').map(Number);
+  const lastDate = new Date(yyyy, mm, 0); // Dia 0 do próximo mês = último dia do mês atual
+  const lastDay = lastDate.getDate();
+  const monthNames = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ];
+  const monthName = monthNames[mm - 1] || 'Competência';
+  const now = new Date();
+  const genDate = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} às ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+  return {
+    monthStr,
+    year: yyyy,
+    month: mm,
+    monthName,
+    lastDay,
+    formattedClosingDate: `${String(lastDay).padStart(2, '0')}/${String(mm).padStart(2, '0')}/${yyyy}`,
+    competenceLabel: `${monthName} de ${yyyy}`,
+    generationTimestamp: genDate,
+    officeName: (typeof user !== 'undefined' && user?.office) ? user.office : 'Almeida Braatz Advocacia'
+  };
+}
+
+function openDiagnosticClosingReport(config) {
+  const {
+    title,
+    badge,
+    themeColor,
+    closing,
+    kpis,
+    sections,
+    conclusion
+  } = config;
+
+  const fileName = `Fechamento_${config.type || 'Diagnostico'}_${closing.monthStr}_${closing.lastDay}.html`;
+
+  const kpisHtml = (kpis || []).map(k => `
+    <div style="background:#ffffff;border:1px solid #e2e8f0;border-top:3.5px solid ${k.color || themeColor || '#010E38'};border-radius:10px;padding:14px 16px;box-shadow:0 2px 6px rgba(1,14,56,0.04);">
+      <span style="display:block;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px;">${k.label}</span>
+      <div style="font-size:20px;font-weight:800;color:#010E38;line-height:1.2;">${k.value}</div>
+      ${k.sub ? `<span style="display:block;font-size:11.5px;color:#475569;margin-top:4px;">${k.sub}</span>` : ''}
+    </div>
+  `).join('');
+
+  const sectionsHtml = (sections || []).map(s => `
+    <section style="margin-bottom:26px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #010E38;padding-bottom:8px;margin-bottom:14px;">
+        <h3 style="margin:0;font-size:15px;font-weight:800;color:#010E38;display:flex;align-items:center;gap:8px;">
+          <span>${s.title}</span>
+        </h3>
+        ${s.badge ? `<span style="font-size:10.5px;font-weight:700;background:rgba(1,14,56,0.06);color:#010E38;padding:3px 8px;border-radius:6px;">${s.badge}</span>` : ''}
+      </div>
+      <div>${s.contentHtml}</div>
+    </section>
+  `).join('');
+
+  const htmlDoc = `<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${esc(title)} — ${esc(closing.officeName)} — Fechamento ${esc(closing.formattedClosingDate)}</title>
+  <style>
+    body {
+      background: #f1f4f9;
+      color: #010E38;
+      font-family: 'Montserrat', Inter, system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 24px 16px;
+      -webkit-font-smoothing: antialiased;
+    }
+    .report-actions {
+      max-width: 980px;
+      margin: 0 auto 16px auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .btn-action {
+      background: #010E38;
+      color: #ffffff;
+      border: 1px solid rgba(235,181,44,0.5);
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all .2s ease;
+      box-shadow: 0 2px 8px rgba(1,14,56,0.15);
+    }
+    .btn-action:hover {
+      background: #081B54;
+      border-color: #EBB52C;
+      transform: translateY(-1px);
+    }
+    .report-sheet {
+      max-width: 980px;
+      margin: 0 auto;
+      background: #ffffff;
+      border: 1px solid #dce1eb;
+      border-radius: 14px;
+      padding: 40px 44px;
+      box-shadow: 0 4px 24px rgba(1, 14, 56, 0.08);
+      box-sizing: border-box;
+    }
+    .report-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 2px solid #010E38;
+      padding-bottom: 18px;
+      margin-bottom: 24px;
+      gap: 20px;
+    }
+    .brand-title {
+      font-size: 19px;
+      font-weight: 900;
+      color: #010E38;
+      letter-spacing: -0.02em;
+      margin: 0;
+    }
+    .brand-gold {
+      color: #EBB52C;
+    }
+    .office-name {
+      font-size: 15px;
+      font-weight: 750;
+      color: #010E38;
+      margin: 4px 0 0 0;
+    }
+    .closing-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: linear-gradient(135deg, #010E38 0%, #081B54 100%);
+      color: #EBB52C;
+      font-size: 11.5px;
+      font-weight: 800;
+      padding: 6px 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(235,181,44,0.4);
+      box-shadow: 0 2px 6px rgba(1,14,56,0.2);
+    }
+    .report-meta-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 12px 18px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 12.5px;
+    }
+    .kpis-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+    table.report-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+      margin: 10px 0 16px 0;
+    }
+    table.report-table th {
+      background: #010E38;
+      color: #ffffff;
+      padding: 10px 12px;
+      text-align: left;
+      font-size: 11.5px;
+      font-weight: 750;
+      letter-spacing: 0.02em;
+    }
+    table.report-table th:first-child { border-top-left-radius: 6px; }
+    table.report-table th:last-child { border-top-right-radius: 6px; }
+    table.report-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #e2e8f0;
+      color: #1e293b;
+    }
+    table.report-table tr:nth-child(even) td {
+      background: #f8fafc;
+    }
+    table.report-table tfoot td {
+      font-weight: 800;
+      background: #f1f5f9;
+      border-top: 2px solid #010E38;
+      color: #010E38;
+    }
+    .conclusion-box {
+      background: #f8fafc;
+      border-left: 4px solid #EBB52C;
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 30px;
+      font-size: 12.5px;
+      line-height: 1.6;
+      color: #334155;
+    }
+    .signatures-block {
+      margin-top: 40px;
+      padding-top: 24px;
+      border-top: 1px solid #e2e8f0;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+    }
+    .sig-line {
+      border-top: 1px solid #010E38;
+      padding-top: 8px;
+      text-align: center;
+      font-size: 12px;
+      color: #010E38;
+      font-weight: 700;
+    }
+    .sig-sub {
+      display: block;
+      font-size: 11px;
+      color: #64748b;
+      font-weight: 500;
+      margin-top: 2px;
+    }
+    .report-footer {
+      margin-top: 24px;
+      text-align: center;
+      font-size: 11px;
+      color: #94a3b8;
+      border-top: 1px dashed #e2e8f0;
+      padding-top: 12px;
+    }
+    @media print {
+      body {
+        background: #ffffff !important;
+        padding: 0 !important;
+      }
+      .report-actions {
+        display: none !important;
+      }
+      .report-sheet {
+        max-width: 100% !important;
+        border: none !important;
+        padding: 10mm 12mm !important;
+        box-shadow: none !important;
+      }
+      @page {
+        margin: 12mm;
+        size: A4 portrait;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="report-actions">
+    <div>
+      <strong style="color:#010E38;font-size:14px;">${esc(title)}</strong>
+      <span style="color:#64748b;font-size:12.5px;margin-left:8px;">${esc(closing.officeName)} — Posição em ${esc(closing.formattedClosingDate)}</span>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button type="button" class="btn-action" onclick="window.print()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#EBB52C" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        <span>Imprimir / Salvar PDF (A4)</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="report-sheet">
+    <!-- Header Executivo -->
+    <header class="report-header">
+      <div>
+        <h1 class="brand-title">DRE <span class="brand-gold">Jurídico</span> <span style="font-size:13px;font-weight:600;color:#64748b;">Scientist</span></h1>
+        <div class="office-name">${esc(closing.officeName)}</div>
+        <div style="font-size:13px;font-weight:700;color:#475569;margin-top:2px;">${esc(title)}</div>
+      </div>
+      <div style="text-align:right;">
+        <span class="closing-badge">
+          <span>📅</span>
+          <span>FECHAMENTO MENSAL CONSOLIDADO</span>
+        </span>
+        <div style="font-size:12px;font-weight:700;color:#010E38;margin-top:6px;">
+          Competência: <strong>${esc(closing.competenceLabel)}</strong>
+        </div>
+        <div style="font-size:11.5px;color:#64748b;">
+          Data de Corte: <strong>${esc(closing.formattedClosingDate)}</strong> (Último dia)
+        </div>
+      </div>
+    </header>
+
+    <!-- Meta Informações da Emissão -->
+    <div class="report-meta-box">
+      <div>
+        <span style="color:#64748b;">Módulo:</span> <strong>${esc(badge || 'Diagnóstico')}</strong>
+      </div>
+      <div>
+        <span style="color:#64748b;">Posição Contábil/Operacional:</span> <strong>Fechamento Definitivo do Mês</strong>
+      </div>
+      <div>
+        <span style="color:#64748b;">Emissão:</span> <strong>${esc(closing.generationTimestamp)}</strong>
+      </div>
+    </div>
+
+    <!-- KPIs do Fechamento -->
+    <div class="kpis-grid">
+      ${kpisHtml}
+    </div>
+
+    <!-- Seções e Tabelas Analíticas -->
+    ${sectionsHtml}
+
+    <!-- Conclusão e Parecer -->
+    ${conclusion ? `
+      <div class="conclusion-box">
+        <strong style="display:block;margin-bottom:6px;color:#010E38;font-size:13px;">📌 Parecer da Controladoria & Recomendações de Fechamento:</strong>
+        ${conclusion}
+      </div>
+    ` : ''}
+
+    <!-- Termo de Encerramento e Assinaturas -->
+    <div class="signatures-block">
+      <div>
+        <div style="height:44px;"></div>
+        <div class="sig-line">
+          Controladoria Jurídica / Operações
+          <span class="sig-sub">${esc(closing.officeName)}</span>
+        </div>
+      </div>
+      <div>
+        <div style="height:44px;"></div>
+        <div class="sig-line">
+          Sócio Gestor / Diretoria Executiva
+          <span class="sig-sub">OAB / Responsável Técnico</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="report-footer">
+      Relatório oficial de fechamento da competência ${esc(closing.competenceLabel)} gerado automaticamente pelo DRE Jurídico Scientist em ${esc(closing.generationTimestamp)}. Documento restrito à governança interna da banca.
+    </div>
+  </div>
+</body>
+</html>`;
+
+  // Abrir em nova aba com visualização perfeita
+  const blob = new Blob([htmlDoc], { type: 'text/html;charset=utf-8' });
+  const blobUrl = URL.createObjectURL(blob);
+  const win = window.open(blobUrl, '_blank');
+  if (!win) {
+    // Fallback: download direto se popup for bloqueado
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+}
+
+// ----------------------------------------------------------------------------
+// 1. Relatório de Fechamento: Saúde do Atendimento & Funil
+// ----------------------------------------------------------------------------
+function generateHealthClosingReport() {
+  const monthInput = $('#health-month-select');
+  const month = monthInput?.value || (typeof localIsoMonth === 'function' ? localIsoMonth() : '2026-10');
+  const closing = getClosingDateDetails(month);
+
+  const raw = (typeof getCommercialHealthForMonth === 'function') ? getCommercialHealthForMonth(month) : {};
+  const ins = (typeof calcCommercialInsights === 'function') ? calcCommercialInsights(raw) : {
+    leads: 0,
+    slaAttended: 0,
+    slaRate: 0,
+    scheduled: 0,
+    held: 0,
+    proposals: 0,
+    contracts: 0,
+    overallRate: 0,
+    cacCents: 0,
+    ticketCents: 0,
+    bottleneck: 'Sem gargalos identificados',
+    bottleneckReason: 'Volume inicial regular',
+    actionPlan: 'Manter acompanhamento diário dos leads.',
+    healthBadge: 'Regular',
+    healthClass: 'health-badge-neutral'
+  };
+
+  const moneyFmt = c => typeof money === 'function' ? money(c) : `R$ ${(c||0).toFixed(2)}`;
+
+  const kpis = [
+    { label: 'Conversão Global', value: `${ins.overallRate.toFixed(1)}%`, sub: `${ins.contracts} contratos de ${ins.leads} leads`, color: '#059669' },
+    { label: 'Atendimento no SLA (<15m)', value: `${ins.slaRate.toFixed(1)}%`, sub: `${ins.slaAttended} de ${ins.leads} leads imediatos`, color: '#0284c7' },
+    { label: 'Ticket Médio Fechado', value: moneyFmt(ins.ticketCents), sub: 'Valor médio por contrato', color: '#EBB52C' },
+    { label: 'CAC Médio da Banca', value: moneyFmt(ins.cacCents), sub: 'Custo de aquisição/cliente', color: '#7c3aed' }
+  ];
+
+  const funilRows = [
+    { etapa: '1. Leads Recebidos (Primeiro Contato)', qtd: ins.leads, conv: '100,0%', obs: 'Base total de oportunidades na competência' },
+    { etapa: '2. Atendimento Ágil no SLA (<15 min)', qtd: ins.slaAttended, conv: `${ins.slaRate.toFixed(1)}%`, obs: 'Oportunidades com resposta imediata da equipe' },
+    { etapa: '3. Reuniões Diagnósticas Agendadas', qtd: ins.scheduled, conv: ins.leads > 0 ? `${((ins.scheduled/ins.leads)*100).toFixed(1)}%` : '0%', obs: 'Interesse qualificado pelo diagnóstico' },
+    { etapa: '4. Reuniões Diagnósticas Realizadas', qtd: ins.held, conv: ins.scheduled > 0 ? `${((ins.held/ins.scheduled)*100).toFixed(1)}%` : '0%', obs: 'Presença efetiva do cliente em reunião' },
+    { etapa: '5. Propostas / Pareceres Emitidos', qtd: ins.proposals, conv: ins.held > 0 ? `${((ins.proposals/ins.held)*100).toFixed(1)}%` : '0%', obs: 'Apresentação formal de honorários' },
+    { etapa: '6. Contratos Efetivamente Fechados', qtd: ins.contracts, conv: `${ins.overallRate.toFixed(1)}%`, obs: 'Assinatura e início da relação contratual' }
+  ];
+
+  const funilTableHtml = `
+    <table class="report-table">
+      <thead>
+        <tr>
+          <th>Etapa do Funil Comercial</th>
+          <th style="text-align:center;">Volume</th>
+          <th style="text-align:center;">Conversão Relativa</th>
+          <th>Observações Operacionais</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${funilRows.map(r => `
+          <tr>
+            <td><strong>${r.etapa}</strong></td>
+            <td style="text-align:center;font-weight:750;">${r.qtd}</td>
+            <td style="text-align:center;font-weight:700;color:#059669;">${r.conv}</td>
+            <td style="color:#64748b;">${r.obs}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+
+  openDiagnosticClosingReport({
+    type: 'Saude_Funil',
+    title: 'Relatório Mensal de Performance Comercial & Atendimento',
+    badge: 'Saúde & Funil de Vendas',
+    themeColor: '#059669',
+    closing,
+    kpis,
+    sections: [
+      { title: 'Matriz de Conversão do Funil no Último Dia do Mês', badge: 'Etapas de Atendimento', contentHtml: funilTableHtml }
+    ],
+    conclusion: `
+      <p style="margin:0 0 6px 0;"><strong>Diagnóstico de Ponto Crítico / Gargalo:</strong> ${esc(ins.bottleneck)} — ${esc(ins.bottleneckReason || 'Sem desvios expressivos.')}</p>
+      <p style="margin:0;"><strong>Plano de Ação para a Próxima Competência:</strong> ${esc(ins.actionPlan || 'Manter rotina de qualificação e sincronização periódica de contratos com a controladoria.')}</p>
+    `
+  });
+}
+
+// ----------------------------------------------------------------------------
+// 2. Relatório de Fechamento: Horas, Custo & Rentabilidade
+// ----------------------------------------------------------------------------
+async function generateHoursClosingReport() {
+  const monthInput = $('#prod-month');
+  const month = monthInput?.value || (typeof localIsoMonth === 'function' ? localIsoMonth() : '2026-10');
+  const closing = getClosingDateDetails(month);
+
+  let data = null;
+  try {
+    data = await api('/productivity' + (month ? '?month=' + encodeURIComponent(month) : ''));
+  } catch(e) {
+    console.warn('Usando dados em cache de produtividade', e);
+  }
+
+  const totals = data?.totals || {};
+  const profs = data?.professionals || [];
+  const contracts = data?.contracts || [];
+
+  const moneyFmt = c => typeof money === 'function' ? money(c) : `R$ ${(c||0).toFixed(2)}`;
+  const hoursFmt = m => `${Math.floor((m||0)/60)}h ${String((m||0)%60).padStart(2,'0')}m`;
+
+  const totalMin = totals.total_minutes || 0;
+  const billableMin = totals.billable_minutes || 0;
+  const totalCost = (totals.total_cost_cents || 0) / 100;
+
+  const kpis = [
+    { label: 'Total de Horas Apontadas', value: hoursFmt(totalMin), sub: `Fechamento em ${closing.formattedClosingDate}`, color: '#0284c7' },
+    { label: 'Horas em Contratos', value: hoursFmt(billableMin), sub: totalMin > 0 ? `${((billableMin/totalMin)*100).toFixed(1)}% do esforço da banca` : '0%', color: '#059669' },
+    { label: 'Custo Gerencial da Equipe', value: moneyFmt(totals.total_cost_cents || 0), sub: 'Absorção de folha / pró-labore no mês', color: '#EBB52C' },
+    { label: 'Profissionais Ativos', value: `${profs.length}`, sub: 'Advogados e assistentes apontando horas', color: '#7c3aed' }
+  ];
+
+  const profsRows = profs.map(p => {
+    const pTotalMin = p.total_minutes || 0;
+    const pBillMin = p.billable_minutes || 0;
+    const costPerHour = (p.cost_per_hour_cents || 0) / 100;
+    const occRate = p.occupation_rate != null ? Number(p.occupation_rate).toFixed(1) + '%' : (pTotalMin > 0 ? ((pBillMin/pTotalMin)*100).toFixed(1) + '%' : '0,0%');
+    return `
+      <tr>
+        <td><strong>${esc(p.name)}</strong></td>
+        <td><span style="font-size:11px;background:#f1f5f9;padding:2px 6px;border-radius:4px;color:#475569;">${esc(p.role || 'Advogado')}</span></td>
+        <td style="text-align:center;font-weight:700;">${hoursFmt(pTotalMin)}</td>
+        <td style="text-align:center;color:#059669;font-weight:700;">${hoursFmt(pBillMin)}</td>
+        <td style="text-align:center;font-weight:700;">${occRate}</td>
+        <td style="text-align:right;font-weight:750;color:#010E38;">${moneyFmt(p.cost_per_hour_cents || 0)}/h</td>
+      </tr>
+    `;
+  }).join('');
+
+  const profsTableHtml = profs.length > 0 ? `
+    <table class="report-table">
+      <thead>
+        <tr>
+          <th>Profissional da Banca</th>
+          <th>Função / Perfil</th>
+          <th style="text-align:center;">Horas Totais</th>
+          <th style="text-align:center;">Horas Faturáveis</th>
+          <th style="text-align:center;">Taxa Ocupação</th>
+          <th style="text-align:right;">Custo-Hora Gerencial</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${profsRows}
+      </tbody>
+    </table>
+  ` : '<p style="color:#64748b;padding:12px;text-align:center;">Nenhum apontamento de profissional registrado nesta competência.</p>';
+
+  const contractsRows = (contracts || []).slice(0, 10).map(c => `
+    <tr>
+      <td><strong>${esc(c.title || c.code || 'Contrato')}</strong></td>
+      <td>${esc(c.customer_name || 'Cliente')}</td>
+      <td style="text-align:center;font-weight:700;">${hoursFmt(c.total_minutes)}</td>
+      <td style="text-align:right;font-weight:750;color:#010E38;">${moneyFmt(c.cost_cents || 0)}</td>
+    </tr>
+  `).join('');
+
+  const contractsTableHtml = contracts.length > 0 ? `
+    <table class="report-table">
+      <thead>
+        <tr>
+          <th>Contrato / Caso Jurídico</th>
+          <th>Cliente</th>
+          <th style="text-align:center;">Horas Consumidas</th>
+          <th style="text-align:right;">Custo Gerencial Alocado</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${contractsRows}
+      </tbody>
+    </table>
+  ` : '<p style="color:#64748b;padding:12px;text-align:center;">Nenhum contrato com horas apontadas nesta competência.</p>';
+
+  openDiagnosticClosingReport({
+    type: 'Horas_Custo',
+    title: 'Relatório Mensal de Produtividade, Ocupação & Custo por Advogado',
+    badge: 'Horas & Rentabilidade',
+    themeColor: '#0284c7',
+    closing,
+    kpis,
+    sections: [
+      { title: 'Quadro Geral de Ocupação & Custo da Equipe', badge: `${profs.length} Profissionais`, contentHtml: profsTableHtml },
+      { title: 'Contratos com Maior Consumo de Esforço no Mês', badge: 'Top Casos', contentHtml: contractsTableHtml }
+    ],
+    conclusion: `
+      <p style="margin:0 0 6px 0;"><strong>Apuração de Produtividade:</strong> O volume total de esforço da banca atingiu ${hoursFmt(totalMin)} até o fechamento de ${esc(closing.formattedClosingDate)}.</p>
+      <p style="margin:0;"><strong>Recomendação Gerencial:</strong> Avaliar os contratos que excederam a média de horas para garantir aditivos contratuais de honorários ou revisão de escopo.</p>
+    `
+  });
+}
+
+// ----------------------------------------------------------------------------
+// 3. Relatório de Fechamento: Inteligência por Etapa Processual
+// ----------------------------------------------------------------------------
+async function generateStagesClosingReport() {
+  const monthInput = $('#stg-month');
+  const month = monthInput?.value || (typeof localIsoMonth === 'function' ? localIsoMonth() : '2026-10');
+  const closing = getClosingDateDetails(month);
+
+  let data = typeof currentStageReport !== 'undefined' ? currentStageReport : null;
+  if (!data || data.month !== month) {
+    try {
+      data = await api('/productivity/stages' + (month ? '?month=' + encodeURIComponent(month) : ''));
+    } catch(e) {
+      console.warn('Erro ao carregar stages', e);
+    }
+  }
+
+  const totals = data?.totals || {};
+  const alerts = data?.alerts || [];
+  const contracts = data?.contracts || [];
+
+  const hoursFmt = m => `${Math.floor((m||0)/60)}h ${String((m||0)%60).padStart(2,'0')}m`;
+  const moneyFmt = c => typeof money === 'function' ? money(c) : `R$ ${(c||0).toFixed(2)}`;
+
+  const kpis = [
+    { label: 'Processos Monitorados', value: `${totals.active_contracts || contracts.length || 0}`, sub: `Posição em ${closing.formattedClosingDate}`, color: '#7c3aed' },
+    { label: 'Horas Previstas (Teto)', value: hoursFmt(totals.estimated_minutes), sub: 'Orçamento total de esforço', color: '#0284c7' },
+    { label: 'Horas Realizadas', value: hoursFmt(totals.spent_minutes), sub: totals.estimated_minutes > 0 ? `${((totals.spent_minutes/totals.estimated_minutes)*100).toFixed(1)}% consumido` : 'Horas acumuladas', color: '#059669' },
+    { label: 'Alertas de Desvio', value: `${alerts.length}`, sub: 'Casos exigindo atenção da gestão', color: alerts.length > 0 ? '#ef4444' : '#059669' }
+  ];
+
+  const contractsRows = (contracts || []).slice(0, 15).map(c => {
+    const est = c.estimated_minutes || 0;
+    const spent = c.spent_minutes || 0;
+    const diff = est - spent;
+    const diffText = diff >= 0 ? `+${hoursFmt(diff)} restante` : `-${hoursFmt(Math.abs(diff))} estouro`;
+    const diffColor = diff >= 0 ? '#059669' : '#ef4444';
+    return `
+      <tr>
+        <td><strong>${esc(c.title || c.code || 'Processo')}</strong></td>
+        <td>${esc(c.customer_name || 'Cliente')}</td>
+        <td style="color:#475569;">${esc(c.current_stage || 'Fase Processual')}</td>
+        <td style="text-align:center;">${hoursFmt(est)}</td>
+        <td style="text-align:center;font-weight:750;">${hoursFmt(spent)}</td>
+        <td style="text-align:center;font-weight:750;color:${diffColor};">${diffText}</td>
+      </tr>
+    `;
+  }).join('');
+
+  const contractsTableHtml = contracts.length > 0 ? `
+    <table class="report-table">
+      <thead>
+        <tr>
+          <th>Processo / Contrato</th>
+          <th>Cliente</th>
+          <th>Fase da Lide</th>
+          <th style="text-align:center;">Orçado</th>
+          <th style="text-align:center;">Realizado</th>
+          <th style="text-align:center;">Saldo de Esforço</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${contractsRows}
+      </tbody>
+    </table>
+  ` : '<p style="color:#64748b;padding:12px;text-align:center;">Nenhum processo com acompanhamento de etapas registrado.</p>';
+
+  const alertsRows = alerts.map(a => `
+    <tr>
+      <td><strong>${esc(a.contract_title || 'Processo')}</strong></td>
+      <td><span style="background:#fee2e2;color:#b91c1c;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;">Desvio Crítico</span></td>
+      <td>${esc(a.message || 'Horas realizadas excederam a estimativa de fase')}</td>
+    </tr>
+  `).join('');
+
+  const alertsTableHtml = alerts.length > 0 ? `
+    <table class="report-table">
+      <thead>
+        <tr>
+          <th>Processo Notificado</th>
+          <th>Severidade</th>
+          <th>Motivo do Desvio</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${alertsRows}
+      </tbody>
+    </table>
+  ` : '<p style="color:#059669;padding:12px;font-weight:700;text-align:center;">✓ Nenhum desvio crítico registrado no encerramento da competência.</p>';
+
+  openDiagnosticClosingReport({
+    type: 'Etapas_Processuais',
+    title: 'Relatório Mensal de Esforço Processual & Desvios de Etapa',
+    badge: 'Inteligência por Etapa',
+    themeColor: '#7c3aed',
+    closing,
+    kpis,
+    sections: [
+      { title: 'Acompanhamento de Horas por Processo e Etapa', badge: 'Posição Consolidada', contentHtml: contractsTableHtml },
+      { title: 'Matriz de Alertas & Desvios de Orçamento', badge: `${alerts.length} Alertas`, contentHtml: alertsTableHtml }
+    ],
+    conclusion: `
+      <p style="margin:0 0 6px 0;"><strong>Encerramento de Etapas:</strong> Foram analisados ${totals.active_contracts || contracts.length} contratos ativos até o corte de ${esc(closing.formattedClosingDate)}.</p>
+      <p style="margin:0;"><strong>Diretriz aos Advogados Responsáveis:</strong> Contratos em fase recursal e de instrução devem manter os apontamentos diários para calibrar o modelo preditivo de esforço.</p>
+    `
+  });
+}
+
+// ----------------------------------------------------------------------------
+// 4. Relatório de Fechamento: Metas & Planejamento Orçamentário
+// ----------------------------------------------------------------------------
+async function generateManagementClosingReport() {
+  const monthInput = $('#manage-month');
+  const month = monthInput?.value || (typeof localIsoMonth === 'function' ? localIsoMonth() : '2026-10');
+  const closing = getClosingDateDetails(month);
+
+  let d = null;
+  try {
+    d = await api('/management' + (month ? '?month=' + encodeURIComponent(month) : ''));
+  } catch(e) {
+    console.warn('Erro ao carregar management', e);
+  }
+
+  const cur = d?.comparativo?.atual || {};
+  const meta = d?.meta || {};
+  const areas = d?.areas || [];
+
+  const moneyFmt = c => typeof money === 'function' ? money(c) : `R$ ${(c||0).toFixed(2)}`;
+
+  const rev = cur.receita_centavos || 0;
+  const cost = (cur.custo_centavos || 0) + (cur.despesa_centavos || 0);
+  const resultado = cur.resultado_centavos != null ? cur.resultado_centavos : (rev - cost);
+  const marginPct = rev > 0 ? ((resultado / rev) * 100) : 0;
+  const atingPct = meta.atingimento_pct != null ? Number(meta.atingimento_pct).toFixed(1) + '%' : '0,0%';
+
+  const kpis = [
+    { label: 'Meta de Receita', value: moneyFmt(meta.receita_centavos || 0), sub: 'Objetivo fixado para a competência', color: '#b45309' },
+    { label: 'Honorários Realizados', value: moneyFmt(rev), sub: `${atingPct} da meta no último dia`, color: rev >= (meta.receita_centavos||0) ? '#059669' : '#0284c7' },
+    { label: 'Resultado Operacional', value: moneyFmt(resultado), sub: `Margem líquida de ${marginPct.toFixed(1)}%`, color: resultado >= 0 ? '#059669' : '#ef4444' },
+    { label: 'Custos & Despesas Totais', value: moneyFmt(cost), sub: 'Consolidação de saídas no mês', color: '#7c3aed' }
+  ];
+
+  const areasRows = (areas || []).map(a => {
+    const aRev = a.receita_centavos || 0;
+    const aCost = a.custo_centavos || 0;
+    const aRes = aRev - aCost;
+    const aMargin = aRev > 0 ? ((aRes / aRev) * 100).toFixed(1) + '%' : '0,0%';
+    const pctTotal = rev > 0 ? ((aRev / rev) * 100).toFixed(1) + '%' : '0,0%';
+    return `
+      <tr>
+        <td><strong>${esc(a.nome || a.area || 'Área Jurídica')}</strong></td>
+        <td style="text-align:right;font-weight:750;color:#010E38;">${moneyFmt(aRev)}</td>
+        <td style="text-align:right;color:#dc2626;">${moneyFmt(aCost)}</td>
+        <td style="text-align:right;font-weight:750;color:${aRes >= 0 ? '#059669' : '#dc2626'};">${moneyFmt(aRes)}</td>
+        <td style="text-align:center;font-weight:700;">${aMargin}</td>
+        <td style="text-align:center;font-weight:700;color:#64748b;">${pctTotal}</td>
+      </tr>
+    `;
+  }).join('');
+
+  const areasTableHtml = areas.length > 0 ? `
+    <table class="report-table">
+      <thead>
+        <tr>
+          <th>Especialidade / Ramo do Direito</th>
+          <th style="text-align:right;">Honorários</th>
+          <th style="text-align:right;">Custos Diretos</th>
+          <th style="text-align:right;">Margem Contribuição</th>
+          <th style="text-align:center;">Margem %</th>
+          <th style="text-align:center;">% da Receita</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${areasRows}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td>TOTAL GERAL DA BANCA</td>
+          <td style="text-align:right;">${moneyFmt(rev)}</td>
+          <td style="text-align:right;">${moneyFmt(cost)}</td>
+          <td style="text-align:right;">${moneyFmt(resultado)}</td>
+          <td style="text-align:center;">${marginPct.toFixed(1)}%</td>
+          <td style="text-align:center;">100,0%</td>
+        </tr>
+      </tfoot>
+    </table>
+  ` : '<p style="color:#64748b;padding:12px;text-align:center;">Nenhuma especialidade jurídica registrada no período.</p>';
+
+  openDiagnosticClosingReport({
+    type: 'Metas_Orcamento',
+    title: 'Demonstrativo de Fechamento Orçamentário & Rentabilidade por Especialidade',
+    badge: 'Planejamento & Metas',
+    themeColor: '#d97706',
+    closing,
+    kpis,
+    sections: [
+      { title: 'Rentabilidade e Absorção por Especialidade Jurídica', badge: `${areas.length} Especialidades`, contentHtml: areasTableHtml }
+    ],
+    conclusion: `
+      <p style="margin:0 0 6px 0;"><strong>Encerramento de Metas:</strong> A banca alcançou ${atingPct} da meta fixada para ${esc(closing.competenceLabel)} até o fechamento de ${esc(closing.formattedClosingDate)}.</p>
+      <p style="margin:0;"><strong>Diretriz Estratégica:</strong> O resultado líquido consolidado foi de ${moneyFmt(resultado)}, reforçando o cumprimento das diretrizes de liquidez e sustentabilidade financeira.</p>
+    `
+  });
+}
+
+// Vinculação dos botões nos formulários
+document.addEventListener('DOMContentLoaded', () => {
+  $('#btn-report-closing-health')?.addEventListener('click', generateHealthClosingReport);
+  $('#btn-report-closing-hours')?.addEventListener('click', generateHoursClosingReport);
+  $('#btn-report-closing-stages')?.addEventListener('click', generateStagesClosingReport);
+  $('#btn-report-closing-management')?.addEventListener('click', generateManagementClosingReport);
+});
+
+// Vinculação imediata também caso DOM já esteja carregado
+setTimeout(() => {
+  $('#btn-report-closing-health')?.addEventListener('click', generateHealthClosingReport);
+  $('#btn-report-closing-hours')?.addEventListener('click', generateHoursClosingReport);
+  $('#btn-report-closing-stages')?.addEventListener('click', generateStagesClosingReport);
+  $('#btn-report-closing-management')?.addEventListener('click', generateManagementClosingReport);
+}, 800);
