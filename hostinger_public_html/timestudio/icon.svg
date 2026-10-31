@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="djBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#020E3B"/>
+      <stop offset="100%" stop-color="#000620"/>
+    </linearGradient>
+    <linearGradient id="djGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFDE6A"/>
+      <stop offset="50%" stop-color="#EBB52C"/>
+      <stop offset="100%" stop-color="#D49B18"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Deep Navy Squircle Base -->
+  <rect width="512" height="512" rx="112" fill="url(#djBg)"/>
+
+  <!-- Inset Gold Perimeter Frame (Idêntico ao Modelo de Referência) -->
+  <rect x="34" y="34" width="444" height="444" rx="84" fill="none" stroke="url(#djGold)" stroke-width="24"/>
+
+  <!-- Monogram Letters (D em Branco #FFFFFF, J em Dourado #EBB52C - Tipografia Sans-Serif Heavy) -->
+  <!-- LETRA D -->
+  <path fill="#FFFFFF" fill-rule="evenodd" d="
+    M 96,132
+    H 214
+    C 282,132 322,176 322,256
+    C 322,336 282,380 214,380
+    H 96
+    Z
+    M 162,194
+    V 318
+    H 206
+    C 240,318 258,296 258,256
+    C 258,216 240,194 206,194
+    Z
+  "/>
+
+  <!-- LETRA J (Modelo Limpo: Haste Reta sem Barra no Topo, Gancho Curvo) -->
+  <path fill="url(#djGold)" d="
+    M 342,132
+    H 406
+    V 306
+    C 406,358 372,380 322,380
+    C 282,380 252,360 242,336
+    L 294,312
+    C 300,324 310,332 324,332
+    C 338,332 346,322 346,300
+    V 132
+    Z
+  "/>
+</svg>
