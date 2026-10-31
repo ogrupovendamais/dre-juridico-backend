@@ -5661,22 +5661,100 @@ function getClosingDateDetails(monthStr, customDateStr) {
   };
 }
 
+// Injeção dinâmica de garantia caso o modal não esteja presente no DOM
+function ensureClosingModalElement() {
+  let dlg = document.getElementById('closing-report-modal');
+  if (dlg) return dlg;
+
+  dlg = document.createElement('dialog');
+  dlg.id = 'closing-report-modal';
+  dlg.className = 'cm-modal-backdrop';
+  dlg.setAttribute('aria-labelledby', 'closing-modal-title');
+  dlg.style.cssText = 'max-width:520px;padding:0;border-radius:16px;border:none;box-shadow:0 25px 65px rgba(1,14,56,0.35);overflow:hidden;border-top:4px solid #EBB52C;margin:auto;';
+
+  dlg.innerHTML = `
+    <div class="cm-modal-header" style="background:#010E38;color:#ffffff;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #EBB52C;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span style="display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:10px;background:rgba(235,181,44,0.15);color:#EBB52C;border:1px solid rgba(235,181,44,0.4);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+        </span>
+        <div>
+          <h3 id="closing-modal-title" style="margin:0;font-size:16px;font-weight:800;color:#ffffff;letter-spacing:-0.01em;">Relatório de Fechamento</h3>
+          <p id="closing-modal-subtitle" style="margin:2px 0 0 0;font-size:12px;color:rgba(255,255,255,0.75);">Defina o mês de competência e a data de corte dos lançamentos</p>
+        </div>
+      </div>
+      <button type="button" id="closing-modal-close" class="cm-modal-close-btn" style="background:transparent;border:none;color:#ffffff;font-size:24px;cursor:pointer;line-height:1;padding:4px 8px;" title="Fechar modal">&times;</button>
+    </div>
+
+    <form id="closing-report-form" onsubmit="event.preventDefault();" style="padding:22px 24px;background:#ffffff;color:#010E38;">
+      <input type="hidden" id="closing-modal-type" value="health">
+
+      <div style="display:flex;flex-direction:column;gap:18px;">
+        <div>
+          <label for="closing-modal-month" style="display:block;font-size:12px;font-weight:700;color:#010E38;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px;">
+            Mês de Competência
+          </label>
+          <div style="position:relative;">
+            <input type="month" id="closing-modal-month" style="width:100%;box-sizing:border-box;padding:10px 14px;border:1.5px solid #cbd5e1;border-radius:8px;font-size:14px;font-weight:600;color:#010E38;background:#f8fafc;outline:none;" required>
+          </div>
+        </div>
+
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <label for="closing-modal-date" style="display:block;font-size:12px;font-weight:700;color:#010E38;text-transform:uppercase;letter-spacing:0.04em;">
+              Data de Fechamento / Corte
+            </label>
+            <span style="font-size:11px;font-weight:600;color:#64748b;">(Último dia ou personalizado)</span>
+          </div>
+          <input type="date" id="closing-modal-date" style="width:100%;box-sizing:border-box;padding:10px 14px;border:1.5px solid #cbd5e1;border-radius:8px;font-size:14px;font-weight:600;color:#010E38;background:#f8fafc;outline:none;" required>
+          
+          <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+            <button type="button" id="closing-btn-preset-lastday" style="background:#eef2ff;border:1px solid #c7d2fe;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:700;color:#3730a3;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
+              <span>🎯 Último Dia do Mês</span>
+            </button>
+            <button type="button" id="closing-btn-preset-today" style="background:#f1f5f9;border:1px solid #cbd5e1;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:700;color:#334155;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
+              <span>📍 Hoje</span>
+            </button>
+            <button type="button" id="closing-btn-preset-d25" style="background:#f1f5f9;border:1px solid #cbd5e1;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:700;color:#334155;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
+              <span>💼 Corte Dia 25</span>
+            </button>
+          </div>
+        </div>
+
+        <div style="background:rgba(1,14,56,0.03);border:1px solid rgba(1,14,56,0.08);border-left:3.5px solid #EBB52C;border-radius:6px;padding:12px 14px;font-size:12px;color:#475569;line-height:1.5;">
+          💡 <strong>Flexibilidade de Fechamento:</strong> Se o mês civil já virou e você precisou lançar pendências com atraso, selecione aqui o dia exato em que deseja fixar o demonstrativo de encerramento contábil e gerencial.
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:flex-end;gap:12px;margin-top:24px;padding-top:16px;border-top:1px solid #e2e8f0;">
+        <button type="button" id="closing-modal-cancel" style="background:transparent;border:1px solid #cbd5e1;border-radius:8px;padding:10px 18px;font-size:13px;font-weight:700;color:#64748b;cursor:pointer;">
+          Cancelar
+        </button>
+        <button type="button" id="closing-modal-submit" style="background:linear-gradient(135deg, #EBB52C, #d49e1e);border:none;border-radius:8px;padding:10px 22px;font-size:13px;font-weight:800;color:#010E38;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 3px 10px rgba(235,181,44,0.35);">
+          <span>📄 Gerar Relatório de Fechamento</span>
+        </button>
+      </div>
+    </form>
+  `;
+
+  document.body.appendChild(dlg);
+  return dlg;
+}
+
 // Controle do Modal de Escolha da Data de Corte / Fechamento
 function openClosingDateModal(reportType) {
-  const dlg = document.getElementById('closing-report-modal');
-  if (!dlg) {
-    // Fallback caso o modal não esteja no DOM
-    if (reportType === 'health') generateHealthClosingReport();
-    else if (reportType === 'hours') generateHoursClosingReport();
-    else if (reportType === 'stages') generateStagesClosingReport();
-    else if (reportType === 'management') generateManagementClosingReport();
-    return;
-  }
+  reportType = reportType || 'health';
+  const dlg = ensureClosingModalElement();
 
   // Detectar competência padrão da aba ativa
   let currentMonth = '';
   if (reportType === 'health') {
-    currentMonth = $('#health-month-input')?.value || $('#health-month-filter')?.value;
+    currentMonth = $('#health-month-select')?.value || $('#health-month-input')?.value || $('#health-month-filter')?.value;
   } else if (reportType === 'hours') {
     currentMonth = $('#prod-month')?.value;
   } else if (reportType === 'stages') {
@@ -5716,17 +5794,29 @@ function openClosingDateModal(reportType) {
     dateEl.value = calculateMonthLastDayDate(currentMonth);
   }
 
-  if (typeof dlg.showModal === 'function') {
-    dlg.showModal();
-  } else {
+  // Inicializa os ouvintes do modal
+  initClosingModalListeners();
+
+  try {
+    if (typeof dlg.showModal === 'function') {
+      dlg.showModal();
+    } else {
+      dlg.setAttribute('open', '');
+      dlg.style.display = 'flex';
+    }
+  } catch (err) {
     dlg.setAttribute('open', '');
+    dlg.style.display = 'flex';
   }
 }
+
+// Expõe globalmente no window para chamada inline imediata
+window.openClosingDateModal = openClosingDateModal;
 
 // Inicializar ouvintes do modal
 function initClosingModalListeners() {
   const dlg = document.getElementById('closing-report-modal');
-  if (!dlg || dlg.dataset.closingInitialized) return;
+  if (!dlg || dlg.dataset.closingInitialized === 'true') return;
   dlg.dataset.closingInitialized = 'true';
 
   const monthEl = document.getElementById('closing-modal-month');
@@ -5773,14 +5863,32 @@ function initClosingModalListeners() {
 
   // Fechamento do modal
   const closeModal = () => {
-    if (typeof dlg.close === 'function') dlg.close();
-    else dlg.removeAttribute('open');
+    try {
+      if (typeof dlg.close === 'function') dlg.close();
+      else {
+        dlg.removeAttribute('open');
+        dlg.style.display = 'none';
+      }
+    } catch (e) {
+      dlg.removeAttribute('open');
+      dlg.style.display = 'none';
+    }
   };
 
   closeBtn?.addEventListener('click', closeModal);
   cancelBtn?.addEventListener('click', closeModal);
 
-  // Submissão
+  // Fechar ao clicar no backdrop escuro
+  dlg.addEventListener('click', (e) => {
+    const rect = dlg.getBoundingClientRect();
+    const isInDialog = (rect.top <= e.clientY && e.clientY <= rect.top + rect.height &&
+      rect.left <= e.clientX && e.clientX <= rect.left + rect.width);
+    if (!isInDialog) {
+      closeModal();
+    }
+  });
+
+  // Submissão com prevenção contra bloqueio de pop-up
   submitBtn?.addEventListener('click', () => {
     const reportType = document.getElementById('closing-modal-type')?.value || 'health';
     const selMonth = monthEl?.value;
@@ -5794,19 +5902,65 @@ function initClosingModalListeners() {
 
     closeModal();
 
+    // Abre a janela síncrona imediatamente para NUNCA ser bloqueada pelo navegador
+    let reportWin = null;
+    try {
+      reportWin = window.open('about:blank', '_blank');
+      if (reportWin) {
+        reportWin.document.write(`
+          <!doctype html>
+          <html>
+          <head>
+            <title>Gerando Relatório de Fechamento...</title>
+            <style>
+              body {
+                background: #010E38;
+                color: #ffffff;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                height: 100vh;
+                margin: 0;
+              }
+              .spinner {
+                width: 44px;
+                height: 44px;
+                border: 4px solid rgba(235, 181, 44, 0.2);
+                border-top: 4px solid #EBB52C;
+                border-radius: 50%;
+                animation: spin 0.8s linear infinite;
+                margin-bottom: 20px;
+              }
+              @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+            </style>
+          </head>
+          <body>
+            <div class="spinner"></div>
+            <div style="font-size:20px;font-weight:800;color:#EBB52C;margin-bottom:8px;">DRE Jurídico Scientist</div>
+            <div style="font-size:14px;color:#94a3b8;">Consolidando demonstrativo executivo até ${selDate}...</div>
+          </body>
+          </html>
+        `);
+      }
+    } catch (e) {
+      console.warn('Erro ao abrir janela síncrona:', e);
+    }
+
     if (reportType === 'health') {
-      generateHealthClosingReport(selMonth, selDate);
+      generateHealthClosingReport(selMonth, selDate, reportWin);
     } else if (reportType === 'hours') {
-      generateHoursClosingReport(selMonth, selDate);
+      generateHoursClosingReport(selMonth, selDate, reportWin);
     } else if (reportType === 'stages') {
-      generateStagesClosingReport(selMonth, selDate);
+      generateStagesClosingReport(selMonth, selDate, reportWin);
     } else if (reportType === 'management') {
-      generateManagementClosingReport(selMonth, selDate);
+      generateManagementClosingReport(selMonth, selDate, reportWin);
     }
   });
 }
 
-function openDiagnosticClosingReport(config) {
+function openDiagnosticClosingReport(config, existingWindow) {
   const {
     title,
     badge,
@@ -6046,11 +6200,19 @@ function openDiagnosticClosingReport(config) {
 </body>
 </html>`;
 
-  const reportWin = window.open('', '_blank');
-  if (reportWin) {
-    reportWin.document.open();
-    reportWin.document.write(htmlDoc);
-    reportWin.document.close();
+  let win = existingWindow;
+  if (!win || win.closed) {
+    try {
+      win = window.open('', '_blank');
+    } catch (e) {
+      win = null;
+    }
+  }
+
+  if (win) {
+    win.document.open();
+    win.document.write(htmlDoc);
+    win.document.close();
   } else {
     alert('Pop-up bloqueado pelo navegador. Por favor, autorize a abertura de janelas para visualizar o relatório.');
   }
@@ -6059,8 +6221,8 @@ function openDiagnosticClosingReport(config) {
 // ----------------------------------------------------------------------------
 // 1. GERADOR: SAÚDE & FUNIL COMERCIAL (COM DATA DE CORTE)
 // ----------------------------------------------------------------------------
-async function generateHealthClosingReport(targetMonth, targetClosingDate) {
-  const monthInput = $('#health-month-input') || $('#health-month-filter');
+async function generateHealthClosingReport(targetMonth, targetClosingDate, existingWindow) {
+  const monthInput = $('#health-month-select') || $('#health-month-input') || $('#health-month-filter');
   const month = targetMonth || monthInput?.value || (typeof localIsoMonth === 'function' ? localIsoMonth() : '2026-10');
   const closing = getClosingDateDetails(month, targetClosingDate);
 
@@ -6137,13 +6299,13 @@ async function generateHealthClosingReport(targetMonth, targetClosingDate) {
       <p style="margin:0 0 6px 0;"><strong>Diagnóstico de Conversão:</strong> A banca encerrou o período em <strong>${esc(closing.formattedClosingDate)}</strong> com taxa de conversão em <strong>${convRate}</strong> e tempo médio de ciclo de <strong>${cicloDias} dias</strong>.</p>
       <p style="margin:0;"><strong>Diretriz de Fechamento:</strong> Manter follow-up imediato sobre o pipeline ativo de <strong>${moneyFmt(pipeline)}</strong> para garantir a sustentabilidade das receitas da próxima competência.</p>
     `
-  });
+  }, existingWindow);
 }
 
 // ----------------------------------------------------------------------------
 // 2. GERADOR: HORAS & CUSTO / PRODUTIVIDADE (COM DATA DE CORTE)
 // ----------------------------------------------------------------------------
-async function generateHoursClosingReport(targetMonth, targetClosingDate) {
+async function generateHoursClosingReport(targetMonth, targetClosingDate, existingWindow) {
   const monthInput = $('#prod-month');
   const month = targetMonth || monthInput?.value || (typeof localIsoMonth === 'function' ? localIsoMonth() : '2026-10');
   const closing = getClosingDateDetails(month, targetClosingDate);
@@ -6255,13 +6417,13 @@ async function generateHoursClosingReport(targetMonth, targetClosingDate) {
       <p style="margin:0 0 6px 0;"><strong>Conclusão Operacional:</strong> No fechamento consolidado em <strong>${esc(closing.formattedClosingDate)}</strong>, a banca absorveu <strong>${totalHoras.toFixed(1)}h</strong> de trabalho técnico com custo de <strong>${moneyFmt(totalCusto)}</strong>.</p>
       <p style="margin:0;"><strong>Diretriz de Rentabilidade:</strong> A taxa de faturabilidade encerrou em <strong>${taxaFaturavel}</strong>. Recomenda-se manter o índice faturável acima de 70% para mitigar despesas ociosas na próxima competência.</p>
     `
-  });
+  }, existingWindow);
 }
 
 // ----------------------------------------------------------------------------
 // 3. GERADOR: ETAPAS PROCESSUAIS (COM DATA DE CORTE)
 // ----------------------------------------------------------------------------
-async function generateStagesClosingReport(targetMonth, targetClosingDate) {
+async function generateStagesClosingReport(targetMonth, targetClosingDate, existingWindow) {
   const monthInput = $('#stg-month');
   const month = targetMonth || monthInput?.value || (typeof localIsoMonth === 'function' ? localIsoMonth() : '2026-10');
   const closing = getClosingDateDetails(month, targetClosingDate);
@@ -6366,13 +6528,13 @@ async function generateStagesClosingReport(targetMonth, targetClosingDate) {
       <p style="margin:0 0 6px 0;"><strong>Status da Carteira:</strong> No fechamento em <strong>${esc(closing.formattedClosingDate)}</strong>, a banca mantém <strong>${totalProcessos} processos ativos</strong>, com permanência média global de <strong>${tempoMedioGeral} dias</strong> por etapa.</p>
       <p style="margin:0;"><strong>Ponto de Atenção:</strong> Acompanhar rigorosamente as fases com lead time superior a 90 dias para acelerar a liquidação e o recebimento de honorários de êxito.</p>
     `
-  });
+  }, existingWindow);
 }
 
 // ----------------------------------------------------------------------------
 // 4. GERADOR: METAS & ORÇAMENTO (COM DATA DE CORTE)
 // ----------------------------------------------------------------------------
-async function generateManagementClosingReport(targetMonth, targetClosingDate) {
+async function generateManagementClosingReport(targetMonth, targetClosingDate, existingWindow) {
   const monthInput = $('#manage-month');
   const month = targetMonth || monthInput?.value || (typeof localIsoMonth === 'function' ? localIsoMonth() : '2026-10');
   const closing = getClosingDateDetails(month, targetClosingDate);
@@ -6467,44 +6629,32 @@ async function generateManagementClosingReport(targetMonth, targetClosingDate) {
       <p style="margin:0 0 6px 0;"><strong>Encerramento de Metas:</strong> A banca alcançou <strong>${atingPct}</strong> da meta fixada para ${esc(closing.competenceLabel)} até a data de corte em <strong>${esc(closing.formattedClosingDate)}</strong>.</p>
       <p style="margin:0;"><strong>Diretriz Estratégica:</strong> O resultado líquido consolidado foi de <strong>${moneyFmt(resultado)}</strong>, reforçando o cumprimento das diretrizes de liquidez e sustentabilidade financeira.</p>
     `
-  });
+  }, existingWindow);
 }
 
-// Vinculação dos botões nos formulários
+// ----------------------------------------------------------------------------
+// DELEGAÇÃO GLOBAL DE EVENTOS (INFALÍVEL: CAPTURA GLOBAL DE CLICKS)
+// ----------------------------------------------------------------------------
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('#btn-report-closing-health, #btn-report-closing-hours, #btn-report-closing-stages, #btn-report-closing-management, .btn-diag-closing');
+  if (!btn) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+
+  let type = 'health';
+  if (btn.id === 'btn-report-closing-hours') type = 'hours';
+  else if (btn.id === 'btn-report-closing-stages') type = 'stages';
+  else if (btn.id === 'btn-report-closing-management') type = 'management';
+
+  openClosingDateModal(type);
+}, true); // UseCapture para interceptar antes de qualquer outro handler
+
+// Vinculação complementar de segurança
 function attachDiagnosticClosingButtons() {
   initClosingModalListeners();
-
-  const btnHealth = document.getElementById('btn-report-closing-health');
-  const btnHours = document.getElementById('btn-report-closing-hours');
-  const btnStages = document.getElementById('btn-report-closing-stages');
-  const btnManagement = document.getElementById('btn-report-closing-management');
-
-  if (btnHealth) {
-    btnHealth.onclick = (e) => {
-      e.preventDefault();
-      openClosingDateModal('health');
-    };
-  }
-  if (btnHours) {
-    btnHours.onclick = (e) => {
-      e.preventDefault();
-      openClosingDateModal('hours');
-    };
-  }
-  if (btnStages) {
-    btnStages.onclick = (e) => {
-      e.preventDefault();
-      openClosingDateModal('stages');
-    };
-  }
-  if (btnManagement) {
-    btnManagement.onclick = (e) => {
-      e.preventDefault();
-      openClosingDateModal('management');
-    };
-  }
 }
 
 document.addEventListener('DOMContentLoaded', attachDiagnosticClosingButtons);
-setTimeout(attachDiagnosticClosingButtons, 500);
-setTimeout(attachDiagnosticClosingButtons, 1500);
+setTimeout(attachDiagnosticClosingButtons, 300);
+setTimeout(attachDiagnosticClosingButtons, 1000);
