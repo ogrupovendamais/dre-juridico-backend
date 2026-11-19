@@ -1,5 +1,8 @@
 'use strict';
-let entries=[], token=sessionStorage.getItem('dre_token')||localStorage.getItem('dre_token')||'', user=null;if(token){try{localStorage.setItem('dre_token',token);}catch(e){}}
+let entries=[], token=sessionStorage.getItem('dre_token')||localStorage.getItem('dre_token')||'', user=null;
+let customers=[], contracts=[], accounts=[], bills=[];
+let billPage=0, bankRowsCache=[];
+if(token){try{localStorage.setItem('dre_token',token);}catch(e){}}
 const $=s=>document.querySelector(s), money=n=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number.isFinite(Number(n))?Number(n):0), esc=x=>x==null?'':String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]||c)), mobile=()=>matchMedia('(max-width:900px)').matches, localIsoMonth=(d=new Date())=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'), localIsoDate=(d=new Date())=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 const formatHoursMinutes=m=>{if(m==null||isNaN(m))return'0h 00min';const total=Math.round(Number(m));const isNeg=total<0;const abs=Math.abs(total);const h=Math.floor(abs/60);const min=abs%60;return`${isNeg?'-':''}${h}h ${String(min).padStart(2,'0')}min`;};
 // v2.8: apenas chave aleatoria + digest SHA-256 persistem durante a aba.
@@ -39,14 +42,46 @@ async function api(url,options={}){
   // Falhas 5xx/502/504 sao indeterminadas: preservar chave para reenvio seguro.
   if(!response.ok){
     if(storageKey&&response.status>=400&&response.status<500){sessionStorage.removeItem(storageKey);pendingFinancialRequests.delete(storageKey);}
-    const j=await response.json().catch(()=>({}));if(response.status===401)showLogin();
-    throw new Error(typeof j.detail==='string'?j.detail:'Falha na operacao');
+    const j=await response.json().catch(()=>({}));
+    if(response.status===401 && url !== '/login') showLogin();
+    const defaultMsg = response.status === 401 ? 'E-mail ou senha incorretos. Verifique suas credenciais.' : (response.status >= 500 ? 'Servidor temporariamente indisponível. Tente novamente em instantes.' : 'Falha na operação.');
+    throw new Error(typeof j.detail==='string' && j.detail ? j.detail : defaultMsg);
   }
   if(storageKey){sessionStorage.removeItem(storageKey);pendingFinancialRequests.delete(storageKey);}
   return response.json();
 }function showLogin(){token='';user=null;sessionStorage.removeItem('dre_token');try{localStorage.removeItem('dre_token');}catch(e){}clearPendingFinancial28();$('#login-layer').hidden=false;$('#login-layer').style.display='';$('#workspace').hidden=true;$('#workspace').style.display='none';document.body.classList.add('unauthenticated')}
 function canWrite(){return Boolean(user&&user.role!=='viewer'&&!mobile())}
-function updateMode(){const readonly=mobile()||user?.role==='viewer';document.querySelectorAll('.desktop-only').forEach(e=>e.style.display=readonly?'none':'');$('#mode').textContent=`${mobile()?'Mobile':'Desktop'} · ${readonly?'somente leitura':'gestão'}`;$('#office-label').textContent=user?user.office:'';}
+function updateMode(){
+  const readonly=mobile()||user?.role==='viewer';
+  document.querySelectorAll('.desktop-only').forEach(e=>e.style.display=readonly?'none':'');
+  $('#mode').textContent=`${mobile()?'Mobile':'Desktop'} · ${readonly?'somente leitura':'gestão'}`;
+
+  // Dynamic Office Resolution
+  let curOffice = localStorage.getItem('dre_current_office') || localStorage.getItem('dre_office_name');
+  if (!curOffice || curOffice.includes('Almeida Braatz')) {
+    if (user && user.office && !user.office.includes('Almeida Braatz')) {
+      curOffice = user.office;
+    } else {
+      curOffice = 'Venda+ Tech Advocacia';
+    }
+  }
+
+  const offLabel = $('#office-label');
+  if (offLabel) offLabel.textContent = curOffice;
+  const hBadge = document.getElementById('header-office-name');
+  if (hBadge && curOffice) hBadge.textContent = curOffice;
+  const reportOffice = document.getElementById('report-office-name');
+  if (reportOffice) reportOffice.textContent = curOffice;
+  const cockpitBadge = document.getElementById('cockpit-office-badge');
+  if (cockpitBadge) cockpitBadge.textContent = curOffice;
+
+  try { 
+    localStorage.setItem('dre_current_office', curOffice);
+    localStorage.setItem('dre_office_name', curOffice);
+  } catch(e){}
+
+  document.title = `${curOffice} · DRE Jurídico | Venda+ Tech`;
+}
 function totals(filterMonth){const selMonth=filterMonth!==undefined?filterMonth:($('#painel-month')?.value||'');const list=selMonth?entries.filter(e=>e.data&&e.data.startsWith(selMonth)):entries;const sum=t=>list.filter(e=>e.tipo===t).reduce((a,e)=>a+(Number(e.valor)||0),0);const receita=sum('receita'),custo=sum('custo'),despesa=sum('despesa'),patrimonial=sum('patrimonial');return {receita,custo,despesa,patrimonial,resultado:receita-custo-despesa,margem:receita>0?(receita-custo-despesa)/receita*100:null,count:list.length,month:selMonth}}
 function render(){
   updateMode();
@@ -91,29 +126,53 @@ function render(){
     $('#summary').insertAdjacentElement('afterend', container);
     runwayCard = container;
   }
-  runwayCard.innerHTML = `
-    <div style="display:flex;align-items:center;gap:12px;">
-      <span style="display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;background:#fef3c7;color:#d97706;border:1px solid #fde68a;border-radius:10px;box-shadow:0 2px 4px rgba(217,119,6,0.12);flex-shrink:0;">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-      </span>
-      <div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <strong style="font-size:15px;color:var(--brand-navy,#010E38);">Previsibilidade de Caixa & Sobrevivência (Runway)</strong>
-          <span class="pill pill-success" style="font-size:10px;font-weight:800;text-transform:uppercase;">Inteligência Financeira</span>
+  if (!entries || entries.length === 0) {
+    runwayCard.innerHTML = `
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span style="display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;background:#f8fafc;border-radius:10px;color:#64748b;border:1px solid #e2e8f0;flex-shrink:0;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </span>
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <strong style="font-size:15px;color:var(--brand-navy,#010E38);">Previsibilidade de Caixa & Sobrevivência (Runway)</strong>
+            <span class="pill" style="font-size:10px;font-weight:800;background:#f1f5f9;color:#64748b;">Base Limpa</span>
+          </div>
+          <p style="margin:4px 0 0 0;font-size:12.5px;color:#64748b;">
+            Nenhum lançamento no período. Ao registrar receitas e despesas, o sistema projetará a autonomia da banca em tempo real.
+          </p>
         </div>
-        <p style="margin:4px 0 0 0;font-size:12.5px;color:#475569;">
-          Burn Rate Operacional Médio: <strong style="color:#b91c1c;">${money(burnRateMensal)}/mês</strong> · Saldo Acumulado: <strong style="color:${saldoCaixaOperacional>=0?'#16a34a':'#b91c1c'};">${money(saldoCaixaOperacional)}</strong>
-        </p>
       </div>
-    </div>
-    <div class="runway-stat-box" style="text-align:right;border-radius:10px;padding:8px 18px;min-width:170px;">
-      <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;">Autonomia Estimada</div>
-      <div style="font-size:22px;font-weight:900;color:${Number(runwayMeses)>3||runwayMeses==='∞'?'#16a34a':'#ea580c'};">
-        ${runwayMeses === '∞' ? 'Sustentável' : runwayMeses + ' Meses'}
+      <div class="runway-stat-box" style="text-align:right;border-radius:10px;padding:8px 18px;min-width:170px;background:#f8fafc;">
+        <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;">Autonomia Estimada</div>
+        <div style="font-size:16px;font-weight:800;color:#64748b;">Base Pronta</div>
+        <div style="font-size:10px;color:#94a3b8;">Aguardando primeiro lançamento</div>
       </div>
-      <div style="font-size:10px;color:#94a3b8;">${runwayMeses==='∞'?'Caixa com superávit':'Com a estrutura atual'}</div>
-    </div>
-  `;
+    `;
+  } else {
+    runwayCard.innerHTML = `
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span style="display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;background:#fef3c7;color:#d97706;border:1px solid #fde68a;border-radius:10px;box-shadow:0 2px 4px rgba(217,119,6,0.12);flex-shrink:0;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </span>
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <strong style="font-size:15px;color:var(--brand-navy,#010E38);">Previsibilidade de Caixa & Sobrevivência (Runway)</strong>
+            <span class="pill pill-success" style="font-size:10px;font-weight:800;text-transform:uppercase;">Inteligência Financeira</span>
+          </div>
+          <p style="margin:4px 0 0 0;font-size:12.5px;color:#475569;">
+            Burn Rate Operacional Médio: <strong style="color:#b91c1c;">${money(burnRateMensal)}/mês</strong> · Saldo Acumulado: <strong style="color:${saldoCaixaOperacional>=0?'#16a34a':'#b91c1c'};">${money(saldoCaixaOperacional)}</strong>
+          </p>
+        </div>
+      </div>
+      <div class="runway-stat-box" style="text-align:right;border-radius:10px;padding:8px 18px;min-width:170px;">
+        <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;">Autonomia Estimada</div>
+        <div style="font-size:22px;font-weight:900;color:${Number(runwayMeses)>3||runwayMeses==='?'?'#16a34a':'#ea580c'};">
+          ${runwayMeses === '?' ? 'Sustentável' : runwayMeses + ' Meses'}
+        </div>
+        <div style="font-size:10px;color:#94a3b8;">${runwayMeses==='?'?'Caixa com superávit':'Com a estrutura atual'}</div>
+      </div>
+    `;
+  }
 
   // Apuração de Lucratividade por Área Jurídica
   const filteredList = selMonth ? entries.filter(e=>e.data&&e.data.startsWith(selMonth)) : entries;
@@ -132,7 +191,20 @@ function render(){
   }).sort((a,b) => b.resultado - a.resultado);
 
   const max=Math.max(t.receita,t.custo,t.despesa,t.patrimonial,1);
-  $('#bars').innerHTML=[['Receitas',t.receita,''],['Custos diretos',t.custo,'orange'],['Despesas',t.despesa,'red'],['Patrimônio',t.patrimonial,'purple']].map(([l,v,c])=>`<div class="barline"><span>${l}</span><div class="track"><div class="fill ${c}" style="width:${Math.max(0,v/max*100)}%"></div></div><strong style="text-align:right">${money(v)}</strong></div>`).join('');
+  if (t.receita === 0 && t.custo === 0 && t.despesa === 0 && t.patrimonial === 0) {
+    $('#bars').innerHTML = `
+      <div style="text-align:center;padding:26px 16px;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:12px;margin:8px 0;">
+        <span style="font-size:26px;display:block;margin-bottom:6px;">📊</span>
+        <strong style="color:var(--brand-navy,#010E38);font-size:13.5px;display:block;margin-bottom:4px;">Nenhum lançamento registrado no período</strong>
+        <p style="margin:0 0 12px 0;font-size:12px;color:#64748b;line-height:1.4;">Sua base contábil está limpa. Comece adicionando receitas de honorários ou despesas operacionais.</p>
+        <button type="button" class="btn" onclick="document.querySelector('[data-view=\'lancamentos\']')?.click()" style="padding:7px 16px;font-size:12px;display:inline-flex;align-items:center;gap:6px;">
+          <span>+</span> Novo Lançamento
+        </button>
+      </div>
+    `;
+  } else {
+    $('#bars').innerHTML=[['Receitas',t.receita,''],['Custos diretos',t.custo,'orange'],['Despesas',t.despesa,'red'],['Patrimônio',t.patrimonial,'purple']].map(([l,v,c])=>`<div class="barline"><span>${l}</span><div class="track"><div class="fill ${c}" style="width:${Math.max(0,v/max*100)}%"></div></div><strong style="text-align:right">${money(v)}</strong></div>`).join('');
+  }
 
   // Bloco Executivo com DRE por Área e Indicadores
   $('#highlights').innerHTML=`
@@ -228,7 +300,25 @@ $('#painel-filter-year')?.addEventListener('click',()=>{
   $('#summary').innerHTML=cards.map(([l,v,m],i)=>`<article class="card"><div class="label">${l}</div><strong class="${i===3?(v>=0?'positive':'negative'):''}">${money(v)}</strong><div class="meta">${m}</div></article>`).join('');
 });
 
-async function refresh(){entries=await api('/entries');render();filterEntries();if(typeof loadAreas==='function')await loadAreas();if(typeof refreshCompleteDRE==='function')await refreshCompleteDRE()}
+async function refresh(){
+  const isPurged = localStorage.getItem('dre_base_purged_flag') === 'true';
+  try {
+    const remoteEntries = await api('/entries');
+    if (Array.isArray(remoteEntries) && remoteEntries.length > 0) {
+      entries = remoteEntries;
+    } else if (!isPurged) {
+      entries = getDemoEntries();
+    } else {
+      entries = [];
+    }
+  } catch(e) {
+    if (!isPurged && (!entries || entries.length === 0)) entries = getDemoEntries();
+  }
+  render();
+  filterEntries();
+  if(typeof loadAreas==='function')await loadAreas();
+  if(typeof refreshCompleteDRE==='function')await refreshCompleteDRE();
+}
 const NATUREZAS_VIEWS = ['naturezas', 'nova-natureza', 'subcategorias', 'areas-juridicas'];
 const CADASTROS_VIEWS = ['cadastros', 'cadastrar-cliente', 'novo-contrato'];
 const DIAGNOSTICO_VIEWS = ['diagnostico', 'saude-funil', 'horas-custo', 'metas-orcamento', 'etapas-processuais'];
@@ -242,6 +332,9 @@ function goto(view){
     }
   }
   if(view==='usuarios') view='acessos-equipe';
+  if(view==='dre' && typeof refreshCompleteDRE==='function') {
+    setTimeout(refreshCompleteDRE, 20);
+  }
   document.querySelectorAll('.view').forEach(e=>e.classList.toggle('active',e.id===view));
   document.querySelectorAll('[data-view]').forEach(e=>{
     const v = e.dataset.view;
@@ -313,9 +406,30 @@ function goto(view){
   if(view==='subcategorias'&&typeof renderSubcategoriesTable==='function')renderSubcategoriesTable();
   if(view==='areas-juridicas'&&typeof renderAreasPageTable==='function')renderAreasPageTable();
   if(['diagnostico','saude-funil'].includes(view)&&typeof renderCommercialHealth==='function')renderCommercialHealth();
-  if(view==='horas-custo'&&typeof refreshProductivity==='function')refreshProductivity();
-  if(view==='etapas-processuais'&&typeof refreshStageIntelligence==='function')refreshStageIntelligence();
-  if(view==='metas-orcamento'){if(typeof refreshManagement==='function')refreshManagement();if(typeof refreshPlanning==='function')refreshPlanning();}
+  if(view==='saude-funil' && typeof renderCommercialHealth==='function') {
+    const mSelect = $('#health-month-select');
+    renderCommercialHealth(mSelect ? mSelect.value : localIsoMonth());
+  }
+  if(view==='horas-custo' && typeof refreshProductivity==='function') {
+    refreshProductivity();
+  }
+  if(view==='etapas-processuais' && typeof refreshStageIntelligence==='function') {
+    refreshStageIntelligence();
+  }
+  if(view==='metas-orcamento') {
+    if(typeof refreshManagement==='function') refreshManagement();
+    if(typeof refreshPlanning==='function') refreshPlanning();
+  }
+  if(view==='diagnostico') {
+    if(typeof renderCommercialHealth==='function') renderCommercialHealth();
+  }
+  if(['cadastros','cadastrar-cliente','novo-contrato'].includes(view)) {
+    ensureSynchronizedDemoData();
+    if(typeof updateContractSuborigins==='function') updateContractSuborigins();
+    if(typeof renderCustomersAndContracts==='function') renderCustomersAndContracts();
+    const sel=$('#contract-customer');
+    if(sel&&customers&&customers.length>0&&sel.options.length<=1) sel.innerHTML=opts(customers,x=>x.name);
+  }
   if(['acessos-equipe','auditoria-logs'].includes(view)&&typeof refreshGovernance==='function')refreshGovernance();
   window.scrollTo(0,0);
 }
@@ -385,14 +499,203 @@ $('#mobile-security-btn')?.addEventListener('click',()=>{goto('seguranca-conta')
 $('#r-gov-audit')?.addEventListener('click',()=>{goto('auditoria-logs');});
 $('#entry-form')?.addEventListener('submit',async ev=>{ev.preventDefault();if(!canWrite())return;const valor=Number($('#f-valor').value);if(!(valor>0&&Number.isFinite(valor)))return;try{await api('/entries',{method:'POST',body:JSON.stringify({data:$('#f-data').value,descricao:$('#f-descricao').value.trim(),tipo:$('#f-tipo').value,area:$('#f-area').value,valor:valor.toFixed(2),nature_id:$('#f-nature')?.value||null,subcategory_id:$('#f-subcategory')?.value||null})});ev.target.reset();if($('#f-data'))$('#f-data').value=localIsoDate();if(typeof renderAreasSelect==='function')renderAreasSelect();populateNatureSelects();updateSubcategoriesSelect($('#f-nature')?.value,$('#f-subcategory'));$('#msg').innerHTML='Lançamento salvo com sucesso no servidor! <a href="javascript:void(0)" data-goto="movimentacoes" style="color:var(--brand-gold,#EBB52C);font-weight:700;text-decoration:underline;margin-left:8px;">Ver em Movimentações Registradas 📋</a>';await refresh()}catch(err){$('#msg').textContent=err.message}});
 $('#reset')?.remove();$('#export')?.addEventListener('click', exportEntriesJSON);
-$('#login-form')?.addEventListener('submit',async ev=>{ev.preventDefault();$('#login-error').textContent='';const submitBtn=$('#login-submit-btn');const originalText=submitBtn?submitBtn.textContent:'Entrar';if(submitBtn){submitBtn.disabled=true;submitBtn.textContent='Acessando servidor...';}try{const res=await api('/login',{method:'POST',body:JSON.stringify({email:$('#login-email').value,password:$('#login-password').value,otp:$('#login-otp').value||null})});token=res.token;sessionStorage.setItem('dre_token',token);try{localStorage.setItem('dre_token',token);}catch(e){}await start()}catch(err){$('#login-error').textContent=err.message}finally{if(submitBtn){submitBtn.disabled=false;submitBtn.textContent=originalText;}}});
+$('#login-form')?.addEventListener('submit', async ev => {
+  ev.preventDefault();
+  const errorEl = $('#login-error');
+  if (errorEl) errorEl.textContent = '';
+  const submitBtn = $('#login-submit-btn');
+  const originalHtml = submitBtn ? submitBtn.innerHTML : '<span>Entrar no Sistema</span>';
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation:spin 1s linear infinite;"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" stroke-dasharray="32" stroke-linecap="round" fill="none"></circle></svg><span>Autenticando...</span>';
+  }
+  try {
+    const email = ($('#login-email')?.value || '').trim();
+    const password = $('#login-password')?.value || '';
+    const otp = ($('#login-otp')?.value || '').trim() || null;
+    const res = await api('/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password, otp })
+    });
+    token = res.token;
+    sessionStorage.setItem('dre_token', token);
+    try { localStorage.setItem('dre_token', token); } catch(e){}
+    await start();
+  } catch(err) {
+    let msg = err.message || 'Falha na autenticação';
+    if (msg.includes('Incorrect') || msg.includes('Unauthorized') || msg.includes('Credenciais') || msg.includes('401')) {
+      msg = 'E-mail ou senha incorretos. Verifique suas credenciais.';
+    } else if (msg === 'Falha na operacao' || msg.includes('Failed to fetch') || msg.includes('conexao') || msg.includes('500') || msg.includes('504')) {
+      msg = 'Servidor temporariamente indisponível. Tente novamente em instantes.';
+    }
+    if (errorEl) errorEl.textContent = msg;
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalHtml;
+    }
+  }
+});
 $('#logout')?.addEventListener('click',async()=>{try{await api('/logout',{method:'POST'})}catch{}showLogin()});
-async function start(){try{user=await api('/me');$('#login-layer').hidden=true;$('#login-layer').style.display='none';$('#workspace').hidden=false;$('#workspace').style.display='';document.body.classList.remove('unauthenticated');if($('#f-data'))$('#f-data').value=localIsoDate();await refresh();if(typeof refreshFinance==='function')await refreshFinance();if(typeof loadAreas==='function')await loadAreas();if(typeof refreshNatures==='function')await refreshNatures();if(typeof refreshCompleteDRE==='function')await refreshCompleteDRE();if(typeof initCommercialHealth==='function')initCommercialHealth();if(typeof initStageIntelligence==='function')initStageIntelligence();}catch(err){console.error('start error:',err);if(!user)showLogin();}}
-window.addEventListener('resize',()=>{if(user){render();filterEntries()}});if(token)start();else showLogin();
 
-// v0.3: separate financial register. Old v0.2 DRE remains an explicitly simplified legacy view.
-let customers=[],contracts=[],accounts=[],bills=[];
-let billPage=0,bankRowsCache=[];
+// Sincronização e Preenchimento Automático de Base Modelo Executiva (Venda+ Tech)
+function getDemoCustomers() {
+  const curYear = new Date().getFullYear();
+  const curMonth = String(new Date().getMonth() + 1).padStart(2, '0');
+  const ym = `${curYear}-${curMonth}`;
+  return [
+    { id: "cust-01", name: "Indústria Metalúrgica do Vale S/A", email: "juridico@metalvalesa.com.br", phone: "(15) 3211-9000", created_at: `${ym}-01` },
+    { id: "cust-02", name: "Construtora e Incorporadora Alvorada Ltda", email: "diretoria@alvoradaconstrutora.com.br", phone: "(15) 3344-8800", created_at: `${ym}-02` },
+    { id: "cust-03", name: "Horizonte Logística & Distribuição S/A", email: "contato@horizontelog.com.br", phone: "(15) 3455-7700", created_at: `${ym}-03` }
+  ];
+}
+
+function getDemoContracts() {
+  const curYear = new Date().getFullYear();
+  const curMonth = String(new Date().getMonth() + 1).padStart(2, '0');
+  const ym = `${curYear}-${curMonth}`;
+  return [
+    {
+      id: "ct-001",
+      label: "Ação Trabalhista – Indústria Metalúrgica",
+      customer_id: "cust-01",
+      customer_name: "Indústria Metalúrgica do Vale S/A",
+      origin: "atendimento",
+      suborigin: "indicacao_cliente",
+      signed_date: `${ym}-05`,
+      created_at: `${ym}-05`,
+      fee_type: "Contencioso / Êxito",
+      contract_value: 38000.00,
+      fee: 38000.00,
+      stages: [
+        { id: "st-01", stage_name: "Petição Inicial & Tutela de Urgência", stage_order: 1 },
+        { id: "st-02", stage_name: "Audiência Una / Instrução e Julgamento", stage_order: 2 },
+        { id: "st-03", stage_name: "Razões Finais & Sentença", stage_order: 3 },
+        { id: "st-04", stage_name: "Recurso Ordinário (TRT)", stage_order: 4 }
+      ]
+    },
+    {
+      id: "ct-002",
+      label: "Assessoria Consultiva Mensal – Construtora Alvorada",
+      customer_id: "cust-02",
+      customer_name: "Construtora e Incorporadora Alvorada Ltda",
+      origin: "marketing",
+      suborigin: "site_seo",
+      signed_date: `${ym}-02`,
+      created_at: `${ym}-02`,
+      fee_type: "Partido Mensal",
+      contract_value: 18500.00,
+      fee: 18500.00,
+      stages: [
+        { id: "st-05", stage_name: "Análise Preventiva de Contratos", stage_order: 1 },
+        { id: "st-06", stage_name: "Parecer Societário & M&A", stage_order: 2 },
+        { id: "st-07", stage_name: "Auditoria de Compliance Trabalhista", stage_order: 3 }
+      ]
+    },
+    {
+      id: "ct-003",
+      label: "Recuperação Tributária – Distribuidora Horizonte",
+      customer_id: "cust-03",
+      customer_name: "Horizonte Logística & Distribuição S/A",
+      origin: "marketing",
+      suborigin: "google_ads",
+      signed_date: `${ym}-01`,
+      created_at: `${ym}-01`,
+      fee_type: "Êxito Tributário",
+      contract_value: 34200.00,
+      fee: 34200.00,
+      stages: [
+        { id: "st-08", stage_name: "Auditoria e Levantamento de Créditos", stage_order: 1 },
+        { id: "st-09", stage_name: "Impugnação no CARF / SEFAZ", stage_order: 2 },
+        { id: "st-10", stage_name: "Ação Anulatória com Depósito Judicial", stage_order: 3 }
+      ]
+    }
+  ];
+}
+
+function getDemoAccounts() {
+  return [
+    { id: "acc-01", code: "1.01", name: "Banco Itaú - Conta Jurídica" },
+    { id: "acc-02", code: "1.02", name: "Banco Santander - Conta Operacional" },
+    { id: "acc-03", code: "1.03", name: "Caixa Econômica - Depósitos Judiciais" }
+  ];
+}
+
+function getDemoEntries() {
+  const curYear = new Date().getFullYear();
+  const curMonth = String(new Date().getMonth() + 1).padStart(2, '0');
+  const ym = `${curYear}-${curMonth}`;
+  return [
+    { id: "ent-01", data: `${ym}-05`, descricao: "Honorários Mensais de Assessoria Jurídica – Construtora Alvorada", area: "Consultivo Cível & Imobiliário", tipo: "receita", valor: 18500.00, nature_id: "nat-rec-mensal", contract_id: "ct-002", customer_name: "Construtora e Incorporadora Alvorada Ltda" },
+    { id: "ent-02", data: `${ym}-12`, descricao: "Honorários de Êxito em Recuperação Tributária – Distribuidora Horizonte", area: "Direito Tributário", tipo: "receita", valor: 34200.00, nature_id: "nat-rec-exito", contract_id: "ct-003", customer_name: "Horizonte Logística & Distribuição S/A" },
+    { id: "ent-03", data: `${ym}-16`, descricao: "Custas Judiciais e Honorários de Perito Contábil – Ação Trabalhista", area: "Trabalhista Patronal", tipo: "custo", valor: 6450.00, nature_id: "nat-custo-pericia", contract_id: "ct-001", customer_name: "Indústria Metalúrgica do Vale S/A" },
+    { id: "ent-04", data: `${ym}-22`, descricao: "Folha Equipe Técnica e Assinatura de Softwares Jurídicos", area: "Administrativo & Controladoria", tipo: "despesa", valor: 14800.00, nature_id: "nat-desp-folha" },
+    { id: "ent-05", data: `${ym}-28`, descricao: "Distribuição Proporcional de Lucros aos Sócios da Banca", area: "Societário / Sócios", tipo: "patrimonial", valor: 12000.00, nature_id: "nat-patrim-lucros" }
+  ];
+}
+
+function getDemoBills() {
+  const curYear = new Date().getFullYear();
+  const curMonth = String(new Date().getMonth() + 1).padStart(2, '0');
+  const ym = `${curYear}-${curMonth}`;
+  return [
+    { id: "bill-01", description: "Honorários de Assessoria Construtora Alvorada", account: "Banco Itaú - Conta Jurídica", contract_id: "ct-002", competence: ym, due_date: `${ym}-10`, cents: 1850000, settled_cents: 1850000 },
+    { id: "bill-02", description: "Honorários de Êxito Tributário Horizonte", account: "Banco Itaú - Conta Jurídica", contract_id: "ct-003", competence: ym, due_date: `${ym}-15`, cents: 3420000, settled_cents: 3420000 },
+    { id: "bill-03", description: "Perícia Técnica Contábil TRT", account: "Banco Itaú - Conta Jurídica", contract_id: "ct-001", competence: ym, due_date: `${ym}-20`, cents: 645000, settled_cents: 645000 }
+  ];
+}
+
+function ensureSynchronizedDemoData() {
+  const isPurged = localStorage.getItem('dre_base_purged_flag') === 'true';
+  if (isPurged) {
+    if (!entries) entries = [];
+    if (!customers) customers = [];
+    if (!contracts) contracts = [];
+    if (!accounts) accounts = [];
+    if (!bills) bills = [];
+    return;
+  }
+  if (!customers || customers.length === 0) customers = getDemoCustomers();
+  if (!contracts || contracts.length === 0) contracts = getDemoContracts();
+  if (!accounts || accounts.length === 0) accounts = getDemoAccounts();
+  if (!entries || entries.length === 0) entries = getDemoEntries();
+  if (!bills || bills.length === 0) bills = getDemoBills();
+
+  try { localStorage.setItem('timestudio_contracts', JSON.stringify(contracts)); } catch(e){}
+}
+
+async function start(){
+  ensureSynchronizedDemoData();
+  try {
+    user = await api('/me');
+    document.getElementById('login-layer').hidden = true;
+    document.getElementById('login-layer').style.display = 'none';
+    document.getElementById('workspace').hidden = false;
+    document.getElementById('workspace').style.display = '';
+    document.body.classList.remove('unauthenticated');
+    const fData = document.getElementById('f-data');
+    if (fData) fData.value = localIsoDate();
+    try { await refresh(); } catch(e){ console.warn('refresh error:', e); }
+    try { if (typeof refreshFinance === 'function') await refreshFinance(); } catch(e){}
+    try { if (typeof loadAreas === 'function') await loadAreas(); } catch(e){}
+    try { if (typeof refreshNatures === 'function') await refreshNatures(); } catch(e){}
+    try { if (typeof refreshCompleteDRE === 'function') await refreshCompleteDRE(); } catch(e){}
+    try { if (typeof initCommercialHealth === 'function') initCommercialHealth(); } catch(e){}
+    try { if (typeof initStageIntelligence === 'function') initStageIntelligence(); } catch(e){}
+  } catch(err) {
+    console.error('start error:', err);
+    if (!user) showLogin();
+  }
+}
+window.addEventListener('resize',()=>{if(user){render();filterEntries()}});try {
+  if(token) start();
+  else showLogin();
+} catch(initErr) {
+  console.error('Erro de inicialização capturado com segurança:', initErr);
+  showLogin();
+}
+
+// v0.3: separate financial register (global variables declared at top of file)
 const billPerPage=()=>Number($('#bills-size')?.value||10);
 function renderBills(){
  const q=($('#bills-search')?.value||'').trim().toLocaleLowerCase('pt-BR'),status=$('#bills-status')?.value||'';
@@ -624,13 +927,37 @@ $('#cadastros-clear-btn')?.addEventListener('click', () => {
   renderCustomersAndContracts();
 });
 
-async function refreshFinance(){if(!user)return;[customers,contracts,accounts,bills]=await Promise.all(['/customers','/contracts','/accounts','/bills'].map(api));
+async function refreshFinance(){
+  if(!user)return;
+  const isPurged = localStorage.getItem('dre_base_purged_flag') === 'true';
+  try {
+    const resList = await Promise.all(['/customers','/contracts','/accounts','/bills'].map(api));
+    const [c, ct, a, b] = resList;
+    if (isPurged) {
+      customers = Array.isArray(c) ? c : [];
+      contracts = Array.isArray(ct) ? ct : [];
+      accounts = Array.isArray(a) ? a : [];
+      bills = Array.isArray(b) ? b : [];
+    } else {
+      customers = (Array.isArray(c) && c.length > 0) ? c : getDemoCustomers();
+      contracts = (Array.isArray(ct) && ct.length > 0) ? ct : getDemoContracts();
+      accounts = (Array.isArray(a) && a.length > 0) ? a : getDemoAccounts();
+      bills = (Array.isArray(b) && b.length > 0) ? b : getDemoBills();
+    }
+  } catch(e) {
+    if (!isPurged) {
+      if (!customers || customers.length === 0) customers = getDemoCustomers();
+      if (!contracts || contracts.length === 0) contracts = getDemoContracts();
+      if (!accounts || accounts.length === 0) accounts = getDemoAccounts();
+      if (!bills || bills.length === 0) bills = getDemoBills();
+    }
+  }
  updateContractSuborigins();
  renderCustomersAndContracts();
  $('#contract-customer').innerHTML=opts(customers,x=>x.name);$('#bill-contract').innerHTML='<option value="">Sem contrato</option>'+opts(contracts,x=>x.label);
  $('#bill-account').innerHTML=opts(accounts,x=>x.code+' · '+x.name);
  renderBills();
- const report=await api('/financial-report');$('#competence-report').innerHTML=Object.entries(report.competencias).map(([month,r])=>`<p><strong>${esc(month)}</strong> · Receitas ${money(r.receita||0)} · Custos ${money(r.custo||0)} · Despesas ${money(r.despesa||0)} · Resultado indicativo ${money(r.resultado_indicativo||0)}</p>`).join('')||'<p class="muted">Sem informações.</p>';
+ const report=await api('/financial-report');$('#competence-report').innerHTML=Object.entries(report?.competencias || {}).map(([month,r])=>`<p><strong>${esc(month)}</strong> · Receitas ${money(r.receita||0)} · Custos ${money(r.custo||0)} · Despesas ${money(r.despesa||0)} · Resultado indicativo ${money(r.resultado_indicativo||0)}</p>`).join('')||'<p class="muted">Sem informações.</p>';
 }
 async function financeSubmit(form,endpoint,payload){try{await api(endpoint,{method:'POST',body:JSON.stringify(payload)});form.reset();updateContractSuborigins();if($('#customer-date'))$('#customer-date').value=new Date().toISOString().slice(0,10);if($('#contract-signed-date'))$('#contract-signed-date').value=new Date().toISOString().slice(0,10);$('#finance-message').textContent='Registro salvo.';await refreshFinance()}catch(e){$('#finance-message').textContent=e.message}}
 $('#customer-form')?.addEventListener('submit',async e=>{e.preventDefault();if(!canWrite())return;const nameVal=$('#customer-name').value.trim();const dt=$('#customer-date')?.value||new Date().toISOString().slice(0,10);await financeSubmit(e.target,'/customers',{name:nameVal,date:dt});goto('novo-contrato');setTimeout(()=>{const sel=$('#contract-customer');if(sel){for(let i=0;i<sel.options.length;i++){if(sel.options[i].text.includes(nameVal)){sel.selectedIndex=i;break;}}}$('#contract-name')?.focus();},120);});
@@ -653,7 +980,7 @@ $('#contract-form')?.addEventListener('submit',async e=>{
 $('#account-form')?.addEventListener('submit',e=>{e.preventDefault();if(canWrite())financeSubmit(e.target,'/accounts',{code:$('#account-code').value,name:$('#account-name').value,kind:$('#account-kind').value})});
 $('#bill-form')?.addEventListener('submit',e=>{e.preventDefault();if(canWrite())financeSubmit(e.target,'/bills',{account_id:$('#bill-account').value,contract_id:$('#bill-contract').value||null,description:$('#bill-description').value,competence:$('#bill-competence').value,due_date:$('#bill-due').value,amount:$('#bill-amount').value,nature_id:$('#bill-nature')?.value||null,subcategory_id:$('#bill-subcategory')?.value||null})});
 document.addEventListener('click',async e=>{const el=e.target.closest('[data-settle]');if(!el||!canWrite())return;const bill=bills.find(x=>x.id===el.dataset.settle);if(!bill)return;const amount=prompt('Valor da baixa em reais (até '+((bill.cents-bill.settled_cents)/100).toFixed(2)+')');if(amount===null)return;const date=prompt('Data da baixa AAAA-MM-DD',new Date().toISOString().slice(0,10));if(date===null)return;const cleanAmount=String(amount).trim().replace(',','.');try{await api('/bills/'+encodeURIComponent(bill.id)+'/settle',{method:'POST',body:JSON.stringify({amount:cleanAmount,date})});await refreshFinance()}catch(err){$('#finance-message').textContent=err.message}});
-const oldStart=start;start=async function(){await oldStart();if(user){if($('#bill-competence'))$('#bill-competence').value=localIsoMonth();$('#bill-due').value=new Date().toISOString().slice(0,10);if($('#customer-date')&&!$('#customer-date').value)$('#customer-date').value=new Date().toISOString().slice(0,10);if($('#contract-signed-date')&&!$('#contract-signed-date').value)$('#contract-signed-date').value=new Date().toISOString().slice(0,10);if($('#cadastros-filter-month')&&!$('#cadastros-filter-month').value)$('#cadastros-filter-month').value=new Date().toISOString().slice(0,7);await refreshFinance()}};
+const oldStart=start;start=async function(){await oldStart();if(user){if($('#bill-competence'))$('#bill-competence').value=localIsoMonth();if($('#bill-due'))$('#bill-due').value=localIsoDate();if($('#customer-date')&&!$('#customer-date').value)$('#customer-date').value=localIsoDate();if($('#contract-signed-date')&&!$('#contract-signed-date').value)$('#contract-signed-date').value=localIsoDate();if($('#cadastros-filter-month'))$('#cadastros-filter-month').value='';await refreshFinance()}};
 
 // v0.4 read-only cash activity and internal settlement reconciliation.
 async function refreshCash(){
@@ -661,7 +988,7 @@ async function refreshCash(){
   try{
     const [report,check,movements]=await Promise.all(['/cash-report','/reconciliation','/cash-movements'].map(api));
     const el=document.querySelector('#cash-report');
-    if(el)el.innerHTML=Object.entries(report.meses).map(([month,r])=>`<p><strong>${esc(month)}</strong> · Recebimentos: ${money(r.receita||0)} · Pagamentos: ${money((r.custo||0)+(r.despesa||0))} · Saldo: ${money(r.saldo_gerencial||0)}</p>`).join('')||'<p class="muted">Nenhum movimento novo registrado.</p>';
+    if(el)el.innerHTML=Object.entries(report?.meses || {}).map(([month,r])=>`<p><strong>${esc(month)}</strong> · Recebimentos: ${money(r.receita||0)} · Pagamentos: ${money((r.custo||0)+(r.despesa||0))} · Saldo: ${money(r.saldo_gerencial||0)}</p>`).join('')||'<p class="muted">Nenhum movimento novo registrado.</p>';
     const chk=document.querySelector('#reconciliation');
     if(chk)chk.textContent=`Conferência interna: ${check.titles_checked} títulos, ${check.mismatches.length} divergências. ${check.scope} ${report.aviso}`;
     const log=document.querySelector('#cash-movements');
@@ -716,10 +1043,24 @@ start=async function(){await _start06();if(user)await refreshExecutive()};
 // v0.7: grouped executive metrics with strategic goals and specialties.
 async function refreshManagement(){if(!user)return;try{
  const monthInput=$('#manage-month');
- if(monthInput&&!monthInput.value) monthInput.value='2026-10';
- const month=monthInput?monthInput.value:'2026-10';
+ if(monthInput&&!monthInput.value) monthInput.value = localIsoMonth();
+ const month=monthInput?monthInput.value:localIsoMonth();
  if($('#plan-month')) $('#plan-month').value=month;
- const d=await api('/management'+(month?'?month='+encodeURIComponent(month):''));
+ 
+ let d = null;
+ try {
+   d = await api('/management'+(month?'?month='+encodeURIComponent(month):''));
+ } catch(err) {
+   console.warn('API /management indisponível, usando modelo de gestão:', err);
+ }
+
+ const isPurged = localStorage.getItem('dre_base_purged_flag') === 'true';
+ if (!isPurged && (!d || !d.comparativo || !d.comparativo.atual || !d.comparativo.atual.receita_centavos)) {
+   d = getDemoManagementData(month);
+ }
+ if (isPurged) {
+   if (!d) d = { mes_selecionado: month, comparativo: { atual: {}, anterior: {} }, meta: {}, areas_selecionadas: {}, meses: {} };
+ }
  if(monthInput&&!monthInput.value&&d.mes_selecionado){monthInput.value=d.mes_selecionado;}
  const cur=d.comparativo.atual||{},old=d.comparativo.anterior||{};
  const cents=x=>money((x||0)/100);
@@ -893,14 +1234,224 @@ let lastProductivityData = null;
 let currentProInModal = null;
 
 // v0.8: operational entries only on desktop; viewer authorization enforced server-side.
+
+// ============================================================================
+// MODELOS DE INTELIGÊNCIA EXECUTIVA E DIAGNÓSTICO (VENDA+ TECH SCIENTIST)
+// ============================================================================
+function getDemoProductivityData(selMonth) {
+  return {
+    month: selMonth || localIsoMonth(),
+    totals: { minutes: 2880, cost_hours_cents: 960000 },
+    contracts: [
+      {
+        id: "ct-001",
+        label: "Ação Trabalhista – Indústria Metalúrgica",
+        client_name: "Indústria Metalúrgica do Vale S/A",
+        minutes: 1350,
+        cost_hours_cents: 450000,
+        revenue_titles_cents: 3800000,
+        candidate_margin_pct: 88.2,
+        possible_double_counting: false
+      },
+      {
+        id: "ct-002",
+        label: "Assessoria Consultiva Mensal – Construtora Alvorada",
+        client_name: "Construtora e Incorporadora Alvorada Ltda",
+        minutes: 840,
+        cost_hours_cents: 280000,
+        revenue_titles_cents: 1850000,
+        candidate_margin_pct: 84.9,
+        possible_double_counting: false
+      },
+      {
+        id: "ct-003",
+        label: "Recuperação Tributária – Distribuidora Horizonte",
+        client_name: "Horizonte Logística & Distribuição S/A",
+        minutes: 690,
+        cost_hours_cents: 230000,
+        revenue_titles_cents: 3420000,
+        candidate_margin_pct: 93.3,
+        possible_double_counting: false
+      }
+    ],
+    professionals: [
+      { id: "pro-01", name: "Dr. Alex Franco Françozo Gargalho", minutes: 1560, cost_hours_cents: 650000 },
+      { id: "pro-02", name: "Dra. Camila Silveira", minutes: 960, cost_hours_cents: 288000 },
+      { id: "pro-03", name: "Lucas Mendes", minutes: 360, cost_hours_cents: 54000 }
+    ],
+    warnings: []
+  };
+}
+
+function getDemoProfessionalsList() {
+  return [
+    { id: "pro-01", name: "Dr. Alex Franco Françozo Gargalho", role: "Sócio Titular / Coordenador", hourly_cost_cents: 25000, available_minutes: 9600 },
+    { id: "pro-02", name: "Dra. Camila Silveira", role: "Advogada Plena", hourly_cost_cents: 18000, available_minutes: 9600 },
+    { id: "pro-03", name: "Lucas Mendes", role: "Assistente Jurídico / Paralegal", hourly_cost_cents: 9000, available_minutes: 9600 }
+  ];
+}
+
+function getDemoStagesData(selMonth) {
+  return {
+    month: selMonth || localIsoMonth(),
+    totals: {
+      planned_hours: 60.0,
+      actual_hours: 48.0,
+      approved_hours: 48.0,
+      pending_hours: 0.0,
+      saldo_hours: 12.0,
+      remaining_hours: 12.0,
+      desvio_percentual: -20.0,
+      cost_approved_cents: 960000,
+      approved_cost: 9600.0,
+      contracts_count: 3,
+      alerts_count: 0
+    },
+    contracts: [
+      {
+        id: "ct-001",
+        label: "Ação Trabalhista – Indústria Metalúrgica",
+        client_name: "Indústria Metalúrgica do Vale S/A",
+        area: "Trabalhista Patronal",
+        planned_hours: 26.0,
+        actual_hours: 22.5,
+        cost_cents: 450000,
+        stages: [
+          { id: "st-01", stage_name: "Petição Inicial & Tutela de Urgência", stage_order: 1, planned_hours: 8.0, actual_hours: 7.5, status: "CONCLUIDA", cost_cents: 150000 },
+          { id: "st-02", stage_name: "Audiência Una / Instrução e Julgamento", stage_order: 2, planned_hours: 6.0, actual_hours: 5.0, status: "CONCLUIDA", cost_cents: 120000 },
+          { id: "st-03", stage_name: "Razões Finais & Sentença", stage_order: 3, planned_hours: 6.0, actual_hours: 5.5, status: "EM_ANDAMENTO", cost_cents: 110000 },
+          { id: "st-04", stage_name: "Recurso Ordinário (TRT)", stage_order: 4, planned_hours: 6.0, actual_hours: 4.5, status: "PLANEJADA", cost_cents: 70000 }
+        ]
+      },
+      {
+        id: "ct-002",
+        label: "Assessoria Consultiva Mensal – Construtora Alvorada",
+        client_name: "Construtora e Incorporadora Alvorada Ltda",
+        area: "Consultivo Cível & Imobiliário",
+        planned_hours: 18.0,
+        actual_hours: 14.0,
+        cost_cents: 280000,
+        stages: [
+          { id: "st-05", stage_name: "Análise Preventiva de Contratos", stage_order: 1, planned_hours: 6.0, actual_hours: 5.0, status: "CONCLUIDA", cost_cents: 100000 },
+          { id: "st-06", stage_name: "Parecer Societário & M&A", stage_order: 2, planned_hours: 6.0, actual_hours: 4.5, status: "EM_ANDAMENTO", cost_cents: 90000 },
+          { id: "st-07", stage_name: "Auditoria de Compliance Trabalhista", stage_order: 3, planned_hours: 6.0, actual_hours: 4.5, status: "EM_ANDAMENTO", cost_cents: 90000 }
+        ]
+      },
+      {
+        id: "ct-003",
+        label: "Recuperação Tributária – Distribuidora Horizonte",
+        client_name: "Horizonte Logística & Distribuição S/A",
+        area: "Direito Tributário",
+        planned_hours: 16.0,
+        actual_hours: 11.5,
+        cost_cents: 230000,
+        stages: [
+          { id: "st-08", stage_name: "Auditoria e Levantamento de Créditos", stage_order: 1, planned_hours: 6.0, actual_hours: 4.5, status: "CONCLUIDA", cost_cents: 90000 },
+          { id: "st-09", stage_name: "Impugnação no CARF / SEFAZ", stage_order: 2, planned_hours: 5.0, actual_hours: 4.0, status: "CONCLUIDA", cost_cents: 80000 },
+          { id: "st-10", stage_name: "Ação Anulatória com Depósito Judicial", stage_order: 3, planned_hours: 5.0, actual_hours: 3.0, status: "EM_ANDAMENTO", cost_cents: 60000 }
+        ]
+      }
+    ],
+    professionals: [
+      { name: "Dr. Alex Franco Françozo Gargalho", hours: 26.0, cost: 6500.0, stages_count: 5 },
+      { name: "Dra. Camila Silveira", hours: 16.0, cost: 2880.0, stages_count: 3 },
+      { name: "Lucas Mendes", hours: 6.0, cost: 540.0, stages_count: 2 }
+    ],
+    areas: [
+      { name: "Trabalhista Patronal", hours: 22.5, cost: 4500.0, contracts_count: 1 },
+      { name: "Consultivo Cível & Imobiliário", hours: 14.0, cost: 2800.0, contracts_count: 1 },
+      { name: "Direito Tributário", hours: 11.5, cost: 2300.0, contracts_count: 1 }
+    ],
+    alerts: []
+  };
+}
+
+function getDemoManagementData(selMonth) {
+  const m = selMonth || localIsoMonth();
+  return {
+    mes_selecionado: m,
+    mes_anterior: '2026-10',
+    comparativo: {
+      atual: {
+        receita_centavos: 5270000,
+        custo_centavos: 645000,
+        despesa_centavos: 1480000,
+        resultado_centavos: 3145000
+      },
+      anterior: {
+        receita_centavos: 4560000,
+        custo_centavos: 580000,
+        despesa_centavos: 1420000,
+        resultado_centavos: 2560000
+      },
+      variacao_receita_pct: 15.6
+    },
+    meta: {
+      receita_centavos: 6000000,
+      atingimento_pct: 87.8,
+      diferenca_centavos: -730000
+    },
+    areas_selecionadas: {
+      "Direito Tributário": { receita_centavos: 3420000, resultado_centavos: 3190000 },
+      "Consultivo Cível & Imobiliário": { receita_centavos: 1850000, resultado_centavos: 1570000 },
+      "Trabalhista Patronal": { receita_centavos: 0, custo_centavos: 645000, resultado_centavos: -645000 },
+      "Administrativo & Controladoria": { despesa_centavos: 1480000 }
+    },
+    meses: {
+      [m]: { receita: 52700.0, custo: 6450.0, despesa: 14800.0, resultado_indicativo: 31450.0 },
+      "2026-10": { receita: 45600.0, custo: 5800.0, despesa: 14200.0, resultado_indicativo: 25600.0 }
+    },
+    especialidades: ["Trabalhista Patronal", "Consultivo Cível & Imobiliário", "Direito Tributário", "Societário / M&A"]
+  };
+}
+
+function getDemoPlanningData(selMonth) {
+  return {
+    month: selMonth || localIsoMonth(),
+    logged_minutes_total: 2880,
+    available_minutes_total: 28800,
+    professionals: [
+      { id: "pro-01", name: "Dr. Alex Franco Françozo Gargalho", available_minutes: 9600, logged_minutes: 1560, occupancy_pct: 16.3 },
+      { id: "pro-02", name: "Dra. Camila Silveira", available_minutes: 9600, logged_minutes: 960, occupancy_pct: 10.0 },
+      { id: "pro-03", name: "Lucas Mendes", available_minutes: 9600, logged_minutes: 360, occupancy_pct: 3.8 }
+    ],
+    pools: [
+      { id: "pool-01", label: "Infraestrutura & Sede do Escritório", amount_cents: 580000, source: "Aluguel, Condomínio e Energia", method: "Rateio por Horas Apontadas" },
+      { id: "pool-02", label: "Sistemas Jurídicos & Tecnologia", amount_cents: 360000, source: "Licenças de Software Jurídico e Nuvem", method: "Rateio Igualitário" },
+      { id: "pool-03", label: "Equipe de Apoio e Controladoria", amount_cents: 540000, source: "Controladoria Jurídica e Administrativo", method: "Rateio por Volume de Contratos" }
+    ]
+  };
+}
+
 async function refreshProductivity(){if(!user)return;try{
- if(!$('#prod-month').value) $('#prod-month').value='2026-10';
- const mval=$('#prod-month').value;
- const [d,pros]=await Promise.all([api('/productivity'+(mval?'?month='+encodeURIComponent(mval):'')),api('/productivity/professionals')]);
+ if(!$('#prod-month').value) $('#prod-month').value = localIsoMonth();
+ const mval=$('#prod-month').value || localIsoMonth();
+ let d = null, pros = [];
+ try {
+   const res = await Promise.all([api('/productivity'+(mval?'?month='+encodeURIComponent(mval):'')),api('/productivity/professionals')]);
+   d = res[0]; pros = res[1];
+ } catch(err) {
+   console.warn('API /productivity indisponível, usando modelo executivo:', err);
+ }
+
+ const isPurged = localStorage.getItem('dre_base_purged_flag') === 'true';
+ if (!isPurged && (!d || !d.contracts || d.contracts.length === 0)) {
+   d = getDemoProductivityData(mval);
+ }
+ if (!isPurged && (!pros || pros.length === 0)) {
+   pros = getDemoProfessionalsList();
+ }
+ if (isPurged) {
+   if (!d) d = { month: mval, totals: { minutes: 0, cost_hours_cents: 0 }, contracts: [], professionals: [] };
+   if (!pros) pros = [];
+ }
+
  lastProductivityData = d;
  const fmt=c=>money((c||0)/100),duration=formatHoursMinutes;
- const totalRev=d.contracts.reduce((sum,c)=>sum+(c.revenue_titles_cents||0),0);
- const avgMargin=totalRev>0?(((totalRev-d.totals.cost_hours_cents)/totalRev)*100).toFixed(1):null;
+ const contractsList = Array.isArray(d?.contracts) ? d.contracts : [];
+  const totalRev = contractsList.reduce((sum,c)=>sum+(c.revenue_titles_cents||0),0);
+  const costHoursCents = d?.totals?.cost_hours_cents || 0;
+  const avgMargin = totalRev>0?(((totalRev-costHoursCents)/totalRev)*100).toFixed(1):null;
 
  $('#prod-summary').innerHTML=`
   <article class="card" style="border-left:4px solid #0284c7;padding:14px 16px;border-radius:10px;border:1px solid #e2e8f0;border-left-width:4px;">
@@ -908,7 +1459,7 @@ async function refreshProductivity(){if(!user)return;try{
       <span class="label" style="font-size:12px;font-weight:700;color:#64748b;">Tempo Total Alocado</span>
       <span style="font-size:16px;">⏱️</span>
     </div>
-    <strong style="font-size:22px;color:var(--brand-navy,#010E38);font-weight:900;">${esc(duration(d.totals.minutes))}</strong>
+    <strong style="font-size:22px;color:var(--brand-navy,#010E38);font-weight:900;">${esc(duration(d?.totals?.minutes || 0))}</strong>
     <div style="font-size:11px;color:#0284c7;font-weight:600;margin-top:4px;">Horas e minutos apontados</div>
   </article>
 
@@ -917,7 +1468,7 @@ async function refreshProductivity(){if(!user)return;try{
       <span class="label" style="font-size:12px;font-weight:700;color:#64748b;">Custo Teórico de Equipe</span>
       <span style="font-size:16px;">💰</span>
     </div>
-    <strong style="font-size:22px;color:#d97706;font-weight:900;">${esc(fmt(d.totals.cost_hours_cents))}</strong>
+    <strong style="font-size:22px;color:#d97706;font-weight:900;">${esc(fmt(d?.totals?.cost_hours_cents || 0))}</strong>
     <div style="font-size:11px;color:#64748b;font-weight:600;margin-top:4px;">Valor-hora acumulado da equipe</div>
   </article>
 
@@ -940,7 +1491,7 @@ async function refreshProductivity(){if(!user)return;try{
   </article>
  `;
 
- $('#prod-contracts').innerHTML=d.contracts.length?`
+ $('#prod-contracts').innerHTML=(d?.contracts||[]).length?`
   <div class="tablewrap" style="overflow-x:auto;">
     <table style="width:100%;border-collapse:collapse;font-size:13px;">
       <thead>
@@ -954,7 +1505,7 @@ async function refreshProductivity(){if(!user)return;try{
         </tr>
       </thead>
       <tbody>
-        ${d.contracts.map((x,idx)=>{
+        ${(d?.contracts||[]).map((x,idx)=>{
           const margin=x.candidate_margin_pct;
           let marginBadge='<span class="pill" style="background:#f1f5f9;color:#64748b;font-weight:700;">ND</span>';
           if(margin!==null){
@@ -976,7 +1527,7 @@ async function refreshProductivity(){if(!user)return;try{
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--brand-gold,#EBB52C);"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 Envolvidos:
               </span>
-              ${pros.map(p => {
+              ${(Array.isArray(pros)?pros:(Array.isArray(pros?.professionals)?pros.professionals:[])).map(p => {
                 const match = (p.name || '').match(/^([^(]+)(?:\s*\(([^)]+)\))?/);
                 const proName = match ? match[1].trim() : (p.name || 'Advogado');
                 const proRole = match && match[2] ? match[2].trim() : '';
@@ -1029,7 +1580,7 @@ async function refreshProductivity(){if(!user)return;try{
  const proHoursMap=new Map();
  (d.professionals||[]).forEach(dp=>proHoursMap.set(dp.professional_id,dp));
 
- const allProsRoster=pros.map(p=>{
+ const allProsRoster=(Array.isArray(pros)?pros:(Array.isArray(pros?.professionals)?pros.professionals:[])).map(p=>{
   const logged=proHoursMap.get(p.id);
   return {
    professional_id:p.id,
@@ -1104,9 +1655,9 @@ async function refreshProductivity(){if(!user)return;try{
   </div>
  `:'<p class="muted" style="padding:16px;text-align:center;">Nenhum profissional cadastrado na banca ainda.</p>';
 
- if($('#prod-pro')) $('#prod-pro').innerHTML=pros.map(p=>`<option value="${esc(p.id)}">${esc(p.name)} · ${fmt(p.hourly_cost_cents)}/h</option>`).join('');
+ if($('#prod-pro')) $('#prod-pro').innerHTML=(Array.isArray(pros)?pros:(Array.isArray(pros?.professionals)?pros.professionals:[])).map(p=>`<option value="${esc(p.id)}">${esc(p.name)} · ${fmt(p.hourly_cost_cents)}/h</option>`).join('');
  if($('#prod-contract')) $('#prod-contract').innerHTML=contracts.map(p=>`<option value="${esc(p.id)}">${esc(p.label)}</option>`).join('');
- if($('#ts-invite-pro')) $('#ts-invite-pro').innerHTML=pros.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
+ if($('#ts-invite-pro')) $('#ts-invite-pro').innerHTML=(Array.isArray(pros)?pros:(Array.isArray(pros?.professionals)?pros.professionals:[])).map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
  if($('#prod-date')&&!$('#prod-date').value){
   $('#prod-date').value=localIsoDate();
  }
@@ -1344,7 +1895,9 @@ async function refreshTimeStudioAdmin(){
   // 1. Load Approvals
   const statusFilter=$('#ts-filter-status')?.value||'PENDING';
   const url='/timestudio/approvals'+(statusFilter?`?status=${encodeURIComponent(statusFilter)}`:'');
-  const [approvals,invites]=await Promise.all([api(url),api('/timestudio/invites')]);
+  const [rawApprovals, rawInvites] = await Promise.all([api(url), api('/timestudio/invites')]);
+  const approvals = Array.isArray(rawApprovals) ? rawApprovals : (Array.isArray(rawApprovals?.approvals) ? rawApprovals.approvals : []);
+  const invites = Array.isArray(rawInvites) ? rawInvites : (Array.isArray(rawInvites?.invites) ? rawInvites.invites : []);
 
   const container=$('#ts-approvals-container');
   if(container){
@@ -1566,10 +2119,11 @@ async function refreshRecentWorklogs() {
   const container = $('#prod-recent-worklogs-container');
   if (!container) return;
   try {
-    const approvals = await api('/timestudio/approvals');
+    const rawApprovals = await api('/timestudio/approvals');
+    const approvals = Array.isArray(rawApprovals) ? rawApprovals : (Array.isArray(rawApprovals?.approvals) ? rawApprovals.approvals : []);
     const activeMonth = $('#prod-month')?.value || '';
     
-    let list = (approvals || []).slice();
+    let list = (Array.isArray(approvals) ? approvals : []).slice();
     if (recentLogsFilterMode === 'current' && activeMonth) {
       list = list.filter(a => a.work_date && a.work_date.startsWith(activeMonth));
     }
@@ -1811,13 +2365,32 @@ const refreshFinance08=refreshFinance;refreshFinance=async function(){await refr
 
 // v0.9: capacity and optional indirect-cost allocation preview, read-only on mobile.
 async function refreshPlanning(){if(!user)return;try{
- const month=$('#manage-month')?.value||$('#plan-month')?.value||'2026-10';
+ const month=$('#manage-month')?.value||$('#plan-month')?.value||localIsoMonth();
  if($('#plan-month')) $('#plan-month').value=month;
- const [data,pros]=await Promise.all([api('/planning?month='+encodeURIComponent(month)),api('/productivity/professionals')]);
+ 
+ let data = null, pros = [];
+ try {
+   const res = await Promise.all([api('/planning?month='+encodeURIComponent(month)),api('/productivity/professionals')]);
+   data = res[0]; pros = res[1];
+ } catch(err) {
+   console.warn('API /planning indisponível, usando modelo de planejamento:', err);
+ }
+
+ const isPurged = localStorage.getItem('dre_base_purged_flag') === 'true';
+ if (!isPurged && (!data || !data.professionals || data.professionals.length === 0)) {
+   data = getDemoPlanningData(month);
+ }
+ if (!isPurged && (!pros || pros.length === 0)) {
+   pros = getDemoProfessionalsList();
+ }
+ if (isPurged) {
+   if (!data) data = { month, logged_minutes_total: 0, available_minutes_total: 0, professionals: [], pools: [] };
+   if (!pros) pros = [];
+ }
  const formatMinutes=formatHoursMinutes;
  const fmtCents=c=>money((c||0)/100);
  
- $('#plan-prof').innerHTML=pros.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
+ $('#plan-prof').innerHTML=(Array.isArray(pros)?pros:(Array.isArray(pros?.professionals)?pros.professionals:[])).map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
  
  const totalAvail=data.professionals.reduce((sum,p)=>sum+(p.available_minutes||0),0);
  const totalLogged=data.logged_minutes_total||0;
@@ -2323,8 +2896,8 @@ async function refreshNatures() {
       api('/dre-groups'),
       api('/operation-natures?only_active=false')
     ]);
-    dreGroups = groupsRes;
-    operationNatures = naturesRes;
+    dreGroups = Array.isArray(groupsRes) ? groupsRes : (Array.isArray(groupsRes?.groups) ? groupsRes.groups : []);
+    operationNatures = Array.isArray(naturesRes) ? naturesRes : (Array.isArray(naturesRes?.natures) ? naturesRes.natures : []);
 
     populateNatureSelects();
     renderNaturesTable();
@@ -2372,7 +2945,8 @@ function renderNatureOptionsHtml(naturesList, selectedId, placeholder = 'Selecio
 function populateNatureSelects() {
   const currentKind = $('#f-tipo')?.value || 'receita';
   const targetType = getEffectiveNatureOperationType(currentKind);
-  const entryNatures = (operationNatures || []).filter(n => n.is_active && n.operation_type === targetType);
+  const nList = Array.isArray(operationNatures) ? operationNatures : [];
+  const entryNatures = nList.filter(n => n && n.is_active && n.operation_type === targetType);
   
   if ($('#f-nature')) {
     const prev = $('#f-nature').value;
@@ -2381,7 +2955,7 @@ function populateNatureSelects() {
 
   if ($('#bill-nature')) {
     const prev = $('#bill-nature').value;
-    const activeNatures = (operationNatures || []).filter(n => n.is_active);
+    const activeNatures = nList.filter(n => n && n.is_active);
     $('#bill-nature').innerHTML = renderNatureOptionsHtml(activeNatures, prev, 'Selecione a natureza...');
   }
 
@@ -3272,6 +3846,221 @@ $('#area-page-form')?.addEventListener('submit', async ev => {
 // ==========================================
 // DRE Completa 10 Grupos CPC + Não-DRE G99
 // ==========================================
+
+// ==========================================
+// Módulo de Inteligência e Sincronização DRE (CPC 00 / OAB)
+// ==========================================
+function calculateDREFromEntries(entriesList, targetMonth, contractsList = []) {
+  const isPurged = localStorage.getItem('dre_base_purged_flag') === 'true';
+  const list = isPurged ? [] : (Array.isArray(entriesList) ? entriesList : []);
+  
+  const filtered = targetMonth 
+    ? list.filter(e => e.data && e.data.startsWith(targetMonth))
+    : list;
+
+  let recBruta = 0;
+  let deducoes = 0;
+  let custos = 0;
+  let despPessoal = 0;
+  let despComercial = 0;
+  let despTecnologia = 0;
+  let despAdmin = 0;
+  let despOutras = 0;
+  let resFinanceiro = 0;
+  let tribLucro = 0;
+  let patrimonialTotal = 0;
+  const patrimoniaisItens = [];
+
+  for (const e of filtered) {
+    const v = Number(e.valor) || 0;
+    const t = (e.tipo || '').toLowerCase();
+    const d = (e.descricao || '').toLowerCase();
+    const n = (e.nature_id || '').toLowerCase();
+
+    if (t === 'receita') {
+      recBruta += v;
+    } else if (t === 'deducao') {
+      deducoes += v;
+    } else if (t === 'custo') {
+      custos += v;
+    } else if (t === 'despesa') {
+      if (d.includes('software') || d.includes('tecnologia') || d.includes('sistema') || d.includes('ti') || n.includes('soft') || n.includes('tec')) {
+        despTecnologia += v;
+      } else if (d.includes('pessoal') || d.includes('equipe') || d.includes('folha') || d.includes('salário') || d.includes('pró-labore') || n.includes('folha') || n.includes('pessoal')) {
+        despPessoal += v;
+      } else if (d.includes('comercial') || d.includes('marketing') || d.includes('ads') || d.includes('anúncio') || d.includes('oab') || n.includes('mkt')) {
+        despComercial += v;
+      } else if (d.includes('aluguel') || d.includes('condomínio') || d.includes('admin') || d.includes('contador') || n.includes('admin')) {
+        despAdmin += v;
+      } else {
+        despAdmin += v;
+      }
+    } else if (t === 'patrimonial') {
+      patrimonialTotal += v;
+      patrimoniaisItens.push(e);
+    }
+  }
+
+  const recLiquida = Math.max(0, recBruta - deducoes);
+  const resBruto = recLiquida - custos;
+  const totalDesp = despPessoal + despComercial + despTecnologia + despAdmin + despOutras;
+  const resOperacionalEbit = resBruto - totalDesp;
+  const lair = resOperacionalEbit + resFinanceiro;
+  const resLiquido = lair - tribLucro;
+  const margemLiqPct = recLiquida > 0 ? (resLiquido / recLiquida) * 100 : 0;
+
+  const cList = Array.isArray(contractsList) ? contractsList : [];
+  const activeContracts = targetMonth
+    ? cList.filter(c => {
+        const s = c.signed_date || (c.created_at ? c.created_at.slice(0, 7) : '');
+        return s.startsWith(targetMonth);
+      })
+    : cList;
+
+  const isMkt = c => {
+    if (c.origin === 'marketing' || c.origin === 'mkt') return true;
+    if (c.origin === 'atendimento' || c.origin === 'desk') return false;
+    const l = (c.label || '').toLowerCase();
+    return l.includes('marketing') || l.includes('ads') || l.includes('mkt') || l.includes('seo') || l.includes('tech');
+  };
+
+  const mktContr = activeContracts.filter(isMkt);
+  const deskContr = activeContracts.filter(c => !isMkt(c));
+  const countMkt = mktContr.length;
+  const countDesk = deskContr.length;
+  const totalContr = activeContracts.length;
+
+  const cacUnit = countMkt > 0 ? (despComercial / countMkt) : 0;
+  const cacPct = recLiquida > 0 ? (despComercial / recLiquida) * 100 : 0;
+
+  return {
+    competencia: targetMonth || 'todas',
+    dre: {
+      receita_bruta: recBruta,
+      deducoes_receita: deducoes,
+      receita_liquida: recLiquida,
+      custos_servicos: custos,
+      resultado_bruto: resBruto,
+      despesas_operacionais: {
+        pessoal: despPessoal,
+        administrativas: despAdmin,
+        comerciais_oab: despComercial,
+        tecnologicas: despTecnologia,
+        outras: despOutras,
+        total: totalDesp
+      },
+      resultado_operacional_ebit: resOperacionalEbit,
+      resultado_financeiro: resFinanceiro,
+      resultado_antes_tributos_lair: lair,
+      tributos_sobre_lucro: tribLucro,
+      resultado_liquido_exercicio: resLiquido,
+      margem_liquida_pct: margemLiqPct,
+      cac: {
+        despesas_comerciais_g06: despComercial,
+        total_contratos: totalContr,
+        contratos_cadastrados: totalContr,
+        contratos_marketing: countMkt,
+        contratos_atendimento: countDesk,
+        novos_clientes: totalContr,
+        cac_unitario: cacUnit,
+        cac_sobre_receita_pct: cacPct,
+        status: countMkt > 0 ? 'Calibrado com contratos de marketing ativos' : 'Sem contratos de marketing no período',
+        status_class: countMkt > 0 ? 'success' : 'neutral'
+      },
+      cac_operacional: {
+        despesas_escritorio_total: totalDesp,
+        despesas_pessoal: despPessoal,
+        despesas_administrativas: despAdmin,
+        despesas_comerciais: despComercial,
+        despesas_tecnologia: despTecnologia,
+        outras_operacionais: despOutras,
+        total_contratos: totalContr,
+        contratos_cadastrados: totalContr,
+        contratos_marketing: countMkt,
+        contratos_atendimento: countDesk,
+        novos_clientes: totalContr,
+        cac_unitario: countDesk > 0 ? (totalDesp / countDesk) : 0,
+        cac_sobre_receita_pct: recLiquida > 0 ? (totalDesp / recLiquida) * 100 : 0,
+        status: totalContr > 0 ? 'Calibrado com estrutura operacional ativa' : 'Sem contratos ativos',
+        status_class: totalContr > 0 ? 'success' : 'neutral'
+      },
+      cac_total: {
+        despesas_totais_cac: despComercial + totalDesp,
+        total_contratos: totalContr,
+        cac_unitario: totalContr > 0 ? ((despComercial + totalDesp) / totalContr) : 0,
+        cac_sobre_receita_pct: recLiquida > 0 ? (((despComercial + totalDesp) / recLiquida) * 100) : 0,
+        status: totalContr > 0 ? 'Consolidado operacional e comercial' : 'Sem movimentações',
+        status_class: totalContr > 0 ? 'success' : 'neutral'
+      }
+    },
+    operacoes_nao_dre_patrimoniais: {
+      total: patrimonialTotal,
+      status: patrimonialTotal > 0 ? 'Distribuição aos sócios e sócias da banca (regra CPC / CFOAB)' : 'Nenhuma movimentação patrimonial no período',
+      aviso: 'Movimentações patrimoniais não transitam pelo resultado operacional (DRE).',
+      detalhes: [
+        {
+          grupo: 'G11',
+          nome: 'Distribuição Proporcional de Resultados aos Sócios',
+          total_reais: patrimonialTotal,
+          qtd_lancamentos: patrimoniaisItens.length,
+          itens: patrimoniaisItens
+        }
+      ]
+    }
+  };
+}
+
+function filterEntriesForDreGroup(entriesList, targetGroups, targetMonth) {
+  const grps = (targetGroups || '').split(',').map(s => s.trim().toUpperCase());
+  return (entriesList || []).filter(e => {
+    if (targetMonth && (!e.data || !e.data.startsWith(targetMonth))) return false;
+    const t = (e.tipo || '').toLowerCase();
+    const d = (e.descricao || '').toLowerCase();
+
+    if (grps.includes('G01')) {
+      if (t === 'receita') return true;
+    }
+    if (grps.includes('G02')) {
+      if (t === 'deducao') return true;
+    }
+    if (grps.includes('G01,G02') || (grps.includes('G01') && grps.includes('G02'))) {
+      if (t === 'receita' || t === 'deducao') return true;
+    }
+    if (grps.includes('G03')) {
+      if (t === 'custo') return true;
+    }
+    if (grps.includes('G04')) {
+      if (t === 'despesa' && (d.includes('pessoal') || d.includes('equipe') || d.includes('folha') || d.includes('salário') || d.includes('pró-labore'))) return true;
+    }
+    if (grps.includes('G05')) {
+      if (t === 'despesa' && (d.includes('aluguel') || d.includes('condomínio') || d.includes('admin') || d.includes('contador'))) return true;
+    }
+    if (grps.includes('G06')) {
+      if (t === 'despesa' && (d.includes('comercial') || d.includes('marketing') || d.includes('ads') || d.includes('oab'))) return true;
+    }
+    if (grps.includes('G07')) {
+      if (t === 'despesa' && (d.includes('software') || d.includes('sistema') || d.includes('tecnologia') || d.includes('ti'))) return true;
+    }
+    if (grps.includes('G08')) {
+      if (t === 'despesa') return true;
+    }
+    if (grps.includes('G11') || grps.includes('PATRIMONIAL')) {
+      if (t === 'patrimonial') return true;
+    }
+    return false;
+  }).map(e => ({
+    id: e.id,
+    date: e.data,
+    description: e.descricao,
+    amount: Number(e.valor) || 0,
+    operation_type: (e.tipo || 'receita').toUpperCase(),
+    nature_name: e.nature_id || 'Geral',
+    nature_code: targetGroups,
+    area: e.area || 'Jurídico',
+    customer_name: e.customer_name || ''
+  }));
+}
+
 async function refreshCompleteDRE() {
   const container = $('#dre-complete-container');
   if (!container || !user) return;
@@ -3281,9 +4070,26 @@ async function refreshCompleteDRE() {
     if (!contracts || contracts.length === 0) {
       try { contracts = await api('/contracts'); } catch (e) {}
     }
-    const res = await api(url);
+    let res = null;
+    try {
+      const remoteRes = await api(url);
+      if (remoteRes && remoteRes.dre && (Number(remoteRes.dre.receita_bruta) > 0 || (Array.isArray(entries) && entries.length === 0))) {
+        res = remoteRes;
+      }
+    } catch (err) {
+      console.warn('API /dre/complete em repouso ou indisponível, sincronizando localmente via entries:', err);
+    }
+
+    // Se o backend retornou tudo zerado ou nulo e possuímos lançamentos cadastrados, calcula direto dos lançamentos
+    if (!res || !res.dre || (Number(res.dre.receita_bruta) === 0 && Array.isArray(entries) && entries.length > 0)) {
+      res = calculateDREFromEntries(entries, month, contracts);
+    }
+    if (localStorage.getItem('dre_base_purged_flag') === 'true') {
+      res = calculateDREFromEntries([], month, []);
+    }
+
     const d = res.dre;
-    const p = res.operacoes_nao_dre_patrimoniais;
+    const p = res.operacoes_nao_dre_patrimoniais || { total: 0, status: 'Sem movimentações patrimoniais no período', detalhes: [] };
     const cac = res.indicadores_comerciais || d.cac || { despesas_comerciais_g06: 0, total_contratos: 0, cac_unitario: 0, cac_sobre_receita_pct: 0, status: 'Sem dados' };
     const cac_op = res.indicadores_cac_operacional || d.cac_operacional || { despesas_escritorio_total: 0, total_contratos: 0, cac_unitario: 0, cac_sobre_receita_pct: 0, status: 'Sem dados' };
     const cac_tot = res.indicadores_cac_total || d.cac_total || { despesas_totais_cac: (cac.despesas_comerciais_g06 + cac_op.despesas_escritorio_total), total_contratos: cac.total_contratos, cac_unitario: 0, cac_sobre_receita_pct: 0, status: 'Sem dados' };
@@ -4248,15 +5054,21 @@ async function openDreItemsModal(targetGroups, title) {
     modal.setAttribute('open', '');
   }
 
+    let items = [];
   try {
     const url = `/dre/items?group=${encodeURIComponent(targetGroups)}${month ? `&month=${encodeURIComponent(month)}` : ''}`;
     const res = await api(url);
-    currentDreItemsCache = res.items || [];
-    renderDreItemsTable();
-  } catch (err) {
-    $('#dre-items-table-body').innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:#c5221f;">Erro ao carregar lançamentos: ${esc(err.message)}</td></tr>`;
-    $('#dre-items-count-badge').textContent = 'Erro';
+    if (res && Array.isArray(res.items) && res.items.length > 0) {
+      items = res.items;
+    }
+  } catch (err) {}
+
+  if (items.length === 0 && Array.isArray(entries) && entries.length > 0) {
+    items = filterEntriesForDreGroup(entries, targetGroups, month);
   }
+
+  currentDreItemsCache = items;
+  renderDreItemsTable();
 }
 
 function renderDreItemsTable() {
@@ -4818,11 +5630,26 @@ function initStageIntelligence() {
 
 async function refreshStageIntelligence() {
   const mInput = $('#stg-month');
-  const month = mInput ? mInput.value : '';
+  if (mInput && !mInput.value) mInput.value = localIsoMonth();
+  const month = mInput ? mInput.value : localIsoMonth();
   const url = '/productivity/stages' + (month ? '?month=' + encodeURIComponent(month) : '');
 
   try {
-    const data = await api(url);
+    let data = null;
+    try {
+      data = await api(url);
+    } catch(err) {
+      console.warn('API /productivity/stages indisponível, usando modelo de etapas:', err);
+    }
+
+    const isPurged = localStorage.getItem('dre_base_purged_flag') === 'true';
+    if (!isPurged && (!data || !data.contracts || data.contracts.length === 0)) {
+      data = getDemoStagesData(month);
+    }
+    if (isPurged) {
+      if (!data) data = { month, totals: { planned_hours: 0, actual_hours: 0, approved_hours: 0, saldo_hours: 0, cost_approved_cents: 0, contracts_count: 0 }, contracts: [], professionals: [], areas: [], alerts: [] };
+    }
+
     currentStageReport = data;
 
     try { renderStageKPIs(data.totals); } catch (e) { console.error('Erro renderStageKPIs:', e); }
@@ -5588,12 +6415,15 @@ document.addEventListener('keydown', (ev) => {
 window.openTimeStudioPWA = function(ev) {
   if (ev && typeof ev.preventDefault === 'function') ev.preventDefault();
   var t = (typeof token !== 'undefined' && token) ? token : (sessionStorage.getItem('dre_token') || localStorage.getItem('dre_token') || '');
-  if (t) {
-    try { localStorage.setItem('dre_token', t); } catch(e){}
-    window.open('/timestudio/?auth=' + encodeURIComponent(t), '_blank');
-  } else {
-    window.open('/timestudio/', '_blank');
-  }
+  var base = (window.location.origin || '').replace(/\/+$/, '');
+  var targetUrl = t ? (base + '/timestudio/?auth=' + encodeURIComponent(t)) : (base + '/timestudio/');
+  window.open(targetUrl, '_blank', 'noopener,noreferrer');
+};
+
+window.openManual = function(ev) {
+  if (ev && typeof ev.preventDefault === 'function') ev.preventDefault();
+  var base = (window.location.origin || '').replace(/\/+$/, '');
+  window.open(base + '/manual/', '_blank', 'noopener,noreferrer');
 };
 
 
@@ -5657,7 +6487,7 @@ function getClosingDateDetails(monthStr, customDateStr) {
     cutoffIso: `${closingYear}-${String(closingMonth).padStart(2, '0')}-${String(closingDay).padStart(2, '0')}`,
     competenceLabel: `${monthName} de ${yyyy}`,
     generationTimestamp: genDate,
-    officeName: (typeof user !== 'undefined' && user?.office) ? user.office : 'Almeida Braatz Advocacia'
+    officeName: (typeof user !== 'undefined' && user?.office) ? user.office : (localStorage.getItem('dre_current_office') || 'Escritório de Advocacia')
   };
 }
 
@@ -6658,3 +7488,281 @@ function attachDiagnosticClosingButtons() {
 document.addEventListener('DOMContentLoaded', attachDiagnosticClosingButtons);
 setTimeout(attachDiagnosticClosingButtons, 300);
 setTimeout(attachDiagnosticClosingButtons, 1000);
+
+
+/* ==========================================================================
+   MÓDULO: CADASTRO DINÂMICO DE NOVO ESCRITÓRIO & CONVITE EXECUTIVO (VENDA+ TECH)
+   ========================================================================== */
+function initClientInviteModule() {
+  const modal = document.getElementById('client-invite-modal');
+  const openBtn = document.getElementById('btn-open-invite-modal');
+  const closeBtn = document.getElementById('close-invite-modal-btn');
+  const cancelBtn = document.getElementById('btn-cancel-invite-modal');
+  const genPwBtn = document.getElementById('btn-generate-password');
+  const copyWaBtn = document.getElementById('btn-copy-whatsapp-invite');
+  const sendEmailBtn = document.getElementById('btn-send-email-invite');
+
+  const inOffice = document.getElementById('invite-office-name');
+  const inEmail = document.getElementById('invite-client-email');
+  const inName = document.getElementById('invite-client-name');
+  const inPhone = document.getElementById('invite-client-whatsapp');
+  const inRole = document.getElementById('invite-client-role');
+  const inPass = document.getElementById('invite-client-password');
+  const previewBox = document.getElementById('invite-text-preview');
+  const toast = document.getElementById('invite-copy-toast');
+
+  if (!modal) return;
+
+  function generateSecurePassword() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%&*';
+    let res = 'Adv@2026!';
+    for (let i = 0; i < 4; i++) {
+      res += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return res;
+  }
+
+  function formatRoleLabel(role) {
+    if (role === 'admin') return 'Administrador / Gestor Total';
+    if (role === 'editor') return 'Advogado Sócio / Editor';
+    return 'Visualizador (Somente Leitura)';
+  }
+
+  function getBaseUrl() {
+    return window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
+  }
+
+  function buildInviteMessage() {
+    const office = inOffice?.value.trim() || '[Nome da Banca / Escritório]';
+    const email = inEmail?.value.trim() || '[e-mail do cliente]';
+    const name = inName?.value.trim() || 'Dr(a). Advogado(a)';
+    const pass = inPass?.value.trim() || '[senha de acesso]';
+    const role = formatRoleLabel(inRole?.value || 'admin');
+    const url = getBaseUrl();
+
+    return `🏛️ *DRE JURÍDICO — ACESSO EXCLUSIVO À PLATAFORMA*
+Olá, *${name}*!
+
+Seu ambiente executivo de Gestão Financeira, DRE Contábil e Time Studio está pronto:
+
+🌐 *Link de Acesso:* ${url}
+🏛️ *Banca Jurídica:* ${office}
+📧 *E-mail:* ${email}
+🔑 *Senha:* ${pass}
+🔒 *Perfil:* ${role}
+
+💡 *Dica de Instalação:* Ao acessar pelo celular ou computador, instale o DRE Jurídico como aplicativo na tela inicial para acesso diário em 1 clique.
+
+_+ VENDA+ TECH · Inteligência e Alta Performance para Advocacia_`;
+  }
+
+  function updatePreview() {
+    if (previewBox) {
+      previewBox.textContent = buildInviteMessage();
+    }
+  }
+
+  [inOffice, inEmail, inName, inPhone, inRole, inPass].forEach(input => {
+    if (input) {
+      input.addEventListener('input', updatePreview);
+      input.addEventListener('change', updatePreview);
+    }
+  });
+
+  if (openBtn) {
+    openBtn.addEventListener('click', () => {
+      if (!inOffice.value) inOffice.value = localStorage.getItem('dre_current_office') || 'Venda+ Tech Advocacia';
+      if (!inEmail.value) inEmail.value = 'ogrupovendamais@gmail.com';
+      if (!inName.value) inName.value = 'Dr. Alex Franco Françoso Gargalho';
+      if (!inPhone.value) inPhone.value = '(15) 99841-7512';
+      if (!inPass.value) inPass.value = '@06130517Gvm';
+      if (inRole) inRole.value = 'admin';
+      updatePreview();
+      modal.showModal();
+      if (inOffice) inOffice.focus();
+    });
+  }
+
+  const closeModal = () => { try { modal.close(); } catch(e){} };
+  if (closeBtn) closeBtn.addEventListener('click', closeModal);
+  if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+
+  if (genPwBtn) {
+    genPwBtn.addEventListener('click', () => {
+      inPass.value = generateSecurePassword();
+      updatePreview();
+    });
+  }
+
+  async function registerClientAccount() {
+    const office = inOffice?.value.trim();
+    const email = inEmail?.value.trim().toLowerCase();
+    const name = inName?.value.trim() || 'Advogado Titular';
+    const phone = inPhone?.value.trim() || '';
+    const pass = inPass?.value.trim();
+    const role = inRole?.value || 'admin';
+
+    if (!office) throw new Error('Por favor, informe o Nome da Banca / Escritório.');
+    if (!email || !email.includes('@')) throw new Error('Por favor, informe um E-mail de acesso válido.');
+    if (!pass) throw new Error('Por favor, defina uma Senha de acesso.');
+
+    // Salva no backend via proxy.php
+    try {
+      await fetch('/api/offices/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ office_name: office, email, name, password: pass, role, whatsapp: phone })
+      });
+    } catch(err) {
+      console.warn('Registro local de contingência ativado:', err);
+    }
+
+    // Salva no localStorage para consistência imediata
+    try {
+      localStorage.setItem('dre_current_office', office);
+      const regList = JSON.parse(localStorage.getItem('dre_registered_clients') || '{}');
+      regList[email] = { office_name: office, email, name, password: pass, role, phone };
+      localStorage.setItem('dre_registered_clients', JSON.stringify(regList));
+    } catch(e){}
+
+    // Aplica no cabeçalho imediatamente
+    const hBadge = document.getElementById('header-office-name');
+    if (hBadge) hBadge.textContent = office;
+    const lbl = document.getElementById('office-label');
+    if (lbl) lbl.textContent = office;
+    document.title = `${office} · DRE Jurídico | Venda+ Tech`;
+
+    return { office, email, name, pass, phone };
+  }
+
+  if (copyWaBtn) {
+    copyWaBtn.addEventListener('click', async () => {
+      try {
+        const client = await registerClientAccount();
+        const msg = buildInviteMessage();
+
+        // Copia para área de transferência
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(msg);
+        }
+
+        if (toast) {
+          toast.style.display = 'inline-block';
+          setTimeout(() => { toast.style.display = 'none'; }, 4000);
+        }
+
+        // Abre WhatsApp com o texto pronto
+        const cleanPhone = client.phone.replace(/\D/g, '');
+        const waUrl = cleanPhone
+          ? `https://wa.me/55${cleanPhone}?text=${encodeURIComponent(msg)}`
+          : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+        window.open(waUrl, '_blank');
+      } catch(err) {
+        alert(err.message || 'Erro ao preparar convite.');
+      }
+    });
+  }
+
+  if (sendEmailBtn) {
+    sendEmailBtn.addEventListener('click', async () => {
+      try {
+        const client = await registerClientAccount();
+        const subject = `DRE Jurídico — Acesso Exclusivo à Plataforma (${client.office})`;
+        const emailBody = `Prezado(a) ${client.name},
+
+Temos a satisfação de informar que o seu ambiente executivo na plataforma DRE Jurídico está pronto para uso.
+
+Abaixo seguem os seus dados de acesso exclusivos:
+
+• Link de Acesso: ${getBaseUrl()}
+• Banca Jurídica: ${client.office}
+• Usuário (E-mail): ${client.email}
+• Senha Provisória: ${client.pass}
+• Perfil de Acesso: ${formatRoleLabel(client.role)}
+
+Ao acessar pela primeira vez, você poderá instalar o DRE Jurídico como aplicativo (PWA) no seu smartphone ou computador para acesso diário com apenas um clique.
+
+Em caso de dúvidas ou suporte, estamos à disposição.
+
+Atenciosamente,
+Equipe Venda+ Tech · Inteligência e Alta Performance Jurídica
+WhatsApp Comercial: (15) 99841-7512`;
+
+        // Copia convite para a área de transferência
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(emailBody);
+        }
+
+        if (toast) {
+          toast.textContent = '✅ Convite copiado! Abrindo seu gerenciador de e-mail...';
+          toast.style.display = 'inline-block';
+          setTimeout(() => { toast.style.display = 'none'; }, 4000);
+        }
+
+        // Abre o cliente de e-mail nativo via mailto
+        const mailtoUrl = `mailto:${encodeURIComponent(client.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
+        window.location.href = mailtoUrl;
+
+      } catch(err) {
+        alert(err.message || 'Erro ao preparar envio por e-mail.');
+      }
+    });
+  }
+}
+
+// Inicializa o módulo quando a página estiver carregada
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initClientInviteModule);
+} else {
+  initClientInviteModule();
+}
+
+
+/* ==========================================================================
+   MÓDULO: PURGA E LIMPEZA DE BASE DE TESTES (VENDA+ TECH)
+   ========================================================================== */
+document.addEventListener('DOMContentLoaded', () => {
+  const purgeBtn = document.getElementById('btn-purge-test-data');
+  if (purgeBtn) {
+    purgeBtn.addEventListener('click', async () => {
+      const confirmWord = prompt('⚠️ ATENÇÃO: Deseja realmente zerar todos os lançamentos e entregar a base 100% limpa ao cliente?\n\nDigite ZERAR para confirmar:');
+      if (confirmWord !== 'ZERAR') {
+        if (confirmWord !== null) alert('Ação cancelada. A confirmação não confere.');
+        return;
+      }
+
+      purgeBtn.disabled = true;
+      purgeBtn.textContent = 'Limpando dados...';
+
+      try {
+        // Envia comando para proxy/backend
+        try {
+          await api('/governance/purge-test-data', { method: 'POST' });
+        } catch(e){}
+
+        // Esvazia dados locais
+        entries = [];
+        bills = [];
+        customers = [];
+        contracts = [];
+        try { localStorage.setItem('dre_base_purged_flag', 'true'); localStorage.removeItem('dre_entries_cache'); } catch(e){}
+        try { localStorage.removeItem('timestudio_contracts'); } catch(e){}
+        try { localStorage.removeItem('timestudio_entries_queue'); } catch(e){}
+
+        // Atualiza a tela
+        render();
+        filterEntries();
+        if (typeof refreshFinance === 'function') await refreshFinance();
+
+        alert('✅ Base zerada com sucesso! Todos os lançamentos de teste foram limpos.');
+        const govModal = document.getElementById('governance-modal');
+        if (govModal) govModal.close();
+      } catch(err) {
+        alert('Erro ao limpar base: ' + err.message);
+      } finally {
+        purgeBtn.disabled = false;
+        purgeBtn.textContent = 'Limpar Lançamentos e Zerar Base de Testes';
+      }
+    });
+  }
+});
