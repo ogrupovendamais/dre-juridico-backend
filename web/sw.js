@@ -1,5 +1,5 @@
 // PWA 3.0: cache restrito a recursos publicos estaticos; nunca cachear /api, sessao ou dados privados.
-const CACHE = 'dre-juridico-static-v140';
+const CACHE = 'dre-juridico-static-v142';
 const ASSETS = ['./index.html', './app.js', './manifest.webmanifest', './icon.svg', './favicon.ico', './favicon.png', './favicon-32x32.png'];
 
 self.addEventListener('install', event => {
