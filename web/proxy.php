@@ -93,7 +93,8 @@ $ep_clean = trim($endpoint, '/');
 $is_local_sess = (strpos($auth_bearer_token, 'dre_local_') === 0);
 $is_self_handled = in_array($ep_clean, [
     'logout', 'offices/register', 'governance/purge-test-data', 'finance/close',
-    'areas', 'financial-report', 'summary', 'executive', 'dre-groups', 'operation-natures'
+    'areas', 'financial-report', 'summary', 'executive', 'dre-groups', 'operation-natures',
+    'timestudio/approvals', 'timestudio/invites', 'productivity/worklogs'
 ]);
 
 if ($is_local_sess || $is_self_handled) {
@@ -728,6 +729,28 @@ if ($ep_clean === 'finance/close' && $method === 'POST') {
     http_response_code(200);
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode(['ok' => true, 'closed' => true, 'message' => 'Mês encerrado com sucesso.'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+
+if (($ep_clean === 'timestudio/approvals' || strpos($ep_clean, 'timestudio/approvals') === 0) && ($http_code !== 200 || empty($response) || strpos($auth_bearer_token, 'dre_local_') === 0)) {
+    http_response_code(200);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode([], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+if ($ep_clean === 'timestudio/invites' && ($http_code !== 200 || empty($response) || strpos($auth_bearer_token, 'dre_local_') === 0)) {
+    http_response_code(200);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode([], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+if (strpos($ep_clean, 'productivity/worklogs') === 0 && ($http_code !== 200 || empty($response) || strpos($auth_bearer_token, 'dre_local_') === 0)) {
+    http_response_code(200);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode([], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
